@@ -58,10 +58,11 @@ impl Shadow {
         }
     }
     /// attach for rendering
-    pub fn attach(&self) {
+    pub fn attach(&self, w: i32, h: i32) {
         unsafe {
             gl::BindFramebuffer(gl::FRAMEBUFFER, self.depth_fbo);
             gl::Clear(gl::DEPTH_BUFFER_BIT);
+            gl::Viewport(0, 0, w, h);
         }
     }
     /// back to default frame buffer

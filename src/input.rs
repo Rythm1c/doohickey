@@ -4,19 +4,22 @@ use crate::src::camera::Direction;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
-pub fn window_input(event: &Event, running: &mut bool, w: &mut i32, h: &mut i32) {
+pub struct WinInfo {
+    pub running: bool,
+    pub w: i32,
+    pub h: i32,
+}
+
+pub fn window_input(event: &Event, win_info: &mut WinInfo) {
     match event {
-        Event::Quit { .. } => *running = false,
+        Event::Quit { .. } => win_info.running = false,
 
         Event::Window {
-            win_event: sdl2::event::WindowEvent::Resized(_w, _h),
+            win_event: sdl2::event::WindowEvent::Resized(w, h),
             ..
         } => {
-            *w = *_w;
-            *h = *_h;
-            {
-                unsafe { gl::Viewport(0, 0, *_w, *_h) };
-            }
+            win_info.w = *w;
+            win_info.h = *h;
         }
         _ => {}
     }

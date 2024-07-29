@@ -1,4 +1,7 @@
-use src::{input, world};
+use src::{
+    input::{self, WinInfo},
+    world,
+};
 
 extern crate gl;
 extern crate sdl2;
@@ -16,11 +19,14 @@ fn main() {
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
     gl_attr.set_context_version(4, 6);
 
-    let mut w: i32 = 1200;
-    let mut h: i32 = 800;
+    let mut win_info = WinInfo {
+        running: true,
+        w: 1200,
+        h: 800,
+    };
 
     let window = video_sub_sys
-        .window("rust engine", w as u32, h as u32)
+        .window("rust engine", win_info.w as u32, win_info.h as u32)
         .position(100, 100)
         .opengl()
         .resizable()
@@ -32,7 +38,7 @@ fn main() {
         gl::load_with(|s| video_sub_sys.gl_get_proc_address(s) as *const std::os::raw::c_void);
 
     unsafe {
-        gl::Viewport(0, 0, w, h);
+        gl::Viewport(0, 0, win_info.w, win_info.h);
         gl::Enable(gl::DEPTH_TEST);
     }
 
@@ -40,28 +46,29 @@ fn main() {
 
     let mut event_pump = sdl.event_pump().unwrap();
 
-    let mut world = world::World::new(w as f32, h as f32).unwrap();
+    let mut world = world::World::new(win_info.w as f32, win_info.h as f32).unwrap();
 
-    let mut running = true;
     let mut delta = 0.0;
 
-    while running {
+    while win_info.running {
         let now = Instant::now();
 
         for event in event_pump.poll_iter() {
-            input::window_input(&event, &mut running, &mut w, &mut h);
+            input::window_input(&event, &mut win_info);
             input::mouse_input(&event, &mut world.cam);
         }
+
+        world
+            .update_cam(win_info.w as f32, win_info.h as f32)
+            .update_objects(delta)
+            .render_shadows();
+
         unsafe {
+            gl::Viewport(0, 0, win_info.w, win_info.h);
             gl::ClearColor(0.1, 0.1, 0.1, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-            gl::Viewport(0, 0, 1200, 800);
         }
-        world
-            .update_cam(w as f32, h as f32)
-            .update_objects(delta)
-            .render_shadows()
-            .render();
+        world.render();
 
         window.gl_swap_window();
 
