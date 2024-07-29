@@ -13,12 +13,14 @@ pub struct Vertex {
     tc: Vec2,
 }
 
+/// mostly for collision detection
+/// specify the most appropriate shape to determine the bounding volume for collisions
 #[derive(PartialEq, Clone, Copy)]
 pub enum Shape {
-    Sphere, /* { radius: f32 } */
-    Cube,   /* { scale: Vec3 } */
-    Quad,
-    Other,
+    Sphere { radius: f32 },
+    Cube { dimensions: Vec3 },
+    /*  Quad,
+    Other, */
 }
 
 struct Mesh {
@@ -27,14 +29,13 @@ struct Mesh {
     vao: u32,
     vbo: u32,
     ebo: u32,
-    pub shape: Shape,
 }
 pub struct Model {
     //containers for render data
     meshes: Vec<Mesh>,
+    pub shape: Shape,
     pub color: Vec3,
     pub transform: Mat4,
-    pub size: Vec3,
     pub pos: Vec3,
     pub rotation: Quat,
     pub velocity: Vec3,
@@ -127,7 +128,7 @@ impl Drop for Mesh {
     }
 }
 impl Model {
-    pub fn new(_pos: Vec3, _size: Vec3, col: Vec3) -> Result<Model, String> {
+    pub fn new(_shape: Shape, _pos: Vec3, col: Vec3) -> Result<Model, String> {
         let t = mat4(
             1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         );
@@ -137,7 +138,7 @@ impl Model {
             color: col,
             velocity: vec3(0.0, 0.0, 0.0),
             pos: _pos,
-            size: _size,
+            shape: _shape,
             rotation: quat(0.0, 0.0, 0.0, 0.0),
             textured: false,
             checkered: false,
@@ -154,7 +155,15 @@ impl Model {
         );
         self.transform = self.transform * translate(&self.pos);
         self.transform = self.transform * rotate(self.rotation.s, self.rotation.axis());
-        self.transform = self.transform * scale(&self.size);
+
+        match self.shape {
+            Shape::Cube { dimensions } => {
+                self.transform = self.transform * scale(&dimensions);
+            }
+            Shape::Sphere { radius } => {
+                self.transform = self.transform * scale(&vec3(radius, radius, radius));
+            } //_ => {}
+        }
     }
 
     pub fn prepere_render_resources(&mut self) {
@@ -169,15 +178,15 @@ impl Model {
     }
 }
 
-pub fn load_sphere(lats: u32, longs: u32, model: &mut Model) {
+pub fn load_sphere(lats: u32, longs: u32, r: f32, model: &mut Model) {
     let mut mesh = Mesh {
         vertices: vec![],
         indices: vec![],
         vao: 0,
         vbo: 0,
         ebo: 0,
-        shape: Shape::Sphere,
     };
+    model.shape = Shape::Sphere { radius: r };
     let lat_angle: f32 = 180.0 / (lats as f32 - 1.0);
     let long_angle: f32 = 360.0 / (longs as f32 - 1.0);
     // tmp vertex
@@ -222,15 +231,16 @@ pub fn load_sphere(lats: u32, longs: u32, model: &mut Model) {
 
     model.meshes.push(mesh);
 }
-pub fn load_quad(model: &mut Model) {
+/* pub fn load_quad(model: &mut Model) {
     let mut mesh = Mesh {
         vertices: vec![],
         indices: vec![],
         vao: 0,
         vbo: 0,
         ebo: 0,
-        shape: Shape::Quad,
     };
+
+    model.shape = Shape::Quad;
 
     let mut vertex: Vertex = Vertex {
         tc: vec2(0.0, 0.0),
@@ -259,17 +269,16 @@ pub fn load_quad(model: &mut Model) {
 
     mesh.indices = vec![0, 1, 2, 0, 2, 3];
     model.meshes.push(mesh);
-}
-pub fn load_cube(model: &mut Model) {
+} */
+pub fn load_cube(size: Vec3, model: &mut Model) {
     let mut mesh = Mesh {
         vertices: vec![],
         indices: vec![],
         vao: 0,
         vbo: 0,
         ebo: 0,
-        shape: Shape::Cube,
     };
-
+    model.shape = Shape::Cube { dimensions: size };
     //front face
     let mut tmp_vertex = Vertex {
         pos: vec3(1.0, -1.0, 1.0),

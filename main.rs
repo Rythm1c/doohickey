@@ -73,6 +73,6 @@ fn main() {
         window.gl_swap_window();
 
         delta = now.elapsed().as_secs_f32();
-        println!("fps : {}", (1.0 / delta));
+        //println!("fps : {}", (1.0 / delta));
     }
 }

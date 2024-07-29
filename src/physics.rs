@@ -7,8 +7,17 @@ struct AABB {
     max: Vec3,
 }
 
-fn average_size(size: Vec3) -> f32 {
-    (size.x + size.y + size.z) / 3.0
+fn radius(shape: model::Shape) -> f32 {
+    match shape {
+        model::Shape::Sphere { radius } => radius,
+        _ => 0.0,
+    }
+}
+fn size(shape: model::Shape) -> Vec3 {
+    match shape {
+        model::Shape::Cube { dimensions } => dimensions,
+        _ => vec3(0.0, 0.0, 0.0),
+    }
 }
 //get a bounding box
 fn get_aabb(pos: Vec3, size: Vec3) -> AABB {
@@ -42,8 +51,8 @@ pub fn collision_sphere_sphere(s1: String, s2: String, models: &mut HashMap<Stri
     let distance = (models.get(&s1).unwrap().pos - models.get(&s2).unwrap().pos).len();
     // get the average of size attributes
     // since the Model struct doesn't have a radius member
-    let radius1 = average_size(models.get(&s1).unwrap().size);
-    let radius2 = average_size(models.get(&s2).unwrap().size);
+    let radius1 = radius(models.get(&s1).unwrap().shape);
+    let radius2 = radius(models.get(&s2).unwrap().shape);
     let sum_radii = radius1 + radius2;
     // if distance between objects(spheres) is less than the sum of both radii
     // then a collision  has occured
@@ -68,8 +77,8 @@ pub fn collision_sphere_aabb(
     aabb: String,
     models: &mut HashMap<String, model::Model>,
 ) {
-    let radius = average_size(models.get(&sphere).unwrap().size);
-    let aabb_size = models.get(&aabb).unwrap().size;
+    let radius = radius(models.get(&sphere).unwrap().shape);
+    let aabb_size = size(models.get(&aabb).unwrap().shape);
 
     let sphere_pos = models.get(&sphere).unwrap().pos;
     let aabb_pos = models.get(&aabb).unwrap().pos;
@@ -99,8 +108,8 @@ pub fn collision_aabb_aabb(
 ) {
     let pos1 = models.get(&aabb1).unwrap().pos;
     let pos2 = models.get(&aabb2).unwrap().pos;
-    let size1 = models.get(&aabb1).unwrap().size;
-    let size2 = models.get(&aabb2).unwrap().size;
+    let size1 = size(models.get(&aabb1).unwrap().shape);
+    let size2 = size(models.get(&aabb2).unwrap().shape);
 
     let box1 = get_aabb(pos1.clone(), size1.clone());
     let box2 = get_aabb(pos2.clone(), size2.clone());

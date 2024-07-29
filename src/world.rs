@@ -53,54 +53,60 @@ impl World {
 
         let mut m_s: HashMap<String, model::Model> = Default::default();
         let mut ball = model::Model::new(
-            vec3(0.0, 15.0, 8.0),
-            vec3(4.0, 4.0, 4.0),
+            model::Shape::Sphere { radius: (1.0) },
+            vec3(4.0, 30.0, 10.0),
             vec3(1.0, 1.0, 1.0),
         )
         .unwrap();
-        model::load_sphere(50, 50, &mut ball);
+        model::load_sphere(50, 50, 4.0, &mut ball);
         ball.checkered = true;
         ball.squares = 20.0;
         ball.prepere_render_resources();
         m_s.insert(String::from("ball"), ball);
 
         let mut ball2 = model::Model::new(
-            vec3(1.0, 35.0, 8.0),
-            vec3(3.0, 3.0, 3.0),
+            model::Shape::Sphere { radius: (1.0) },
+            vec3(3.0, 40.0, 10.0),
             vec3(1.0, 0.35, 0.06),
         )
         .unwrap();
-        model::load_sphere(50, 50, &mut ball2);
+        model::load_sphere(50, 50, 3.0, &mut ball2);
         ball2.prepere_render_resources();
         m_s.insert(String::from("ball2"), ball2);
 
         let mut cube = model::Model::new(
-            vec3(-25.0, 4.0, 8.0),
-            vec3(2.0, 2.0, 2.0),
+            model::Shape::Cube {
+                dimensions: Vec3::new(1.0, 1.0, 1.0),
+            },
+            vec3(-12.0, 20.0, 6.0),
             vec3(0.92, 0.29, 0.29),
         )
         .unwrap();
-        model::load_cube(&mut cube);
+        model::load_cube(Vec3::new(2.0, 2.0, 2.0), &mut cube);
         cube.prepere_render_resources();
         m_s.insert(String::from("cube"), cube);
 
         let mut cube2 = model::Model::new(
-            vec3(-45.0, 15.0, 8.0),
+            model::Shape::Cube {
+                dimensions: Vec3::new(1.0, 1.0, 1.0),
+            },
             vec3(5.0, 5.0, 5.0),
             vec3(0.0, 1.0, 0.12),
         )
         .unwrap();
-        model::load_cube(&mut cube2);
+        model::load_cube(Vec3::new(5.0, 5.0, 5.0), &mut cube2);
         cube2.prepere_render_resources();
         m_s.insert(String::from("cube2"), cube2);
 
         let mut platform = model::Model::new(
+            model::Shape::Cube {
+                dimensions: Vec3::new(1.0, 1.0, 1.0),
+            },
             vec3(0.0, -2.0, 0.0),
-            vec3(1000.0, 2.0, 1000.0),
             vec3(1.0, 1.0, 1.0),
         )
         .unwrap();
-        model::load_cube(&mut platform);
+        model::load_cube(Vec3::new(1000.0, 2.0, 1000.0), &mut platform);
         platform.sub_dvd = true;
         platform.lines = 70.0;
         platform.prepere_render_resources();
@@ -127,7 +133,7 @@ impl World {
         Ok(World {
             projection: perspective(45.0, w as f32 / h as f32, 0.1, 1000.0),
             sun: lights::DirectionalLight {
-                shadows: shadows::Shadow::new(w as i32, h as i32),
+                shadows: shadows::Shadow::new(1900 as i32, 1200 as i32),
                 color: vec3(1.0, 1.0, 1.0),
                 dir: vec3(0.3, -0.7, 0.4),
             },
@@ -206,7 +212,7 @@ impl World {
         self
     }
     pub fn render_shadows(&mut self) -> &mut Self {
-        self.sun.shadows.attach(1200, 800);
+        self.sun.shadows.attach(1900, 1200);
 
         self.s_shadow.set_use();
         self.s_shadow.update_mat4(
