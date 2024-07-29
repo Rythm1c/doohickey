@@ -52,7 +52,11 @@ fn main() {
             input::window_input(&event, &mut running, &mut w, &mut h);
             input::mouse_input(&event, &mut world.cam);
         }
-
+        unsafe {
+            gl::ClearColor(0.1, 0.1, 0.1, 1.0);
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+            gl::Viewport(0, 0, 1200, 800);
+        }
         world
             .update_cam(w as f32, h as f32)
             .update_objects(delta)
