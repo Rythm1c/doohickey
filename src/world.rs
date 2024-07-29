@@ -206,12 +206,7 @@ impl World {
         self
     }
     pub fn render_shadows(&mut self) -> &mut Self {
-        unsafe {
-            gl::CullFace(gl::FRONT);
-            gl::Viewport(0, 0, 1200, 800);
-        }
-
-        self.sun.shadows.attach();
+        self.sun.shadows.attach(1200, 800);
 
         self.s_shadow.set_use();
         self.s_shadow.update_mat4(
@@ -229,12 +224,6 @@ impl World {
     }
 
     pub fn render(&mut self) {
-        unsafe {
-            gl::CullFace(gl::BACK);
-            gl::ClearColor(0.1, 0.1, 0.1, 1.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-            gl::Viewport(0, 0, 1200, 800);
-        }
         self.s_obj.set_use();
         self.sun.shadows.bind_texture();
         self.s_obj.update_vec3("L_direction", self.sun.dir);
