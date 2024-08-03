@@ -1,5 +1,4 @@
 use crate::math::{mat4::*, vec3::*};
-
 use crate::src::{animations, camera, lights, model, physics, shaders, shadows};
 
 use std::collections::HashMap;
@@ -7,9 +6,10 @@ use std::ffi::CString;
 
 pub struct World {
     //shaders
-    pub s_obj: shaders::Program, // object shader
-    pub s_shadow: shaders::Program,
+    s_obj: shaders::Program, // object shader
+    s_shadow: shaders::Program,
     // shaders end
+    player: model::Model,
     pub cam: camera::Camera,
     pub models: HashMap<String, model::Model>,
     projection: Mat4,
@@ -19,7 +19,7 @@ pub struct World {
 }
 
 impl World {
-    pub fn new(w: f32, h: f32) -> Result<World, String> {
+    pub fn new(ratio: f32) -> Result<World, String> {
         let c = camera::Camera::new(
             vec3(0.0, 0.0, 1.0),
             vec3(0.0, 1.0, 0.0),
@@ -130,14 +130,26 @@ impl World {
             color: vec3(0.0, 1.0, 0.5),
         });
 
+        let mut _player = model::Model::new(
+            model::Shape::Cube {
+                dimensions: vec3(1.0, 1.0, 1.0),
+            },
+            vec3(0.0, 4.0, 2.0),
+            vec3(1.0, 1.0, 1.0),
+        )
+        .unwrap();
+        model::load_frm_gltf("wooden_doll/scene.gltf", &mut _player);
+        _player.prepere_render_resources();
+
         Ok(World {
-            projection: perspective(45.0, w as f32 / h as f32, 0.1, 1000.0),
+            projection: perspective(45.0, ratio, 0.1, 1000.0),
             sun: lights::DirectionalLight {
-                shadows: shadows::Shadow::new(1900 as i32, 1200 as i32),
+                shadows: shadows::Shadow::new(1900, 1200),
                 color: vec3(1.0, 1.0, 1.0),
                 dir: vec3(0.3, -0.7, 0.4),
             },
             s_shadow: shadow_program,
+            player: _player,
             elapsed: 0.0,
             models: m_s,
             s_obj: prgm,
@@ -145,8 +157,7 @@ impl World {
             cam: c,
         })
     }
-    pub fn update_cam(&mut self, w: f32, h: f32) -> &mut World {
-        let ratio = w as f32 / h as f32;
+    pub fn update_cam(&mut self, ratio: f32) -> &mut World {
         self.projection = perspective(45.0, ratio, 0.1, 1000.0);
         self.cam.update_motion();
 
@@ -204,6 +215,7 @@ impl World {
                 .unwrap()
                 .velocity,
         );
+        self.player.update_properties();
 
         for model in self.models.values_mut() {
             model.update_properties();
@@ -211,7 +223,7 @@ impl World {
 
         self
     }
-    pub fn render_shadows(&mut self) -> &mut Self {
+    pub fn add_shadows(&mut self) -> &mut Self {
         self.sun.shadows.attach(1900, 1200);
 
         self.s_shadow.set_use();
@@ -219,11 +231,11 @@ impl World {
             "lightSpace",
             self.sun.get_projection() * self.sun.get_view(),
         );
-        // render scene depth info from light perspective
-        for model in self.models.values_mut() {
+
+        self.models.values_mut().for_each(|model| {
             self.s_shadow.update_mat4("model", model.transform);
             model.render();
-        }
+        });
         // end of render
         shadows::Shadow::detach();
         self
@@ -256,9 +268,20 @@ impl World {
                 self.lights[i].color,
             );
         }
+        self.s_obj.update_mat4("transform", self.player.transform);
+        self.s_obj
+            .update_int("textured", self.player.textured as i32);
+        self.s_obj.update_vec3("col", self.player.color);
+        self.s_obj
+            .update_int("checkered", self.player.checkered as i32);
+        self.s_obj.update_float("squares", self.player.squares);
+        self.s_obj
+            .update_int("subDivided", self.player.sub_dvd as i32);
+        self.s_obj.update_float("lines", self.player.lines);
 
+        self.player.render();
         // object specific
-        for model in self.models.values_mut() {
+        self.models.values_mut().for_each(|model| {
             self.s_obj.update_mat4("transform", model.transform);
             self.s_obj.update_int("textured", model.textured as i32);
             self.s_obj.update_vec3("col", model.color);
@@ -268,6 +291,6 @@ impl World {
             self.s_obj.update_float("lines", model.lines);
 
             model.render();
-        }
+        })
     }
 }

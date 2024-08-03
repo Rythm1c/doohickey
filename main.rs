@@ -5,6 +5,7 @@ use src::{
 
 extern crate gl;
 extern crate sdl2;
+
 use std::time::Instant;
 
 mod math;
@@ -42,11 +43,11 @@ fn main() {
         gl::Enable(gl::DEPTH_TEST);
     }
 
-    // video_sub_sys.gl_set_swap_interval(1);
+    video_sub_sys.gl_set_swap_interval(1).unwrap();
 
     let mut event_pump = sdl.event_pump().unwrap();
 
-    let mut world = world::World::new(win_info.w as f32, win_info.h as f32).unwrap();
+    let mut world = world::World::new(win_info.get_ratio()).unwrap();
 
     let mut delta = 0.0;
 
@@ -59,9 +60,9 @@ fn main() {
         }
 
         world
-            .update_cam(win_info.w as f32, win_info.h as f32)
+            .update_cam(win_info.get_ratio())
             .update_objects(delta)
-            .render_shadows();
+            .add_shadows();
 
         unsafe {
             gl::Viewport(0, 0, win_info.w, win_info.h);

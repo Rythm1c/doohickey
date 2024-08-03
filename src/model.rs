@@ -1,6 +1,5 @@
 extern crate gltf;
-extern crate tobj;
-
+//extern crate tobj;
 use crate::gl;
 
 use crate::math::{mat4::*, quaternion::*, vec2::*, vec3::*};
@@ -23,6 +22,7 @@ pub enum Shape {
     Other, */
 }
 
+#[derive(PartialEq, Clone)]
 struct Mesh {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,
@@ -150,9 +150,7 @@ impl Model {
 
     pub fn update_properties(&mut self) {
         self.pos = self.pos + self.velocity;
-        self.transform = mat4(
-            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-        );
+        self.transform = Mat4::new();
         self.transform = self.transform * translate(&self.pos);
         self.transform = self.transform * rotate(self.rotation.s, self.rotation.axis());
 
@@ -178,6 +176,93 @@ impl Model {
     }
 }
 
+pub fn load_frm_gltf(path: &str, model: &mut Model) {
+    let (document, buffers, ..) = gltf::import(path).unwrap();
+
+    let mut tmp_mesh = Mesh {
+        vertices: vec![],
+        indices: vec![],
+        vao: 0,
+        vbo: 0,
+        ebo: 0,
+    };
+
+    for mesh in document.meshes() {
+        //prepare for next batch of data
+        tmp_mesh.vertices.clear();
+        tmp_mesh.indices.clear();
+        tmp_mesh.vao = 0;
+        tmp_mesh.vbo = 0;
+        tmp_mesh.ebo = 0;
+
+        /*  for node in scene.nodes() {
+        // let children = node.children().map(|child| dbg!(child));
+
+        let mesh = node.mesh().expect("Got mesh"); */
+
+        let primitives = mesh.primitives();
+        primitives.for_each(|primitive| {
+            // let indices = primitive.indices();
+            let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
+            //temporary array to hold position data
+            let mut tmp_positions: Vec<Vec3> = vec![];
+            // extract positions
+            if let Some(positions) = reader.read_positions().map(|v| dbg!(v)) {
+                for pos in positions {
+                    tmp_positions.push(Vec3 {
+                        x: pos[0],
+                        y: pos[1],
+                        z: pos[2],
+                    });
+                }
+            };
+            //temporary storage for normals
+            let mut tmp_normals: Vec<Vec3> = vec![];
+            //extract normals
+            if let Some(normals) = reader.read_normals().map(|n| dbg!(n)) {
+                for norm in normals {
+                    tmp_normals.push(Vec3 {
+                        x: norm[0],
+                        y: norm[1],
+                        z: norm[2],
+                    })
+                }
+            }
+            //temporary storage for texure coordinates
+            let mut tmp_tex_coords: Vec<Vec2> = vec![];
+            //extract
+            if let Some(gltf::mesh::util::ReadTexCoords::F32(gltf::accessor::Iter::Standard(itr))) =
+                reader.read_tex_coords(0).map(|tc| dbg!(tc))
+            {
+                for texcoord in itr {
+                    tmp_tex_coords.push(Vec2 {
+                        x: texcoord[0],
+                        y: texcoord[1],
+                    });
+                }
+            }
+
+            //extract
+            if let Some(gltf::mesh::util::ReadIndices::U32(gltf::accessor::Iter::Standard(itr))) =
+                reader.read_indices().map(|i| dbg!(i))
+            {
+                for index in itr {
+                    tmp_mesh.indices.push(index);
+                }
+            }
+
+            for i in 0..tmp_positions.len() {
+                tmp_mesh.vertices.push(Vertex {
+                    norm: tmp_normals[i],
+                    pos: tmp_positions[i],
+                    tc: tmp_tex_coords[i],
+                })
+            }
+            model.meshes.push(tmp_mesh.clone());
+        })
+    }
+}
+
 pub fn load_sphere(lats: u32, longs: u32, r: f32, model: &mut Model) {
     let mut mesh = Mesh {
         vertices: vec![],
@@ -191,9 +276,9 @@ pub fn load_sphere(lats: u32, longs: u32, r: f32, model: &mut Model) {
     let long_angle: f32 = 360.0 / (longs as f32 - 1.0);
     // tmp vertex
     let mut vert: Vertex = Vertex {
-        pos: vec3(0.0, 0.0, 0.0),
-        norm: vec3(0.0, 0.0, 0.0),
-        tc: vec2(0.0, 0.0),
+        tc: Vec2::ZERO,
+        pos: Vec3::ZERO,
+        norm: Vec3::ZERO,
     };
     // get vertices
     for i in 0..lats {

@@ -10,6 +10,13 @@ pub struct WinInfo {
     pub h: i32,
 }
 
+impl WinInfo {
+    /// get width to height ratio(w : h)
+    pub fn get_ratio(&self) -> f32 {
+        self.w as f32 / self.h as f32
+    }
+}
+
 pub fn window_input(event: &Event, win_info: &mut WinInfo) {
     match event {
         Event::Quit { .. } => win_info.running = false,
