@@ -195,11 +195,6 @@ pub fn load_frm_gltf(path: &str, model: &mut Model) {
         tmp_mesh.vbo = 0;
         tmp_mesh.ebo = 0;
 
-        /*  for node in scene.nodes() {
-        // let children = node.children().map(|child| dbg!(child));
-
-        let mesh = node.mesh().expect("Got mesh"); */
-
         let primitives = mesh.primitives();
         primitives.for_each(|primitive| {
             // let indices = primitive.indices();
@@ -207,7 +202,9 @@ pub fn load_frm_gltf(path: &str, model: &mut Model) {
             //temporary array to hold position data
             let mut tmp_positions: Vec<Vec3> = vec![];
             // extract positions
-            if let Some(positions) = reader.read_positions().map(|v| dbg!(v)) {
+            if let Some(positions) = reader.read_positions()
+            /* .map(|v| dbg!(v)) */
+            {
                 for pos in positions {
                     tmp_positions.push(Vec3 {
                         x: pos[0],
@@ -219,7 +216,9 @@ pub fn load_frm_gltf(path: &str, model: &mut Model) {
             //temporary storage for normals
             let mut tmp_normals: Vec<Vec3> = vec![];
             //extract normals
-            if let Some(normals) = reader.read_normals().map(|n| dbg!(n)) {
+            if let Some(normals) = reader.read_normals()
+            /* .map(|n| dbg!(n)) */
+            {
                 for norm in normals {
                     tmp_normals.push(Vec3 {
                         x: norm[0],
@@ -232,7 +231,8 @@ pub fn load_frm_gltf(path: &str, model: &mut Model) {
             let mut tmp_tex_coords: Vec<Vec2> = vec![];
             //extract
             if let Some(gltf::mesh::util::ReadTexCoords::F32(gltf::accessor::Iter::Standard(itr))) =
-                reader.read_tex_coords(0).map(|tc| dbg!(tc))
+                reader.read_tex_coords(0)
+            /* .map(|tc| dbg!(tc)) */
             {
                 for texcoord in itr {
                     tmp_tex_coords.push(Vec2 {
@@ -244,7 +244,8 @@ pub fn load_frm_gltf(path: &str, model: &mut Model) {
 
             //extract
             if let Some(gltf::mesh::util::ReadIndices::U32(gltf::accessor::Iter::Standard(itr))) =
-                reader.read_indices().map(|i| dbg!(i))
+                reader.read_indices()
+            /* .map(|i| dbg!(i)) */
             {
                 for index in itr {
                     tmp_mesh.indices.push(index);

@@ -7,16 +7,16 @@ struct AABB {
     max: Vec3,
 }
 
-fn radius(shape: model::Shape) -> f32 {
+fn radius(shape: model::Shape) -> Result<f32, String> {
     match shape {
-        model::Shape::Sphere { radius } => radius,
-        _ => 0.0,
+        model::Shape::Sphere { radius } => Ok(radius),
+        _ => Err(String::from("not a sphere!")),
     }
 }
-fn size(shape: model::Shape) -> Vec3 {
+fn size(shape: model::Shape) -> Result<Vec3, String> {
     match shape {
-        model::Shape::Cube { dimensions } => dimensions,
-        _ => vec3(0.0, 0.0, 0.0),
+        model::Shape::Cube { dimensions } => Ok(dimensions),
+        _ => Err(String::from("not a cube!")),
     }
 }
 //get a bounding box
@@ -51,8 +51,8 @@ pub fn collision_sphere_sphere(s1: String, s2: String, models: &mut HashMap<Stri
     let distance = (models.get(&s1).unwrap().pos - models.get(&s2).unwrap().pos).len();
     // get the average of size attributes
     // since the Model struct doesn't have a radius member
-    let radius1 = radius(models.get(&s1).unwrap().shape);
-    let radius2 = radius(models.get(&s2).unwrap().shape);
+    let radius1 = radius(models.get(&s1).unwrap().shape).unwrap();
+    let radius2 = radius(models.get(&s2).unwrap().shape).unwrap();
     let sum_radii = radius1 + radius2;
     // if distance between objects(spheres) is less than the sum of both radii
     // then a collision  has occured
@@ -77,8 +77,8 @@ pub fn collision_sphere_aabb(
     aabb: String,
     models: &mut HashMap<String, model::Model>,
 ) {
-    let radius = radius(models.get(&sphere).unwrap().shape);
-    let aabb_size = size(models.get(&aabb).unwrap().shape);
+    let radius = radius(models.get(&sphere).unwrap().shape).unwrap();
+    let aabb_size = size(models.get(&aabb).unwrap().shape).unwrap();
 
     let sphere_pos = models.get(&sphere).unwrap().pos;
     let aabb_pos = models.get(&aabb).unwrap().pos;
@@ -108,8 +108,8 @@ pub fn collision_aabb_aabb(
 ) {
     let pos1 = models.get(&aabb1).unwrap().pos;
     let pos2 = models.get(&aabb2).unwrap().pos;
-    let size1 = size(models.get(&aabb1).unwrap().shape);
-    let size2 = size(models.get(&aabb2).unwrap().shape);
+    let size1 = size(models.get(&aabb1).unwrap().shape).unwrap();
+    let size2 = size(models.get(&aabb2).unwrap().shape).unwrap();
 
     let box1 = get_aabb(pos1.clone(), size1.clone());
     let box2 = get_aabb(pos2.clone(), size2.clone());

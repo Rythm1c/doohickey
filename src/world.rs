@@ -1,3 +1,4 @@
+//use crate::math::quaternion::Quat;
 use crate::math::{mat4::*, vec3::*};
 use crate::src::{animations, camera, lights, model, physics, shaders, shadows};
 
@@ -20,7 +21,7 @@ pub struct World {
 
 impl World {
     pub fn new(ratio: f32) -> Result<World, String> {
-        let c = camera::Camera::new(
+        let camera = camera::Camera::new(
             vec3(0.0, 0.0, 1.0),
             vec3(0.0, 1.0, 0.0),
             vec3(0.0, 5.0, -30.0),
@@ -132,13 +133,14 @@ impl World {
 
         let mut _player = model::Model::new(
             model::Shape::Cube {
-                dimensions: vec3(1.0, 1.0, 1.0),
+                dimensions: vec3(0.1, 0.1, 0.1),
             },
-            vec3(0.0, 4.0, 2.0),
+            vec3(0.0, 7.0, 2.0),
             vec3(1.0, 1.0, 1.0),
         )
         .unwrap();
-        model::load_frm_gltf("wooden_doll/scene.gltf", &mut _player);
+        model::load_frm_gltf("man/scene.gltf", &mut _player);
+        //_player.rotation = Quat::new(1.0, 0.0, 0.0, -90.0);
         _player.prepere_render_resources();
 
         Ok(World {
@@ -154,7 +156,7 @@ impl World {
             models: m_s,
             s_obj: prgm,
             lights: ls,
-            cam: c,
+            cam: camera,
         })
     }
     pub fn update_cam(&mut self, ratio: f32) -> &mut World {
@@ -232,6 +234,9 @@ impl World {
             self.sun.get_projection() * self.sun.get_view(),
         );
 
+        self.s_shadow.update_mat4("model", self.player.transform);
+        self.player.render();
+
         self.models.values_mut().for_each(|model| {
             self.s_shadow.update_mat4("model", model.transform);
             model.render();
@@ -268,6 +273,7 @@ impl World {
                 self.lights[i].color,
             );
         }
+
         self.s_obj.update_mat4("transform", self.player.transform);
         self.s_obj
             .update_int("textured", self.player.textured as i32);
@@ -278,8 +284,8 @@ impl World {
         self.s_obj
             .update_int("subDivided", self.player.sub_dvd as i32);
         self.s_obj.update_float("lines", self.player.lines);
-
         self.player.render();
+
         // object specific
         self.models.values_mut().for_each(|model| {
             self.s_obj.update_mat4("transform", model.transform);
