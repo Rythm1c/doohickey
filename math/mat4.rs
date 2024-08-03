@@ -1,5 +1,4 @@
-use crate::math::misc::*;
-use crate::math::vec3::*;
+use crate::math::{misc::*, vec3::*};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Mat4 {

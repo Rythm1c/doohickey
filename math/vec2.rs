@@ -7,3 +7,7 @@ pub struct Vec2 {
 pub fn vec2(_x: f32, _y: f32) -> Vec2 {
     Vec2 { x: _x, y: _y }
 }
+
+impl Vec2 {
+    pub const ZERO: Vec2 = Vec2 { x: 0.0, y: 0.0 };
+}
