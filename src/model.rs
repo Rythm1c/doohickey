@@ -109,15 +109,23 @@ impl Mesh {
     }
 
     pub fn render(&mut self) {
-        unsafe {
-            gl::BindVertexArray(self.vao);
-            gl::DrawElements(
-                gl::TRIANGLES,
-                self.indices.len().try_into().unwrap(),
-                gl::UNSIGNED_INT,
-                std::ptr::null(),
-            );
-            gl::BindVertexArray(0);
+        if self.indices.len() != 0 {
+            unsafe {
+                gl::BindVertexArray(self.vao);
+                gl::DrawElements(
+                    gl::TRIANGLES,
+                    self.indices.len().try_into().unwrap(),
+                    gl::UNSIGNED_INT,
+                    std::ptr::null(),
+                );
+                gl::BindVertexArray(0);
+            }
+        } else {
+            unsafe {
+                gl::BindVertexArray(self.vao);
+                gl::DrawArrays(gl::TRIANGLES, 0, self.vertices.len() as i32);
+                gl::BindVertexArray(0);
+            }
         }
     }
 }
@@ -262,10 +270,6 @@ pub fn from_dae(path: &Path, model: &mut Model) {
                                         obj.normals[k.2.unwrap()].z as f32,
                                     );
                                     mesh.vertices.push(vertex);
-
-                                    mesh.indices.push(mesh.indices.len() as u32);
-                                    mesh.indices.push(mesh.indices.len() as u32);
-                                    mesh.indices.push(mesh.indices.len() as u32);
                                 }
                                 _ => {}
                             }
