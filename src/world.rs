@@ -52,7 +52,7 @@ impl World {
         let shadow_program =
             shaders::Program::from_shaders(&[vshader_shadows, fshader_shadows]).unwrap();
 
-        let mut m_s: HashMap<String, model::Model> = Default::default();
+        let mut models_: HashMap<String, model::Model> = Default::default();
         let mut ball = model::Model::new(
             model::Shape::Sphere { radius: (1.0) },
             vec3(4.0, 30.0, 10.0),
@@ -62,8 +62,7 @@ impl World {
         model::load_sphere(50, 50, 4.0, &mut ball);
         ball.checkered = true;
         ball.squares = 20.0;
-        ball.prepere_render_resources();
-        m_s.insert(String::from("ball"), ball);
+        models_.insert(String::from("ball"), ball);
 
         let mut ball2 = model::Model::new(
             model::Shape::Sphere { radius: (1.0) },
@@ -72,8 +71,7 @@ impl World {
         )
         .unwrap();
         model::load_sphere(50, 50, 3.0, &mut ball2);
-        ball2.prepere_render_resources();
-        m_s.insert(String::from("ball2"), ball2);
+        models_.insert(String::from("ball2"), ball2);
 
         let mut cube = model::Model::new(
             model::Shape::Cube {
@@ -84,8 +82,7 @@ impl World {
         )
         .unwrap();
         model::load_cube(Vec3::new(2.0, 2.0, 2.0), &mut cube);
-        cube.prepere_render_resources();
-        m_s.insert(String::from("cube"), cube);
+        models_.insert(String::from("cube"), cube);
 
         let mut cube2 = model::Model::new(
             model::Shape::Cube {
@@ -96,8 +93,7 @@ impl World {
         )
         .unwrap();
         model::load_cube(Vec3::new(5.0, 5.0, 5.0), &mut cube2);
-        cube2.prepere_render_resources();
-        m_s.insert(String::from("cube2"), cube2);
+        models_.insert(String::from("cube2"), cube2);
 
         let mut platform = model::Model::new(
             model::Shape::Cube {
@@ -110,38 +106,42 @@ impl World {
         model::load_cube(Vec3::new(1000.0, 2.0, 1000.0), &mut platform);
         platform.sub_dvd = true;
         platform.lines = 70.0;
-        platform.prepere_render_resources();
-        m_s.insert(String::from("platform"), platform);
+        models_.insert(String::from("platform"), platform);
 
-        let mut ls: Vec<lights::PointLight> = vec![];
-        ls.push(lights::PointLight {
-            position: vec3(30.0, 20.0, -20.0),
-            color: vec3(1.0, 1.0, 1.0),
-        });
-        ls.push(lights::PointLight {
-            position: vec3(-30.0, 20.0, -20.0),
-            color: vec3(1.0, 0.6, 0.01),
-        });
-        ls.push(lights::PointLight {
-            position: vec3(30.0, 20.0, 40.0),
-            color: vec3(1.0, 0.0, 1.0),
-        });
-        ls.push(lights::PointLight {
-            position: vec3(-30.0, 20.0, 40.0),
-            color: vec3(0.0, 1.0, 0.5),
-        });
+        models_
+            .values_mut()
+            .for_each(|m| m.prepere_render_resources());
 
-        let mut _player = model::Model::new(
+        let ls = vec![
+            lights::PointLight {
+                position: vec3(30.0, 20.0, -20.0),
+                color: vec3(1.0, 1.0, 1.0),
+            },
+            lights::PointLight {
+                position: vec3(-30.0, 20.0, -20.0),
+                color: vec3(1.0, 0.6, 0.01),
+            },
+            lights::PointLight {
+                position: vec3(30.0, 20.0, 40.0),
+                color: vec3(1.0, 0.0, 1.0),
+            },
+            lights::PointLight {
+                position: vec3(-30.0, 20.0, 40.0),
+                color: vec3(0.0, 1.0, 0.5),
+            },
+        ];
+
+        let mut player_ = model::Model::new(
             model::Shape::Cube {
                 dimensions: vec3(0.1, 0.1, 0.1),
             },
-            vec3(0.0, 7.0, 2.0),
+            vec3(0.0, 2.0, 2.0),
             vec3(1.0, 1.0, 1.0),
         )
         .unwrap();
-        model::load_frm_gltf("man/scene.gltf", &mut _player);
-        //_player.rotation = Quat::new(1.0, 0.0, 0.0, -90.0);
-        _player.prepere_render_resources();
+        //model::from_gltf("man/scene.gltf", &mut player_);
+        model::from_dae(std::path::Path::new("Running.dae"), &mut player_);
+        player_.prepere_render_resources();
 
         Ok(World {
             projection: perspective(45.0, ratio, 0.1, 1000.0),
@@ -151,9 +151,9 @@ impl World {
                 dir: vec3(0.3, -0.7, 0.4),
             },
             s_shadow: shadow_program,
-            player: _player,
+            player: player_,
+            models: models_,
             elapsed: 0.0,
-            models: m_s,
             s_obj: prgm,
             lights: ls,
             cam: camera,

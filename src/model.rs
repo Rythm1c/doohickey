@@ -1,8 +1,9 @@
-extern crate gltf;
 //extern crate tobj;
 use crate::gl;
 
 use crate::math::{mat4::*, quaternion::*, vec2::*, vec3::*};
+
+//const MAX_BONE_INFLUENCE: usize = 4;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -10,6 +11,8 @@ pub struct Vertex {
     pos: Vec3,
     norm: Vec3,
     tc: Vec2,
+    //weights: [f32; MAX_BONE_INFLUENCE],
+    //bone_ids: [i32; MAX_BONE_INFLUENCE],
 }
 
 /// mostly for collision detection
@@ -24,6 +27,7 @@ pub enum Shape {
 
 #[derive(PartialEq, Clone)]
 struct Mesh {
+    //containers for render data
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,
     vao: u32,
@@ -31,7 +35,6 @@ struct Mesh {
     ebo: u32,
 }
 pub struct Model {
-    //containers for render data
     meshes: Vec<Mesh>,
     pub shape: Shape,
     pub color: Vec3,
@@ -176,24 +179,120 @@ impl Model {
     }
 }
 
-pub fn load_frm_gltf(path: &str, model: &mut Model) {
-    let (document, buffers, ..) = gltf::import(path).unwrap();
+use std::path::Path;
+extern crate collada;
+pub fn from_dae(path: &Path, model: &mut Model) {
+    let doc = collada::document::ColladaDocument::from_path(path).unwrap();
 
-    let mut tmp_mesh = Mesh {
-        vertices: vec![],
-        indices: vec![],
-        vao: 0,
-        vbo: 0,
-        ebo: 0,
-    };
+    for obj in doc.get_obj_set().unwrap().objects {
+        let mut mesh = Mesh {
+            vertices: vec![],
+            indices: vec![],
+            vao: 0,
+            vbo: 0,
+            ebo: 0,
+        };
+        for geometry in obj.geometry {
+            for primitive in geometry.mesh {
+                match primitive {
+                    collada::PrimitiveElement::Triangles(triangles) => {
+                        println!("mesh triangles {}", triangles.vertices.len());
+
+                        for triangle in triangles.vertices {
+                            mesh.indices.push(triangle.0 as u32);
+                            mesh.indices.push(triangle.1 as u32);
+                            mesh.indices.push(triangle.2 as u32);
+                        }
+                    }
+                    collada::PrimitiveElement::Polylist(polylist) => {
+                        for shape in polylist.shapes {
+                            match shape {
+                                collada::Shape::Triangle(i, j, k) => {
+                                    let mut vertex = Vertex {
+                                        pos: Vec3::ZERO,
+                                        norm: Vec3::ZERO,
+                                        tc: Vec2::ZERO,
+                                    };
+                                    vertex.pos = vec3(
+                                        obj.vertices[i.0].x as f32,
+                                        obj.vertices[i.0].y as f32,
+                                        obj.vertices[i.0].z as f32,
+                                    );
+                                    vertex.tc = vec2(
+                                        obj.tex_vertices[i.1.unwrap()].x as f32,
+                                        obj.tex_vertices[i.1.unwrap()].y as f32,
+                                    );
+                                    vertex.norm = vec3(
+                                        obj.normals[i.2.unwrap()].x as f32,
+                                        obj.normals[i.2.unwrap()].y as f32,
+                                        obj.normals[i.2.unwrap()].z as f32,
+                                    );
+                                    mesh.vertices.push(vertex);
+
+                                    //sec vert
+                                    vertex.pos = vec3(
+                                        obj.vertices[j.0].x as f32,
+                                        obj.vertices[j.0].y as f32,
+                                        obj.vertices[j.0].z as f32,
+                                    );
+                                    vertex.tc = vec2(
+                                        obj.tex_vertices[j.1.unwrap()].x as f32,
+                                        obj.tex_vertices[j.1.unwrap()].y as f32,
+                                    );
+                                    vertex.norm = vec3(
+                                        obj.normals[j.2.unwrap()].x as f32,
+                                        obj.normals[j.2.unwrap()].y as f32,
+                                        obj.normals[j.2.unwrap()].z as f32,
+                                    );
+                                    mesh.vertices.push(vertex);
+
+                                    //third vert
+                                    vertex.pos = vec3(
+                                        obj.vertices[k.0].x as f32,
+                                        obj.vertices[k.0].y as f32,
+                                        obj.vertices[k.0].z as f32,
+                                    );
+                                    vertex.tc = vec2(
+                                        obj.tex_vertices[k.1.unwrap()].x as f32,
+                                        obj.tex_vertices[k.1.unwrap()].y as f32,
+                                    );
+                                    vertex.norm = vec3(
+                                        obj.normals[k.2.unwrap()].x as f32,
+                                        obj.normals[k.2.unwrap()].y as f32,
+                                        obj.normals[k.2.unwrap()].z as f32,
+                                    );
+                                    mesh.vertices.push(vertex);
+
+                                    mesh.indices.push(mesh.indices.len() as u32);
+                                    mesh.indices.push(mesh.indices.len() as u32);
+                                    mesh.indices.push(mesh.indices.len() as u32);
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        model.meshes.push(mesh);
+    }
+}
+
+extern crate gltf;
+#[allow(dead_code)]
+pub fn from_gltf(path: &str, model: &mut Model) {
+    let (document, buffers, ..) = gltf::import(path).unwrap();
 
     for mesh in document.meshes() {
         //prepare for next batch of data
-        tmp_mesh.vertices.clear();
-        tmp_mesh.indices.clear();
-        tmp_mesh.vao = 0;
-        tmp_mesh.vbo = 0;
-        tmp_mesh.ebo = 0;
+        let mut tmp_mesh = Mesh {
+            vertices: vec![],
+            indices: vec![],
+            vao: 0,
+            vbo: 0,
+            ebo: 0,
+        };
 
         let primitives = mesh.primitives();
         primitives.for_each(|primitive| {
