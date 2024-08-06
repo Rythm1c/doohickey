@@ -1,10 +1,11 @@
 //use crate::math::quaternion::Quat;
+
 use crate::math::{mat4::*, vec3::*};
-use crate::src::{animations, camera, lights, model, physics, shaders, shadows};
+use crate::src::{animations, camera, lights, model, physics, player, shaders, shadows};
 
 use std::collections::HashMap;
-use std::ffi::CString;
-
+//use std::ffi::CString;
+use std::path::Path;
 pub struct World {
     //shaders
     s_obj: shaders::Program, // object shader
@@ -28,29 +29,17 @@ impl World {
             0.5,
         )
         .unwrap();
+        use shaders::{Program, Shader};
+        let vert_shader = Shader::from_vert_src(Path::new("shaders/shader.vert")).unwrap();
+        let frag_shader = Shader::from_frag_src(Path::new("shaders/shader.frag")).unwrap();
+        let prgm = Program::from_shaders(&[vert_shader, frag_shader]).unwrap();
 
-        let vert_shader = shaders::Shader::from_vert_src(
-            &CString::new(include_str!("../shaders/shader.vert")).unwrap(),
-        )
-        .unwrap();
-        let frag_shader = shaders::Shader::from_frag_src(
-            &CString::new(include_str!("../shaders/shader.frag")).unwrap(),
-        )
-        .unwrap();
-        let prgm = shaders::Program::from_shaders(&[vert_shader, frag_shader]).unwrap();
-        prgm.set_use();
-        prgm.update_int("shadowMap", 0);
+        let vshader_shadows = Shader::from_vert_src(Path::new("shaders/shadowmap.vert")).unwrap();
+        let fshader_shadows = Shader::from_frag_src(Path::new("shaders/shadowmap.frag")).unwrap();
+        let shadow_program = Program::from_shaders(&[vshader_shadows, fshader_shadows]).unwrap();
 
-        let vshader_shadows = shaders::Shader::from_vert_src(
-            &CString::new(include_str!("../shaders/shadowmap.vert")).unwrap(),
-        )
-        .unwrap();
-        let fshader_shadows = shaders::Shader::from_frag_src(
-            &CString::new(include_str!("../shaders/shadowmap.frag")).unwrap(),
-        )
-        .unwrap();
-        let shadow_program =
-            shaders::Program::from_shaders(&[vshader_shadows, fshader_shadows]).unwrap();
+        // prgm.set_use();
+        // prgm.update_int("shadowMap", 0);
 
         let mut models_: HashMap<String, model::Model> = Default::default();
         let mut ball = model::Model::new(
@@ -145,16 +134,16 @@ impl World {
 
         Ok(World {
             projection: perspective(45.0, ratio, 0.1, 1000.0),
+            s_shadow: shadow_program,
+            player: player_,
+            elapsed: 0.0,
+            s_obj: prgm,
+            models: models_,
             sun: lights::DirectionalLight {
                 shadows: shadows::Shadow::new(1900, 1200),
                 color: vec3(1.0, 1.0, 1.0),
                 dir: vec3(0.3, -0.7, 0.4),
             },
-            s_shadow: shadow_program,
-            player: player_,
-            models: models_,
-            elapsed: 0.0,
-            s_obj: prgm,
             lights: ls,
             cam: camera,
         })

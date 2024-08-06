@@ -21,6 +21,7 @@ pub struct Vertex {
 pub enum Shape {
     Sphere { radius: f32 },
     Cube { dimensions: Vec3 },
+    None,
     /*  Quad,
     Other, */
 }
@@ -171,7 +172,8 @@ impl Model {
             }
             Shape::Sphere { radius } => {
                 self.transform = self.transform * scale(&vec3(radius, radius, radius));
-            } //_ => {}
+            }
+            _ => {}
         }
     }
 
@@ -204,8 +206,6 @@ pub fn from_dae(path: &Path, model: &mut Model) {
             for primitive in geometry.mesh {
                 match primitive {
                     collada::PrimitiveElement::Triangles(triangles) => {
-                        println!("mesh triangles {}", triangles.vertices.len());
-
                         for triangle in triangles.vertices {
                             mesh.indices.push(triangle.0 as u32);
                             mesh.indices.push(triangle.1 as u32);
@@ -420,45 +420,7 @@ pub fn load_sphere(lats: u32, longs: u32, r: f32, model: &mut Model) {
 
     model.meshes.push(mesh);
 }
-/* pub fn load_quad(model: &mut Model) {
-    let mut mesh = Mesh {
-        vertices: vec![],
-        indices: vec![],
-        vao: 0,
-        vbo: 0,
-        ebo: 0,
-    };
 
-    model.shape = Shape::Quad;
-
-    let mut vertex: Vertex = Vertex {
-        tc: vec2(0.0, 0.0),
-        pos: vec3(-1.0, -1.0, 0.0),
-        norm: vec3(0.0, 0.0, 0.0),
-    };
-    mesh.vertices.push(vertex);
-    vertex = Vertex {
-        tc: vec2(0.0, 1.0),
-        pos: vec3(-1.0, 1.0, 0.0),
-        norm: vec3(0.0, 0.0, 0.0),
-    };
-    mesh.vertices.push(vertex);
-    vertex = Vertex {
-        tc: vec2(1.0, 1.0),
-        pos: vec3(1.0, 1.0, 0.0),
-        norm: vec3(0.0, 0.0, 0.0),
-    };
-    mesh.vertices.push(vertex);
-    vertex = Vertex {
-        tc: vec2(1.0, 0.0),
-        pos: vec3(1.0, -1.0, 0.0),
-        norm: vec3(0.0, 0.0, 0.0),
-    };
-    mesh.vertices.push(vertex);
-
-    mesh.indices = vec![0, 1, 2, 0, 2, 3];
-    model.meshes.push(mesh);
-} */
 pub fn load_cube(size: Vec3, model: &mut Model) {
     let mut mesh = Mesh {
         vertices: vec![],
@@ -625,3 +587,42 @@ pub fn load_cube(size: Vec3, model: &mut Model) {
     ];
     model.meshes.push(mesh);
 }
+/* pub fn load_quad(model: &mut Model) {
+    let mut mesh = Mesh {
+        vertices: vec![],
+        indices: vec![],
+        vao: 0,
+        vbo: 0,
+        ebo: 0,
+    };
+
+    model.shape = Shape::Quad;
+
+    let mut vertex: Vertex = Vertex {
+        tc: vec2(0.0, 0.0),
+        pos: vec3(-1.0, -1.0, 0.0),
+        norm: vec3(0.0, 0.0, 0.0),
+    };
+    mesh.vertices.push(vertex);
+    vertex = Vertex {
+        tc: vec2(0.0, 1.0),
+        pos: vec3(-1.0, 1.0, 0.0),
+        norm: vec3(0.0, 0.0, 0.0),
+    };
+    mesh.vertices.push(vertex);
+    vertex = Vertex {
+        tc: vec2(1.0, 1.0),
+        pos: vec3(1.0, 1.0, 0.0),
+        norm: vec3(0.0, 0.0, 0.0),
+    };
+    mesh.vertices.push(vertex);
+    vertex = Vertex {
+        tc: vec2(1.0, 0.0),
+        pos: vec3(1.0, -1.0, 0.0),
+        norm: vec3(0.0, 0.0, 0.0),
+    };
+    mesh.vertices.push(vertex);
+
+    mesh.indices = vec![0, 1, 2, 0, 2, 3];
+    model.meshes.push(mesh);
+} */

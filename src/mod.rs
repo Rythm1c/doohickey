@@ -6,6 +6,7 @@ pub mod input;
 pub mod lights;
 pub mod model;
 pub mod physics;
+pub mod player;
 pub mod shaders;
 pub mod shadows;
 pub mod world;

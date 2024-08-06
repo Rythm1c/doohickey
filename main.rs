@@ -1,11 +1,10 @@
+extern crate gl;
+extern crate sdl2;
+
 use src::{
     input::{self, WinInfo},
     world,
 };
-
-extern crate gl;
-extern crate sdl2;
-
 use std::time::Instant;
 
 mod math;
@@ -74,6 +73,6 @@ fn main() {
         window.gl_swap_window();
 
         delta = now.elapsed().as_secs_f32();
-        //println!("fps : {}", (1.0 / delta));
+        println!("fps : {}", (1.0 / delta));
     }
 }

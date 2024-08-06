@@ -1,7 +1,10 @@
 use crate::gl;
 use crate::math::{mat4::*, vec3::*};
 
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
+use std::fs::File;
+use std::io::{prelude::*, BufReader};
+use std::path::Path;
 
 pub struct Program {
     id: gl::types::GLuint,
@@ -97,15 +100,15 @@ pub struct Shader {
 }
 
 impl Shader {
-    pub fn from_src(src: &CStr, kind: gl::types::GLenum) -> Result<Shader, String> {
+    pub fn from_src(src: &Path, kind: gl::types::GLenum) -> Result<Shader, String> {
         let id = shader_from_src(src, kind)?;
         Ok(Shader { id })
     }
 
-    pub fn from_vert_src(src: &CStr) -> Result<Shader, String> {
+    pub fn from_vert_src(src: &Path) -> Result<Shader, String> {
         Shader::from_src(src, gl::VERTEX_SHADER)
     }
-    pub fn from_frag_src(src: &CStr) -> Result<Shader, String> {
+    pub fn from_frag_src(src: &Path) -> Result<Shader, String> {
         Shader::from_src(src, gl::FRAGMENT_SHADER)
     }
 
@@ -122,10 +125,18 @@ impl Drop for Shader {
     }
 }
 
-fn shader_from_src(src: &CStr, kind: gl::types::GLenum) -> Result<gl::types::GLuint, String> {
+fn shader_from_src(path: &Path, kind: gl::types::GLenum) -> Result<gl::types::GLuint, String> {
+    let f = File::open(path).unwrap();
+    let mut reader = BufReader::new(f);
+
+    let mut src = String::new();
+    reader.read_to_string(&mut src).unwrap();
+
+    let src_as_cstr = CString::new(src).unwrap();
+
     let id = unsafe { gl::CreateShader(kind) };
     unsafe {
-        gl::ShaderSource(id, 1, &src.as_ptr(), std::ptr::null());
+        gl::ShaderSource(id, 1, &src_as_cstr.as_c_str().as_ptr(), std::ptr::null());
         gl::CompileShader(id);
     }
     let mut success: gl::types::GLint = 1;
