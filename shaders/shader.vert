@@ -3,6 +3,8 @@
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec3 norm;
 layout(location = 2) in vec2 tc;
+layout(location = 3) in vec4 boneWeights;
+layout(location = 4) in ivec4 boneIds;
 
 uniform mat4 transform;
 uniform mat4 view;

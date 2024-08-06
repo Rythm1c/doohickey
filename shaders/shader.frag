@@ -48,9 +48,9 @@ void main() {
     if(textured) {
        // result = texture(image, vs_in.texCoords).rgb;
     } else {
-        result += directional_light();
+        //result += directional_light();
 
-        //for(int i = 0; i < pointLightCount; i++) result += calc_pointlight(pointLights[i]);
+        for(int i = 0; i < pointLightCount; i++) result += calc_pointlight(pointLights[i]);
     }
 
     if(checkered) {
