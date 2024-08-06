@@ -3,7 +3,7 @@ use crate::math::{mat4::*, vec3::*};
 
 use std::ffi::CString;
 use std::fs::File;
-use std::io::{prelude::*, BufReader};
+use std::io::prelude::*;
 use std::path::Path;
 
 pub struct Program {
@@ -126,17 +126,16 @@ impl Drop for Shader {
 }
 
 fn shader_from_src(path: &Path, kind: gl::types::GLenum) -> Result<gl::types::GLuint, String> {
-    let f = File::open(path).unwrap();
-    let mut reader = BufReader::new(f);
+    let mut file = File::open(path).unwrap();
 
     let mut src = String::new();
-    reader.read_to_string(&mut src).unwrap();
+    file.read_to_string(&mut src).unwrap();
 
     let src_as_cstr = CString::new(src).unwrap();
 
     let id = unsafe { gl::CreateShader(kind) };
     unsafe {
-        gl::ShaderSource(id, 1, &src_as_cstr.as_c_str().as_ptr(), std::ptr::null());
+        gl::ShaderSource(id, 1, &src_as_cstr.as_ptr(), std::ptr::null());
         gl::CompileShader(id);
     }
     let mut success: gl::types::GLint = 1;

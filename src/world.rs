@@ -11,7 +11,7 @@ pub struct World {
     s_obj: shaders::Program, // object shader
     s_shadow: shaders::Program,
     // shaders end
-    player: model::Model,
+    player: player::Player,
     pub cam: camera::Camera,
     pub models: HashMap<String, model::Model>,
     projection: Mat4,
@@ -120,7 +120,8 @@ impl World {
             },
         ];
 
-        let mut player_ = model::Model::new(
+        let mut player_ = player::Player::new(&String::from("mannequin"));
+        player_.model = model::Model::new(
             model::Shape::Cube {
                 dimensions: vec3(0.1, 0.1, 0.1),
             },
@@ -130,7 +131,8 @@ impl World {
         .unwrap();
         //model::from_gltf("man/scene.gltf", &mut player_);
         model::from_dae(std::path::Path::new("Running.dae"), &mut player_);
-        player_.prepere_render_resources();
+        player::extract_animations(std::path::Path::new("Running.dae"), &mut player_);
+        player_.model.prepere_render_resources();
 
         Ok(World {
             projection: perspective(45.0, ratio, 0.1, 1000.0),
@@ -139,13 +141,13 @@ impl World {
             elapsed: 0.0,
             s_obj: prgm,
             models: models_,
+            lights: ls,
+            cam: camera,
             sun: lights::DirectionalLight {
                 shadows: shadows::Shadow::new(1900, 1200),
                 color: vec3(1.0, 1.0, 1.0),
                 dir: vec3(0.3, -0.7, 0.4),
             },
-            lights: ls,
-            cam: camera,
         })
     }
     pub fn update_cam(&mut self, ratio: f32) -> &mut World {
@@ -156,24 +158,25 @@ impl World {
     }
     pub fn update_objects(&mut self, dt: f32) -> &mut World {
         self.elapsed += dt;
+
         animations::spin(
+            dt,
+            90.0,
+            vec3(0.0, 1.0, 1.0),
             &mut self
                 .models
                 .get_mut(&String::from("cube2"))
                 .unwrap()
                 .rotation,
-            dt,
-            90.0,
-            vec3(0.0, 1.0, 1.0),
         );
 
         animations::rotate_around(
-            &mut self.models.get_mut(&String::from("cube2")).unwrap().pos,
             vec3(0.0, 20.0, 20.0),
             30.0,
             45.0,
             vec3(0.0, 1.0, 0.0),
             self.elapsed,
+            &mut self.models.get_mut(&String::from("cube2")).unwrap().pos,
         );
 
         physics::collision_sphere_sphere(
@@ -206,7 +209,7 @@ impl World {
                 .unwrap()
                 .velocity,
         );
-        self.player.update_properties();
+        self.player.model.update_properties();
 
         for model in self.models.values_mut() {
             model.update_properties();
@@ -223,8 +226,9 @@ impl World {
             self.sun.get_projection() * self.sun.get_view(),
         );
 
-        self.s_shadow.update_mat4("model", self.player.transform);
-        self.player.render();
+        self.s_shadow
+            .update_mat4("model", self.player.model.transform);
+        self.player.model.render();
 
         self.models.values_mut().for_each(|model| {
             self.s_shadow.update_mat4("model", model.transform);
@@ -263,17 +267,19 @@ impl World {
             );
         }
 
-        self.s_obj.update_mat4("transform", self.player.transform);
         self.s_obj
-            .update_int("textured", self.player.textured as i32);
-        self.s_obj.update_vec3("col", self.player.color);
+            .update_mat4("transform", self.player.model.transform);
         self.s_obj
-            .update_int("checkered", self.player.checkered as i32);
-        self.s_obj.update_float("squares", self.player.squares);
+            .update_int("textured", self.player.model.textured as i32);
+        self.s_obj.update_vec3("col", self.player.model.color);
         self.s_obj
-            .update_int("subDivided", self.player.sub_dvd as i32);
-        self.s_obj.update_float("lines", self.player.lines);
-        self.player.render();
+            .update_int("checkered", self.player.model.checkered as i32);
+        self.s_obj
+            .update_float("squares", self.player.model.squares);
+        self.s_obj
+            .update_int("subDivided", self.player.model.sub_dvd as i32);
+        self.s_obj.update_float("lines", self.player.model.lines);
+        self.player.model.render();
 
         // object specific
         self.models.values_mut().for_each(|model| {
