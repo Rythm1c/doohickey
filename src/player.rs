@@ -1,5 +1,5 @@
 use crate::math::{mat4::*, vec3::*};
-use crate::src::animations::{BoneAnimations, Sample};
+use crate::src::animations::{BoneAnimation, Sample};
 use crate::src::model::{Model, Shape};
 
 pub struct Bone {
@@ -16,7 +16,7 @@ pub struct Player {
     pub id: String,
     pub model: Model,
     pub skeleton: Vec<Bone>,
-    pub animations: Vec<BoneAnimations>,
+    pub animations: Vec<BoneAnimation>,
     pub current_animation: Animation,
 }
 
@@ -47,7 +47,7 @@ pub fn extract_animations(path: &Path, player: &mut Player) {
             });
             //println!("animation time {}", sample);
         }
-        player.animations.push(BoneAnimations {
+        player.animations.push(BoneAnimation {
             bone: animation.target.clone(),
             samples: samples_,
         });

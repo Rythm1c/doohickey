@@ -103,20 +103,20 @@ impl World {
 
         let ls = vec![
             lights::PointLight {
-                position: vec3(30.0, 20.0, -20.0),
-                color: vec3(1.0, 1.0, 1.0),
+                pos: vec3(30.0, 20.0, -20.0),
+                col: vec3(1.0, 1.0, 1.0),
             },
             lights::PointLight {
-                position: vec3(-30.0, 20.0, -20.0),
-                color: vec3(1.0, 0.6, 0.01),
+                pos: vec3(-30.0, 20.0, -20.0),
+                col: vec3(1.0, 0.6, 0.01),
             },
             lights::PointLight {
-                position: vec3(30.0, 20.0, 40.0),
-                color: vec3(1.0, 0.0, 1.0),
+                pos: vec3(30.0, 20.0, 40.0),
+                col: vec3(1.0, 0.0, 1.0),
             },
             lights::PointLight {
-                position: vec3(-30.0, 20.0, 40.0),
-                color: vec3(0.0, 1.0, 0.5),
+                pos: vec3(-30.0, 20.0, 40.0),
+                col: vec3(0.0, 1.0, 0.5),
             },
         ];
 
@@ -150,13 +150,13 @@ impl World {
             },
         })
     }
-    pub fn update_cam(&mut self, ratio: f32) -> &mut World {
+    pub fn update_cam(&mut self, ratio: f32) -> &mut Self {
         self.projection = perspective(45.0, ratio, 0.1, 1000.0);
         self.cam.update_motion();
 
         self
     }
-    pub fn update_objects(&mut self, dt: f32) -> &mut World {
+    pub fn update_animations(&mut self, dt: f32) -> &mut Self {
         self.elapsed += dt;
 
         animations::spin(
@@ -179,6 +179,9 @@ impl World {
             &mut self.models.get_mut(&String::from("cube2")).unwrap().pos,
         );
 
+        self
+    }
+    pub fn update_physics(&mut self) -> &mut Self {
         physics::collision_sphere_sphere(
             String::from("ball"),
             String::from("ball2"),
@@ -209,6 +212,10 @@ impl World {
                 .unwrap()
                 .velocity,
         );
+
+        self
+    }
+    pub fn update_objects(&mut self) -> &mut Self {
         self.player.model.update_properties();
 
         for model in self.models.values_mut() {
@@ -257,28 +264,10 @@ impl World {
             .update_int("pointLightCount", self.lights.len() as i32);
         // update point lights
         for i in 0..(self.lights.len()) {
-            self.s_obj.update_vec3(
-                format!("pointLights[{}].position", i).as_str(),
-                self.lights[i].position,
-            );
-            self.s_obj.update_vec3(
-                format!("pointLights[{}].color", i).as_str(),
-                self.lights[i].color,
-            );
+            pl_to_shader(&self.lights[i], &mut self.s_obj, i);
         }
 
-        self.s_obj
-            .update_mat4("transform", self.player.model.transform);
-        self.s_obj
-            .update_int("textured", self.player.model.textured as i32);
-        self.s_obj.update_vec3("col", self.player.model.color);
-        self.s_obj
-            .update_int("checkered", self.player.model.checkered as i32);
-        self.s_obj
-            .update_float("squares", self.player.model.squares);
-        self.s_obj
-            .update_int("subDivided", self.player.model.sub_dvd as i32);
-        self.s_obj.update_float("lines", self.player.model.lines);
+        player_to_shader(&self.player, &mut self.s_obj);
         self.player.model.render();
 
         // object specific
@@ -294,4 +283,19 @@ impl World {
             model.render();
         })
     }
+}
+
+fn pl_to_shader(light: &lights::PointLight, shader: &mut shaders::Program, i: usize) {
+    shader.update_vec3(format!("pointLights[{}].position", i).as_str(), light.pos);
+    shader.update_vec3(format!("pointLights[{}].color", i).as_str(), light.col);
+}
+
+fn player_to_shader(player: &player::Player, shader: &mut shaders::Program) {
+    shader.update_mat4("transform", player.model.transform);
+    shader.update_int("textured", player.model.textured as i32);
+    shader.update_vec3("col", player.model.color);
+    shader.update_int("checkered", player.model.checkered as i32);
+    shader.update_float("squares", player.model.squares);
+    shader.update_int("subDivided", player.model.sub_dvd as i32);
+    shader.update_float("lines", player.model.lines);
 }

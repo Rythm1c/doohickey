@@ -262,6 +262,7 @@ pub fn from_dae(path: &Path, player: &mut Player) {
                 match primitive {
                     collada::PrimitiveElement::Triangles(triangles) => {
                         for triangle in &triangles.vertices {
+                            // not sure about this part but also dont care 
                             mesh.indices.push(triangle.0 as u32);
                             mesh.indices.push(triangle.1 as u32);
                             mesh.indices.push(triangle.2 as u32);
@@ -273,10 +274,8 @@ pub fn from_dae(path: &Path, player: &mut Player) {
                                 collada::Shape::Triangle(i, j, k) => {
                                     //first
                                     mesh.vertices.push(get_attributs(&obj, &i));
-
                                     //sec vert
                                     mesh.vertices.push(get_attributs(&obj, &j));
-
                                     //third vert
                                     mesh.vertices.push(get_attributs(&obj, &k));
                                 }

@@ -11,6 +11,9 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform mat4 lightSpace;
 
+#define MAX_BONE_TRANSFORMS 100
+uniform mat4 boneTranforms[MAX_BONE_TRANSFORMS];
+
 out vs_Out {
     vec3 normal;
     vec3 fragPos;

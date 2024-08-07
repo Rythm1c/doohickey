@@ -60,7 +60,9 @@ fn main() {
 
         world
             .update_cam(win_info.get_ratio())
-            .update_objects(delta)
+            .update_animations(delta)
+            .update_physics()
+            .update_objects()
             .add_shadows();
 
         unsafe {

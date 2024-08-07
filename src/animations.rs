@@ -29,11 +29,11 @@ pub struct Sample {
     pub time: f32,
     pub transform: Mat4,
 }
-pub struct BoneAnimations {
+pub struct BoneAnimation {
     pub samples: Vec<Sample>,
     pub bone: String,
 }
-impl BoneAnimations {
+impl BoneAnimation {
     pub fn total_time(&self) -> f32 {
         let mut total = 0.0_f32;
         for sample in &self.samples {

@@ -3,8 +3,8 @@ use crate::math::{mat4::*, vec3::*};
 use crate::src::shadows;
 
 pub struct PointLight {
-    pub position: Vec3,
-    pub color: Vec3,
+    pub pos: Vec3,
+    pub col: Vec3,
 }
 
 pub struct DirectionalLight {
