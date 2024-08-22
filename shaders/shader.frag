@@ -58,8 +58,8 @@ void main() {
             result *= 0.3;
     }
     if(subDivided) {
-        if(line_fn() == 1)
-            result *= 0.2;
+        if(line_fn() == 0)
+            result *= 0.1;
     }
 
     vec3 background = vec3(0.1);

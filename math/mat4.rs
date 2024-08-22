@@ -34,7 +34,7 @@ pub fn mat4(
 }
 
 impl Mat4 {
-    pub const identity: Self = Self {
+    pub const IDENTITY: Self = Self {
         data: [
             [1.0, 0.0, 0.0, 0.0],
             [0.0, 1.0, 0.0, 0.0],
@@ -167,7 +167,7 @@ pub fn scale(s: &Vec3) -> Mat4 {
 }
 //rotation matrices using euler angles
 ///rotation around the x-axis using specified angle
-pub fn rotationX(angle: f32) -> Mat4 {
+pub fn rotation_x(angle: f32) -> Mat4 {
     let yy = radians(angle).cos();
     let yz = -radians(angle).sin();
 
@@ -184,7 +184,7 @@ pub fn rotationX(angle: f32) -> Mat4 {
     };
 }
 ///rotation around the y-axis using specified angle
-pub fn rotationY(angle: f32) -> Mat4 {
+pub fn rotation_y(angle: f32) -> Mat4 {
     let xx = radians(angle).cos();
     let xz = radians(angle).sin();
 
@@ -201,7 +201,7 @@ pub fn rotationY(angle: f32) -> Mat4 {
     };
 }
 ///rotation around the Z-axis using specified angle
-pub fn rotationZ(angle: f32) -> Mat4 {
+pub fn rotation_z(angle: f32) -> Mat4 {
     let xx = radians(angle).cos();
     let xy = -radians(angle).sin();
 

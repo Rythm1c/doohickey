@@ -10,9 +10,7 @@ const MAX_BONE_INFLUENCE: usize = 4;
 pub struct Vertex {
     pub pos: Vec3,
     pub norm: Vec3,
-    pub tc: Vec2,
-    pub weights: [f32; MAX_BONE_INFLUENCE],
-    pub bone_ids: [i32; MAX_BONE_INFLUENCE],
+    pub tex: Vec2,
 }
 
 /// mostly for collision detection
@@ -50,7 +48,7 @@ pub struct Model {
     pub lines: f32,
 }
 impl Mesh {
-    pub const default: Self = Self {
+    pub const DEFAULT: Self = Self {
         vertices: Vec::new(),
         indices: Vec::new(),
         vao: 0,
@@ -112,26 +110,6 @@ impl Mesh {
                 (6 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
             );
 
-            gl::EnableVertexAttribArray(3);
-            gl::VertexAttribPointer(
-                3,
-                4,
-                gl::FLOAT,
-                gl::FALSE,
-                std::mem::size_of::<Vertex>() as gl::types::GLsizei,
-                (8 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
-            );
-
-            gl::EnableVertexAttribArray(4);
-            gl::VertexAttribPointer(
-                4,
-                4,
-                gl::INT,
-                gl::FALSE,
-                std::mem::size_of::<Vertex>() as gl::types::GLsizei,
-                (12 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
-            );
-
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
             gl::BindVertexArray(0);
         }
@@ -170,7 +148,7 @@ impl Drop for Mesh {
 impl Model {
     pub const default: Self = Self {
         meshes: Vec::new(),
-        transform: Mat4::identity,
+        transform: Mat4::IDENTITY,
         color: Vec3::ONE,
         velocity: Vec3::ZERO,
         pos: Vec3::ZERO,
@@ -184,8 +162,8 @@ impl Model {
     };
 
     pub fn new(_shape: Shape, _pos: Vec3, col: Vec3) -> Result<Model, String> {
-        let t = Mat4::identity;
-        
+        let t = Mat4::IDENTITY;
+
         Ok(Model {
             meshes: Vec::new(),
             transform: t,
@@ -247,32 +225,21 @@ fn get_attributs(obj: &collada::Object, index: &collada::VTNIndex) -> Vertex {
             obj.vertices[i].y as f32,
             obj.vertices[i].z as f32,
         ),
-        bone_ids: [
-            obj.joint_weights[i].joints[0] as i32,
-            obj.joint_weights[i].joints[1] as i32,
-            obj.joint_weights[i].joints[2] as i32,
-            obj.joint_weights[i].joints[3] as i32,
-        ],
+
         norm: vec3(
             obj.normals[k].x as f32,
             obj.normals[k].y as f32,
             obj.normals[k].z as f32,
         ),
-        weights: obj.joint_weights[i].weights,
-        tc: vec2(obj.tex_vertices[j].x as f32, obj.tex_vertices[j].y as f32),
+
+        tex: vec2(obj.tex_vertices[j].x as f32, obj.tex_vertices[j].y as f32),
     }
 }
 pub fn from_dae(path: &Path) -> Model {
     let doc = collada::document::ColladaDocument::from_path(path).unwrap();
     let mut model = Model::default;
     for obj in doc.get_obj_set().unwrap().objects {
-        let mut mesh = Mesh {
-            vertices: Vec::new(),
-            indices: Vec::new(),
-            vao: 0,
-            vbo: 0,
-            ebo: 0,
-        };
+        let mut mesh = Mesh::DEFAULT;
         println!(
             "num of verts {}\nnum of weights {}",
             obj.vertices.len(),
@@ -344,13 +311,7 @@ pub fn from_gltf(path: &str, model: &mut Model) {
 
     for mesh in document.meshes() {
         //prepare for next batch of data
-        let mut tmp_mesh = Mesh {
-            vertices: vec![],
-            indices: vec![],
-            vao: 0,
-            vbo: 0,
-            ebo: 0,
-        };
+        let mut tmp_mesh = Mesh::DEFAULT;
 
         let primitives = mesh.primitives();
         primitives.for_each(|primitive| {
@@ -413,9 +374,7 @@ pub fn from_gltf(path: &str, model: &mut Model) {
                 tmp_mesh.vertices.push(Vertex {
                     norm: tmp_normals[i],
                     pos: tmp_positions[i],
-                    tc: tmp_tex_coords[i],
-                    weights: [0.0, 0.0, 0.0, 0.0],
-                    bone_ids: [-1, -1, -1, -1],
+                    tex: tmp_tex_coords[i],
                 })
             }
             model.meshes.push(tmp_mesh.clone());

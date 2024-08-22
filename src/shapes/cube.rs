@@ -1,206 +1,46 @@
 use crate::math::{vec2::*, vec3::*};
 use crate::src::model::*;
 
+const DATA: [[f32; 8]; 24] = [
+    [1.0, -1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0],
+    [-1.0, -1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+    [-1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0],
+    [1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+    [1.0, -1.0, -1.0, 0.0, 0.0, -1.0, 1.0, 0.0],
+    [-1.0, -1.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0],
+    [-1.0, 1.0, -1.0, 0.0, 0.0, -1.0, 0.0, 1.0],
+    [1.0, 1.0, -1.0, 0.0, 0.0, -1.0, 1.0, 1.0],
+    [-1.0, -1.0, 1.0, -1.0, 0.0, 0.0, 1.0, 0.0],
+    [-1.0, -1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 0.0],
+    [-1.0, 1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0],
+    [-1.0, 1.0, 1.0, -1.0, 0.0, 0.0, 1.0, 1.0],
+    // right face
+    [1.0, -1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0],
+    [1.0, -1.0, -1.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    [1.0, 1.0, -1.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+    [1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0],
+    // top face
+    [-1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+    [1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0],
+    [-1.0, 1.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0],
+    [1.0, 1.0, -1.0, 0.0, 1.0, 0.0, 1.0, 1.0],
+    // bottom face
+    [-1.0, -1.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0],
+    [1.0, -1.0, 1.0, 0.0, -1.0, 0.0, 1.0, 0.0],
+    [-1.0, -1.0, -1.0, 0.0, -1.0, 0.0, 0.0, 1.0],
+    [1.0, -1.0, -1.0, 0.0, -1.0, 0.0, 1.0, 1.0],
+];
+
 pub fn load_cube() -> Mesh {
-    let mut mesh = Mesh::default;
+    let mut mesh = Mesh::DEFAULT;
     //front face
-    let mut tmp_vertex = Vertex {
-        pos: vec3(1.0, -1.0, 1.0),
-        norm: vec3(0.0, 0.0, 1.0),
-        tc: vec2(1.0, 0.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(-1.0, -1.0, 1.0),
-        norm: vec3(0.0, 0.0, 1.0),
-        tc: vec2(0.0, 0.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(-1.0, 1.0, 1.0),
-        norm: vec3(0.0, 0.0, 1.0),
-        tc: vec2(0.0, 1.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(1.0, 1.0, 1.0),
-        norm: vec3(0.0, 0.0, 1.0),
-        tc: vec2(1.0, 1.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    //back face
-    tmp_vertex = Vertex {
-        pos: vec3(1.0, -1.0, -1.0),
-        norm: vec3(0.0, 0.0, -1.0),
-        tc: vec2(1.0, 0.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(-1.0, -1.0, -1.0),
-        norm: vec3(0.0, 0.0, -1.0),
-        tc: vec2(0.0, 0.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(-1.0, 1.0, -1.0),
-        norm: vec3(0.0, 0.0, -1.0),
-        tc: vec2(0.0, 1.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(1.0, 1.0, -1.0),
-        norm: vec3(0.0, 0.0, -1.0),
-        tc: vec2(1.0, 1.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    //left face
-    tmp_vertex = Vertex {
-        pos: vec3(-1.0, -1.0, 1.0),
-        norm: vec3(-1.0, 0.0, 0.0),
-        tc: vec2(1.0, 0.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(-1.0, -1.0, -1.0),
-        norm: vec3(-1.0, 0.0, 0.0),
-        tc: vec2(0.0, 0.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(-1.0, 1.0, -1.0),
-        norm: vec3(-1.0, 0.0, 0.0),
-        tc: vec2(0.0, 1.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(-1.0, 1.0, 1.0),
-        norm: vec3(-1.0, 0.0, 0.0),
-        tc: vec2(1.0, 1.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    //right face
-    tmp_vertex = Vertex {
-        pos: vec3(1.0, -1.0, 1.0),
-        norm: vec3(1.0, 0.0, 0.0),
-        tc: vec2(1.0, 0.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(1.0, -1.0, -1.0),
-        norm: vec3(1.0, 0.0, 0.0),
-        tc: vec2(0.0, 0.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(1.0, 1.0, -1.0),
-        norm: vec3(1.0, 0.0, 0.0),
-        tc: vec2(0.0, 1.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(1.0, 1.0, 1.0),
-        norm: vec3(1.0, 0.0, 0.0),
-        tc: vec2(1.0, 1.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    //top face
-    tmp_vertex = Vertex {
-        pos: vec3(-1.0, 1.0, 1.0),
-        norm: vec3(0.0, 1.0, 0.0),
-        tc: vec2(0.0, 0.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(1.0, 1.0, 1.0),
-        norm: vec3(0.0, 1.0, 0.0),
-        tc: vec2(1.0, 0.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(-1.0, 1.0, -1.0),
-        norm: vec3(0.0, 1.0, 0.0),
-        tc: vec2(0.0, 1.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(1.0, 1.0, -1.0),
-        norm: vec3(0.0, 1.0, 0.0),
-        tc: vec2(1.0, 1.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    //bottom face
-    tmp_vertex = Vertex {
-        pos: vec3(-1.0, -1.0, 1.0),
-        norm: vec3(0.0, -1.0, 0.0),
-        tc: vec2(0.0, 0.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(1.0, -1.0, 1.0),
-        norm: vec3(0.0, -1.0, 0.0),
-        tc: vec2(1.0, 0.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(-1.0, -1.0, -1.0),
-        norm: vec3(0.0, -1.0, 0.0),
-        tc: vec2(0.0, 1.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
-    tmp_vertex = Vertex {
-        pos: vec3(1.0, -1.0, -1.0),
-        norm: vec3(0.0, -1.0, 0.0),
-        tc: vec2(1.0, 1.0),
-        weights: [0.0, 0.0, 0.0, 0.0],
-        bone_ids: [-1, -1, -1, -1],
-    };
-    mesh.vertices.push(tmp_vertex);
+    for v in &DATA {
+        mesh.vertices.push(Vertex {
+            pos: vec3(v[0], v[1], v[2]),
+            norm: vec3(v[3], v[4], v[5]),
+            tex: vec2(v[6], v[7]),
+        })
+    }
 
     mesh.indices = vec![
         0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 18,
