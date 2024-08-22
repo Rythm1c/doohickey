@@ -52,12 +52,12 @@ impl World {
         models_.insert(String::from("ball"), ball);
 
         let mut ball2 = model::Model::new(
-            model::Shape::Sphere { radius: (3.0) },
-            vec3(3.0, 40.0, 10.0),
+            model::Shape::Sphere { radius: (4.0) },
+            vec3(15.0, 40.0, 10.0),
             vec3(1.0, 0.35, 0.06),
         )
         .unwrap();
-        ball2.meshes.push(load_sphere(100, 100));
+        ball2.meshes.push(load_icosphere(2));
         models_.insert(String::from("ball2"), ball2);
 
         let mut cube = model::Model::new(
@@ -250,7 +250,7 @@ impl World {
             "lightSpace",
             self.sun.get_projection() * self.sun.get_view(),
         );
-        self.s_obj.update_int("shadowsEnabled", true as i32);
+        self.s_obj.update_int("shadowsEnabled", false as i32);
 
         self.s_obj
             .update_int("pointLightCount", self.lights.len() as i32);

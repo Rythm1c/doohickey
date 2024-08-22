@@ -12,7 +12,7 @@ pub struct Bone {
 pub struct Player {
     pub id: String,
     pub model: Model,
-    pub skeleton: Vec<Bone>,
+    // pub skeleton: Vec<Bone>,
     // index of current animation
     index: usize,
 }
@@ -21,7 +21,7 @@ impl Player {
     pub fn new(name: &String) -> Self {
         Self {
             index: 0,
-            skeleton: Vec::new(),
+            //skeleton: Vec::new(),
             id: name.to_string(),
             model: Model::new(Shape::None, Vec3::ZERO, Vec3::ZERO).unwrap(),
         }
