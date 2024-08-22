@@ -1,4 +1,4 @@
-use crate::math::{mat4::Mat4, misc::*, quaternion::*, vec3::*};
+use crate::math::{ misc::*, quaternion::*, vec3::*};
 
 /// spin object
 pub fn spin(dt: f32, angle: f32, axis: Vec3, rotation: &mut Quat) {
@@ -23,22 +23,4 @@ pub fn rotate_around(center: Vec3, radius: f32, angle: f32, axis: Vec3, dt: f32,
     let result = q * quat(unit_pos.x, unit_pos.y, unit_pos.z, 0.0) * q.inverse();
 
     *pos = result.axis() * radius + center;
-}
-
-pub struct Sample {
-    pub time: f32,
-    pub transform: Mat4,
-}
-pub struct BoneAnimation {
-    pub samples: Vec<Sample>,
-    pub bone: String,
-}
-impl BoneAnimation {
-    pub fn total_time(&self) -> f32 {
-        let mut total = 0.0_f32;
-        for sample in &self.samples {
-            total += sample.time;
-        }
-        total
-    }
 }

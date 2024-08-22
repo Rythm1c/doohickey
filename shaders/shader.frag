@@ -48,9 +48,9 @@ void main() {
     if(textured) {
        // result = texture(image, vs_in.texCoords).rgb;
     } else {
-        //result += directional_light();
+        result += directional_light();
 
-        for(int i = 0; i < pointLightCount; i++) result += calc_pointlight(pointLights[i]);
+        //for(int i = 0; i < pointLightCount; i++) result += calc_pointlight(pointLights[i]);
     }
 
     if(checkered) {
@@ -63,7 +63,7 @@ void main() {
     }
 
     vec3 background = vec3(0.1);
-    float backgroundfract = blend(600.0);
+    float backgroundfract = blend(300.0);
     result = (result * (1.0 - backgroundfract)) + (background * backgroundfract);
 
     color = vec4(result, 1.0);

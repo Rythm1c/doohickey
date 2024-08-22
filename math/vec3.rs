@@ -8,10 +8,16 @@ pub struct Vec3 {
 }
 
 impl Vec3 {
-    pub const ZERO: Vec3 = Vec3 {
+    pub const ZERO: Self = Self {
         x: 0.0,
         y: 0.0,
         z: 0.0,
+    };
+
+    pub const ONE: Self = Self {
+        x: 1.0,
+        y: 1.0,
+        z: 1.0,
     };
 
     pub fn new(_x: f32, _y: f32, _z: f32) -> Self {

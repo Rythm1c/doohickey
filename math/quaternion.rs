@@ -18,6 +18,13 @@ pub fn quat(_x: f32, _y: f32, _z: f32, _s: f32) -> Quat {
 }
 
 impl Quat {
+    pub const ZERO: Self = Self {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+        s: 0.0,
+    };
+
     pub fn new(_x: f32, _y: f32, _z: f32, _s: f32) -> Self {
         Self {
             x: (_x),

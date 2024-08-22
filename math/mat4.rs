@@ -34,6 +34,15 @@ pub fn mat4(
 }
 
 impl Mat4 {
+    pub const identity: Self = Self {
+        data: [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ],
+    };
+
     pub fn new() -> Self {
         Self {
             data: [
@@ -125,6 +134,17 @@ impl Mul<Mat4> for Mat4 {
     }
 }
 
+pub fn column_to_row_major(m: &Mat4) -> Mat4 {
+    Mat4 {
+        data: [
+            [m.data[0][0], m.data[1][0], m.data[2][0], m.data[3][0]],
+            [m.data[0][1], m.data[1][1], m.data[2][1], m.data[3][1]],
+            [m.data[0][2], m.data[1][2], m.data[2][2], m.data[3][2]],
+            [m.data[0][3], m.data[1][3], m.data[2][3], m.data[3][3]],
+        ],
+    }
+}
+
 pub fn translate(p: &Vec3) -> Mat4 {
     Mat4 {
         data: [
@@ -145,7 +165,58 @@ pub fn scale(s: &Vec3) -> Mat4 {
         ],
     }
 }
-//TODO: add rotation functions
+//rotation matrices using euler angles
+///rotation around the x-axis using specified angle
+pub fn rotationX(angle: f32) -> Mat4 {
+    let yy = radians(angle).cos();
+    let yz = -radians(angle).sin();
+
+    let zy = radians(angle).sin();
+    let zz = radians(angle).cos();
+
+    return Mat4 {
+        data: [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, yy, yz, 0.0],
+            [0.0, zy, zz, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ],
+    };
+}
+///rotation around the y-axis using specified angle
+pub fn rotationY(angle: f32) -> Mat4 {
+    let xx = radians(angle).cos();
+    let xz = radians(angle).sin();
+
+    let zx = -radians(angle).sin();
+    let zz = radians(angle).cos();
+
+    return Mat4 {
+        data: [
+            [xx, 0.0, xz, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [zx, 0.0, zz, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ],
+    };
+}
+///rotation around the Z-axis using specified angle
+pub fn rotationZ(angle: f32) -> Mat4 {
+    let xx = radians(angle).cos();
+    let xy = -radians(angle).sin();
+
+    let yx = radians(angle).sin();
+    let yy = radians(angle).cos();
+
+    return Mat4 {
+        data: [
+            [xx, xy, 0.0, 0.0],
+            [yx, yy, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ],
+    };
+}
 
 /// for camera rotation
 pub fn look_at(eye: &Vec3, front: &Vec3, up: &Vec3) -> Mat4 {
@@ -173,22 +244,39 @@ pub fn look_at(eye: &Vec3, front: &Vec3, up: &Vec3) -> Mat4 {
 /// l: left, r: right, n: near, f: far, t: top, b: bottom  
 /// create a clipping volume from sepcified distances
 pub fn frustrum(l: f32, r: f32, t: f32, b: f32, n: f32, f: f32) -> Mat4 {
+    let xx = (2.0 * n) / (r - l);
+    let xz = (r + l) / (r - l);
+
+    let yy = (2.0 * n) / (t - b);
+    let yz = (t + b) / (t - b);
+
+    let zz = -(f + n) / (f - n);
+    let zw = (-2.0 * f * n) / (f - n);
+
     Mat4 {
         data: [
-            [(2.0 * n) / (r - l), 0.0, (r + l) / (r - l), 0.0],
-            [0.0, (2.0 * n) / (t - b), (t + b) / (t - b), 0.0],
-            [0.0, 0.0, -(f + n) / (f - n), (-2.0 * f * n) / (f - n)],
+            [xx, 0.0, xz, 0.0],
+            [0.0, yy, yz, 0.0],
+            [0.0, 0.0, zz, zw],
             [0.0, 0.0, -1.0, 0.0],
         ],
     }
 }
 
 pub fn orthogonal(l: f32, r: f32, t: f32, b: f32, n: f32, f: f32) -> Mat4 {
+    let xx = 2.0 / (r - l);
+    let xw = -(r + l) / (r - l);
+
+    let yy = 2.0 / (t - b);
+    let yw = -(t + b) / (t - b);
+
+    let zz = -2.0 / (f - n);
+    let zw = -(n + f) / (f - n);
     Mat4 {
         data: [
-            [2.0 / (r - l), 0.0, 0.0, -(r + l) / (r - l)],
-            [0.0, 2.0 / (t - b), 0.0, -(t + b) / (t - b)],
-            [0.0, 0.0, -2.0 / (f - n), -(n + f) / (f - n)],
+            [xx, 0.0, 0.0, xw],
+            [0.0, yy, 0.0, yw],
+            [0.0, 0.0, zz, zw],
             [0.0, 0.0, 0.0, 1.0],
         ],
     }

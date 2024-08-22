@@ -9,4 +9,5 @@ pub mod physics;
 pub mod player;
 pub mod shaders;
 pub mod shadows;
+pub mod shapes;
 pub mod world;

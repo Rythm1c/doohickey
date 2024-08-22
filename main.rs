@@ -63,7 +63,7 @@ fn main() {
             .update_animations(delta)
             .update_physics()
             .update_objects()
-            .add_shadows();
+            .update_shadows();
 
         unsafe {
             gl::Viewport(0, 0, win_info.w, win_info.h);

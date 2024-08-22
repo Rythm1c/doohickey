@@ -1,6 +1,7 @@
 //use crate::math::quaternion::Quat;
 
 use crate::math::{mat4::*, vec3::*};
+use crate::src::shapes::{cube::*, sphere::*};
 use crate::src::{animations, camera, lights, model, physics, player, shaders, shadows};
 
 use std::collections::HashMap;
@@ -38,61 +39,58 @@ impl World {
         let fshader_shadows = Shader::from_frag_src(Path::new("shaders/shadowmap.frag")).unwrap();
         let shadow_program = Program::from_shaders(&[vshader_shadows, fshader_shadows]).unwrap();
 
-        // prgm.set_use();
-        // prgm.update_int("shadowMap", 0);
-
         let mut models_: HashMap<String, model::Model> = Default::default();
         let mut ball = model::Model::new(
-            model::Shape::Sphere { radius: (1.0) },
+            model::Shape::Sphere { radius: (4.0) },
             vec3(4.0, 30.0, 10.0),
             vec3(1.0, 1.0, 1.0),
         )
         .unwrap();
-        model::load_sphere(50, 50, 4.0, &mut ball);
+        ball.meshes.push(load_sphere(100, 100));
         ball.checkered = true;
         ball.squares = 20.0;
         models_.insert(String::from("ball"), ball);
 
         let mut ball2 = model::Model::new(
-            model::Shape::Sphere { radius: (1.0) },
+            model::Shape::Sphere { radius: (3.0) },
             vec3(3.0, 40.0, 10.0),
             vec3(1.0, 0.35, 0.06),
         )
         .unwrap();
-        model::load_sphere(50, 50, 3.0, &mut ball2);
+        ball2.meshes.push(load_sphere(100, 100));
         models_.insert(String::from("ball2"), ball2);
 
         let mut cube = model::Model::new(
             model::Shape::Cube {
-                dimensions: Vec3::new(1.0, 1.0, 1.0),
+                dimensions: Vec3::new(2.0, 2.0, 2.0),
             },
             vec3(-12.0, 20.0, 6.0),
             vec3(0.92, 0.29, 0.29),
         )
         .unwrap();
-        model::load_cube(Vec3::new(2.0, 2.0, 2.0), &mut cube);
+        cube.meshes.push(load_cube());
         models_.insert(String::from("cube"), cube);
 
         let mut cube2 = model::Model::new(
             model::Shape::Cube {
-                dimensions: Vec3::new(1.0, 1.0, 1.0),
+                dimensions: Vec3::new(5.0, 5.0, 5.0),
             },
             vec3(5.0, 5.0, 5.0),
             vec3(0.0, 1.0, 0.12),
         )
         .unwrap();
-        model::load_cube(Vec3::new(5.0, 5.0, 5.0), &mut cube2);
+        cube2.meshes.push(load_cube());
         models_.insert(String::from("cube2"), cube2);
 
         let mut platform = model::Model::new(
             model::Shape::Cube {
-                dimensions: Vec3::new(1.0, 1.0, 1.0),
+                dimensions: Vec3::new(1000.0, 2.0, 1000.0),
             },
             vec3(0.0, -2.0, 0.0),
             vec3(1.0, 1.0, 1.0),
         )
         .unwrap();
-        model::load_cube(Vec3::new(1000.0, 2.0, 1000.0), &mut platform);
+        platform.meshes.push(load_cube());
         platform.sub_dvd = true;
         platform.lines = 70.0;
         models_.insert(String::from("platform"), platform);
@@ -121,17 +119,11 @@ impl World {
         ];
 
         let mut player_ = player::Player::new(&String::from("mannequin"));
-        player_.model = model::Model::new(
-            model::Shape::Cube {
-                dimensions: vec3(0.1, 0.1, 0.1),
-            },
-            vec3(0.0, 2.0, 2.0),
-            vec3(1.0, 1.0, 1.0),
-        )
-        .unwrap();
-        //model::from_gltf("man/scene.gltf", &mut player_);
-        model::from_dae(std::path::Path::new("Running.dae"), &mut player_);
-        player::extract_animations(std::path::Path::new("Running.dae"), &mut player_);
+        player_.model = model::from_dae(Path::new("Running.dae"));
+        player_.model.shape = model::Shape::Cube {
+            dimensions: Vec3::new(0.1, 0.1, 0.1),
+        };
+
         player_.model.prepere_render_resources();
 
         Ok(World {
@@ -224,7 +216,7 @@ impl World {
 
         self
     }
-    pub fn add_shadows(&mut self) -> &mut Self {
+    pub fn update_shadows(&mut self) -> &mut Self {
         self.sun.shadows.attach(1900, 1200);
 
         self.s_shadow.set_use();
@@ -267,35 +259,29 @@ impl World {
             pl_to_shader(&self.lights[i], &mut self.s_obj, i);
         }
 
-        player_to_shader(&self.player, &mut self.s_obj);
+        model_to_shader(&mut self.player.model, &mut self.s_obj);
         self.player.model.render();
 
         // object specific
         self.models.values_mut().for_each(|model| {
-            self.s_obj.update_mat4("transform", model.transform);
-            self.s_obj.update_int("textured", model.textured as i32);
-            self.s_obj.update_vec3("col", model.color);
-            self.s_obj.update_int("checkered", model.checkered as i32);
-            self.s_obj.update_float("squares", model.squares);
-            self.s_obj.update_int("subDivided", model.sub_dvd as i32);
-            self.s_obj.update_float("lines", model.lines);
-
+            model_to_shader(model, &mut self.s_obj);
             model.render();
         })
     }
 }
-
+/// send point light to shaders point light array
 fn pl_to_shader(light: &lights::PointLight, shader: &mut shaders::Program, i: usize) {
     shader.update_vec3(format!("pointLights[{}].position", i).as_str(), light.pos);
     shader.update_vec3(format!("pointLights[{}].color", i).as_str(), light.col);
 }
-
-fn player_to_shader(player: &player::Player, shader: &mut shaders::Program) {
-    shader.update_mat4("transform", player.model.transform);
-    shader.update_int("textured", player.model.textured as i32);
-    shader.update_vec3("col", player.model.color);
-    shader.update_int("checkered", player.model.checkered as i32);
-    shader.update_float("squares", player.model.squares);
-    shader.update_int("subDivided", player.model.sub_dvd as i32);
-    shader.update_float("lines", player.model.lines);
+// send player info to shader for drawing
+fn model_to_shader(model: &mut model::Model, shader: &mut shaders::Program) {
+    /* shader.update_mat4("boneTransform", Mat4::new()); */
+    shader.update_mat4("transform", model.transform);
+    shader.update_int("textured", model.textured as i32);
+    shader.update_vec3("col", model.color);
+    shader.update_int("checkered", model.checkered as i32);
+    shader.update_float("squares", model.squares);
+    shader.update_int("subDivided", model.sub_dvd as i32);
+    shader.update_float("lines", model.lines);
 }
