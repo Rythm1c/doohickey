@@ -1,26 +1,34 @@
 use crate::math::{mat4::*, quaternion::*, vec3::*};
 use crate::src::model::{Model, Shape};
 
+#[derive(Clone)]
 pub struct Object {
     pub model: Model,
     pub transform: Transform,
 }
 
 impl Object {
-    pub fn new(shape: Shape, pos: Vec3) -> Self {
-        let transform = Transform::new(shape, pos);
-
+    pub fn new() -> Self {
         Self {
-            transform,
+            transform: Transform::DEFAULT,
             model: Model::DEFAULT,
         }
     }
+    pub fn change_pos(&mut self, n_pos: Vec3) -> &mut Self {
+        self.transform.pos = n_pos;
+        self
+    }
+    pub fn change_shape(&mut self, n_shape: Shape) -> &mut Self {
+        self.transform.shape = n_shape;
+        self
+    }
 
-    pub fn update_model(&mut self, m: Model) {
-        self.model = m;
+    pub fn update_model(&mut self, model: Model) {
+        self.model = model;
     }
 }
 
+#[derive(Clone)]
 pub struct Transform {
     pub pos: Vec3,
     pub velocity: Vec3,

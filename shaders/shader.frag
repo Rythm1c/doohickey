@@ -4,11 +4,12 @@ out vec4 color;
 
 in vs_Out {
     vec3 normal;
+    vec3 fragCol;
     vec3 fragPos;
     vec2 texCoords;
     vec4 lightSpace;
 } fs_in;
-uniform vec3 col;
+vec3 col = fs_in.fragCol;
 uniform vec3 viewPos;
 
 // point light data and calculations
@@ -67,7 +68,7 @@ void main() {
     result = (result * (1.0 - backgroundfract)) + (background * backgroundfract);
 
     color = vec4(result, 1.0);
-    //color = vec4(0.0, 1.0, 0.12, 1.0);
+    //color = vec4(0.13, 0.27, 1.0, 1.0);
 }
 
 // function definations
@@ -142,7 +143,7 @@ vec3 directional_light() {
 
     vec3 viewDir = normalize(viewPos - fs_in.fragPos);
     vec3 halfwaydir = normalize(lightDir + viewDir);
-    float spec = pow(max(dot(norm, halfwaydir), 0.0), 16.0);
+    float spec = pow(max(dot(norm, halfwaydir), 0.0), 64.0);
     vec3 specular = spec * L_color * col;
 
     if(shadowsEnabled)

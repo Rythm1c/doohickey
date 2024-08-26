@@ -1,7 +1,7 @@
 use crate::math::{misc::*, vec2::*, vec3::*};
 use crate::src::model::*;
 
-pub fn load_sphere(lats: u32, longs: u32) -> Mesh {
+pub fn load_sphere(lats: u32, longs: u32, color: Vec3) -> Mesh {
     let mut mesh = Mesh::DEFAULT;
 
     let lat_angle: f32 = 180.0 / (lats as f32 - 1.0);
@@ -11,6 +11,7 @@ pub fn load_sphere(lats: u32, longs: u32) -> Mesh {
         tex: Vec2::ZERO,
         pos: Vec3::ZERO,
         norm: Vec3::ZERO,
+        col: color,
     };
     // get vertices
     for i in 0..lats {
@@ -49,7 +50,7 @@ pub fn load_sphere(lats: u32, longs: u32) -> Mesh {
     mesh
 }
 
-pub fn load_icosphere(divs: i32) -> Mesh {
+pub fn load_icosphere(divs: i32, color: Vec3) -> Mesh {
     let lat_angle = (0.5 as f32).atan();
     let long_angle = radians(72.0);
     let mut tmp = Mesh::DEFAULT;
@@ -58,6 +59,7 @@ pub fn load_icosphere(divs: i32) -> Mesh {
         tex: Vec2::ZERO,
         norm: Vec3::ZERO,
         pos: Vec3::ZERO,
+        col: color,
     };
 
     //first vertex
@@ -92,73 +94,40 @@ pub fn load_icosphere(divs: i32) -> Mesh {
     tmp.vertices.push(vertex);
     // arranges verts into triangles
     let mut mesh = Mesh::DEFAULT;
-    add_tri(&mut mesh, tmp.vertices[0], tmp.vertices[1], tmp.vertices[2]);
-    add_tri(&mut mesh, tmp.vertices[0], tmp.vertices[2], tmp.vertices[3]);
-    add_tri(&mut mesh, tmp.vertices[0], tmp.vertices[3], tmp.vertices[4]);
-    add_tri(&mut mesh, tmp.vertices[0], tmp.vertices[4], tmp.vertices[5]);
-    add_tri(&mut mesh, tmp.vertices[0], tmp.vertices[5], tmp.vertices[1]);
 
-    add_tri(&mut mesh, tmp.vertices[1], tmp.vertices[6], tmp.vertices[2]);
-    add_tri(&mut mesh, tmp.vertices[2], tmp.vertices[6], tmp.vertices[7]);
-    add_tri(&mut mesh, tmp.vertices[2], tmp.vertices[7], tmp.vertices[3]);
-    add_tri(&mut mesh, tmp.vertices[3], tmp.vertices[7], tmp.vertices[8]);
-    add_tri(&mut mesh, tmp.vertices[3], tmp.vertices[8], tmp.vertices[4]);
-    add_tri(&mut mesh, tmp.vertices[4], tmp.vertices[8], tmp.vertices[9]);
-    add_tri(&mut mesh, tmp.vertices[4], tmp.vertices[9], tmp.vertices[5]);
-    add_tri(
-        &mut mesh,
-        tmp.vertices[5],
-        tmp.vertices[9],
-        tmp.vertices[10],
-    );
-    add_tri(
-        &mut mesh,
-        tmp.vertices[5],
-        tmp.vertices[10],
-        tmp.vertices[1],
-    );
-    add_tri(
-        &mut mesh,
-        tmp.vertices[1],
-        tmp.vertices[10],
-        tmp.vertices[6],
-    );
-
-    add_tri(
-        &mut mesh,
-        tmp.vertices[11],
-        tmp.vertices[6],
-        tmp.vertices[7],
-    );
-    add_tri(
-        &mut mesh,
-        tmp.vertices[11],
-        tmp.vertices[7],
-        tmp.vertices[8],
-    );
-    add_tri(
-        &mut mesh,
-        tmp.vertices[11],
-        tmp.vertices[8],
-        tmp.vertices[9],
-    );
-    add_tri(
-        &mut mesh,
-        tmp.vertices[11],
-        tmp.vertices[9],
-        tmp.vertices[10],
-    );
-    add_tri(
-        &mut mesh,
-        tmp.vertices[11],
-        tmp.vertices[10],
-        tmp.vertices[6],
-    );
-
-    let mut final_mesh = Mesh::DEFAULT;
+    let triangles: Vec<[usize; 3]> = vec![
+        [0, 1, 2],
+        [0, 2, 3],
+        [0, 3, 4],
+        [0, 4, 5],
+        [0, 5, 1],
+        [1, 6, 2],
+        [2, 6, 7],
+        [2, 7, 3],
+        [3, 7, 8],
+        [3, 8, 4],
+        [4, 8, 9],
+        [4, 9, 5],
+        [5, 9, 10],
+        [5, 10, 1],
+        [1, 10, 6],
+        [11, 6, 7],
+        [11, 7, 8],
+        [11, 8, 9],
+        [11, 9, 10],
+        [11, 10, 6],
+    ];
+    for triangle in triangles {
+        add_tri(
+            &mut mesh,
+            tmp.vertices[triangle[0]],
+            tmp.vertices[triangle[1]],
+            tmp.vertices[triangle[2]],
+        );
+    }
 
     for _ in 0..divs {
-        final_mesh.vertices.clear();
+        let mut final_mesh = Mesh::DEFAULT;
         let range = 0..(mesh.vertices.len() / 3);
 
         for face in range {
@@ -175,7 +144,7 @@ pub fn load_icosphere(divs: i32) -> Mesh {
             add_tri(&mut final_mesh, p1, p2, p3);
             add_tri(&mut final_mesh, p2, p3, v3);
         }
-        mesh = final_mesh.clone();
+        mesh = final_mesh;
     }
 
     mesh
@@ -186,6 +155,7 @@ fn divide(v1: Vertex, v2: Vertex) -> Vertex {
         pos: Vec3::ZERO,
         norm: Vec3::ZERO,
         tex: Vec2::ZERO,
+        col: Vec3::ONE,
     };
 
     v3.pos.x = v1.pos.x + v2.pos.x;
@@ -198,27 +168,9 @@ fn divide(v1: Vertex, v2: Vertex) -> Vertex {
     v3.pos.y *= scale;
     v3.pos.z *= scale;
 
+    v3.col = (v1.col + v2.col) / 2.0;
+
     v3.norm = v3.pos;
 
     v3
-}
-
-fn add_tri(mesh: &mut Mesh, p1: Vertex, p2: Vertex, p3: Vertex) {
-    let normal = (p1.norm + p2.norm + p3.norm) / 3.0;
-
-    mesh.vertices.push(Vertex {
-        pos: p1.pos,
-        norm: normal,
-        tex: p1.tex,
-    });
-    mesh.vertices.push(Vertex {
-        pos: p2.pos,
-        norm: normal,
-        tex: p2.tex,
-    });
-    mesh.vertices.push(Vertex {
-        pos: p3.pos,
-        norm: normal,
-        tex: p3.tex,
-    });
 }

@@ -6,10 +6,10 @@ use crate::src::{
 
 use std::path::Path;
 pub struct World {
+    pub camera: camera::Camera,
     s_obj: shaders::Program,
     s_shadow: shaders::Program,
     player: Object,
-    pub camera: camera::Camera,
     projection: Mat4,
     sun: lights::DirectionalLight,
     assets: Assets,
@@ -37,59 +37,62 @@ impl World {
         );
 
         let mut assets = Assets::new();
-        let mut model = Model::new(vec3(1.0, 1.0, 1.0));
-        model.add_mesh(load_sphere(100, 100));
+        let mut model = Model::DEFAULT;
+
+        model.add_mesh(load_sphere(100, 100, vec3(1.0, 1.0, 1.0)));
         model.squares = 20.0;
         model.checkered = true;
-        let mut character = Object::new(Shape::Sphere { radius: (4.0) }, vec3(4.0, 30.0, 10.0));
-        character.update_model(model);
-        assets.add_character("ball", character);
+        let mut character = Object::new();
 
-        model = Model::new(vec3(1.0, 0.35, 0.06));
-        model.add_mesh(load_icosphere(4));
-        character = Object::new(Shape::Sphere { radius: (7.0) }, vec3(15.0, 40.0, 10.0));
-        character.update_model(model);
-        assets.add_character("ball2", character);
+        character
+            .change_pos(vec3(4.0, 30.0, 10.0))
+            .change_shape(Shape::Sphere { radius: (4.0) })
+            .update_model(model);
+        assets.add_object("ball", character.clone());
 
-        model = Model::new(vec3(1.0, 0.35, 0.06));
-        model.add_mesh(load_cube());
-        character = Object::new(
-            Shape::Cube {
-                dimensions: Vec3::new(2.0, 2.0, 2.0),
-            },
-            vec3(-15.0, 40.0, 10.0),
-        );
-        character.update_model(model);
-        assets.add_character("cube", character);
+        model = Model::DEFAULT;
+        model.add_mesh(load_icosphere(3, vec3(1.0, 0.35, 0.06)));
+        character
+            .change_pos(vec3(15.0, 40.0, 10.0))
+            .change_shape(Shape::Sphere { radius: (7.0) })
+            .update_model(model);
+        assets.add_object("ball2", character.clone());
 
-        model = Model::new(vec3(0.0, 1.0, 0.12));
-        model.add_mesh(load_cube());
-        character = Object::new(
-            Shape::Cube {
+        model = Model::DEFAULT;
+        model.add_mesh(load_cube(false, vec3(1.0, 0.13, 0.48)));
+        character
+            .change_pos(vec3(-15.0, 40.0, 10.0))
+            .change_shape(Shape::Cube {
+                dimensions: vec3(6.0, 6.0, 6.0),
+            })
+            .update_model(model);
+        assets.add_object("cube", character.clone());
+
+        model = Model::DEFAULT;
+        model.add_mesh(load_cube(true, Vec3::ZERO));
+        character
+            .change_pos(vec3(5.0, 5.0, 5.0))
+            .change_shape(Shape::Cube {
                 dimensions: Vec3::new(5.0, 5.0, 5.0),
-            },
-            vec3(5.0, 5.0, 5.0),
-        );
-        character.update_model(model);
-        assets.add_character("cube2", character);
+            })
+            .update_model(model);
+        assets.add_object("cube2", character.clone());
 
-        model = Model::new(vec3(0.7, 0.7, 0.7));
-        model.add_mesh(load_cube());
+        model = Model::DEFAULT;
+        model.add_mesh(load_cube(false, vec3(0.9, 0.9, 0.9)));
         model.sub_dvd = true;
         model.lines = 70.0;
-        character = Object::new(
-            Shape::Cube {
+        character
+            .change_pos(vec3(0.0, -2.0, 0.0))
+            .change_shape(Shape::Cube {
                 dimensions: Vec3::new(1000.0, 2.0, 1000.0),
-            },
-            vec3(0.0, -2.0, 0.0),
-        );
-        character.update_model(model);
-        assets.add_character("platform", character);
+            })
+            .update_model(model.clone());
+        assets.add_object("platform", character);
 
-        assets
-            .characters
-            .values_mut()
-            .for_each(|character| character.model.prepere_render_resources());
+        assets.characters.values_mut().for_each(|character| {
+            character.model.prepere_render_resources();
+        });
 
         assets.add_pointlight(lights::PointLight {
             pos: vec3(30.0, 20.0, -20.0),
@@ -110,13 +113,13 @@ impl World {
             col: vec3(0.0, 1.0, 0.5),
         });
 
-        let mut player = Object::new(
-            Shape::Cube {
+        let mut player = Object::new();
+        player
+            .change_pos(vec3(0.0, 12.0, 3.0))
+            .change_shape(Shape::Cube {
                 dimensions: vec3(0.1, 0.1, 0.1),
-            },
-            vec3(0.0, 12.0, 3.0),
-        );
-        player.update_model(from_dae(Path::new("Running.dae")));
+            })
+            .update_model(from_dae(Path::new("Running.dae"), vec3(1.0, 1.0, 1.0)));
         player.model.prepere_render_resources();
 
         let sun = lights::DirectionalLight {
@@ -126,8 +129,8 @@ impl World {
         };
 
         Ok(World {
-            camera,
             sun,
+            camera,
             s_shadow,
             player,
             s_obj,
@@ -149,16 +152,16 @@ impl World {
             dt,
             90.0,
             vec3(0.0, 1.0, 1.0),
-            &mut self.assets.get_character("cube2").transform,
+            &mut self.assets.get_object("cube2").transform,
         );
 
         animations::rotate_around(
             vec3(0.0, 20.0, 20.0),
-            30.0,
-            45.0,
+            50.0,
+            22.5,
             vec3(0.0, 1.0, 0.0),
             self.elapsed,
-            &mut self.assets.get_character("cube2").transform.pos,
+            &mut self.assets.get_object("cube2").transform.pos,
         );
 
         self
@@ -185,9 +188,9 @@ impl World {
             &mut self.assets.characters,
         );
 
-        physics::gravity(&mut self.assets.get_character("cube").transform.velocity);
-        physics::gravity(&mut self.assets.get_character("ball").transform.velocity);
-        physics::gravity(&mut self.assets.get_character("ball2").transform.velocity);
+        physics::gravity(&mut self.assets.get_object("cube").transform.velocity);
+        physics::gravity(&mut self.assets.get_object("ball").transform.velocity);
+        physics::gravity(&mut self.assets.get_object("ball2").transform.velocity);
 
         self
     }
@@ -256,7 +259,6 @@ fn model_to_shader(o: &mut Object, shader: &mut shaders::Program) {
     /* shader.update_mat4("boneTransform", Mat4::new()); */
     shader.update_mat4("transform", o.transform.get());
     shader.update_int("textured", o.model.textured as i32);
-    shader.update_vec3("col", o.model.color);
     shader.update_int("checkered", o.model.checkered as i32);
     shader.update_float("squares", o.model.squares);
     shader.update_int("subDivided", o.model.sub_dvd as i32);

@@ -34,8 +34,8 @@ fn main() {
         .unwrap();
 
     let _gl_context = window.gl_create_context().unwrap();
-    let _gl =
-        gl::load_with(|s| video_sub_sys.gl_get_proc_address(s) as *const std::os::raw::c_void);
+    use std::os::raw::c_void;
+    let _gl = gl::load_with(|s| video_sub_sys.gl_get_proc_address(s) as *const c_void);
 
     unsafe {
         gl::Viewport(0, 0, win_info.w, win_info.h);

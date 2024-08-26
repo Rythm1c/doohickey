@@ -14,18 +14,18 @@ impl Assets {
         }
     }
 
-    pub fn add_character(&mut self, n: &str, o: Object) {
+    pub fn add_object(&mut self, n: &str, o: Object) {
         if self.characters.contains_key(&String::from(n)) {
             println!("name already exists!");
         } else {
             self.characters.insert(String::from(n), o);
         }
     }
-    pub fn get_character(&mut self, n: &str) -> &mut Object {
+    pub fn get_object(&mut self, n: &str) -> &mut Object {
         self.characters.get_mut(&String::from(n)).unwrap()
     }
 
-    pub fn remove_character(&mut self, n: String) {
+    pub fn remove_object(&mut self, n: String) {
         if self.characters.contains_key(&n) {
             self.characters.remove(&n);
         } else {

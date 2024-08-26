@@ -9,6 +9,7 @@ pub struct Vertex {
     pub pos: Vec3,
     pub norm: Vec3,
     pub tex: Vec2,
+    pub col: Vec3,
 }
 
 /// mostly for collision detection
@@ -30,10 +31,11 @@ pub struct Mesh {
     vbo: u32,
     ebo: u32,
 }
+
+#[derive(Clone)]
 pub struct Model {
     pub meshes: Vec<Mesh>,
     pub textured: bool,
-    pub color: Vec3,
     pub checkered: bool,
     pub squares: f32,
     pub sub_dvd: bool,
@@ -105,6 +107,16 @@ impl Mesh {
                 (6 * float_size) as *const GLvoid,
             );
 
+            gl::EnableVertexAttribArray(3);
+            gl::VertexAttribPointer(
+                3,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                vert_size as i32,
+                (8 * float_size) as *const GLvoid,
+            );
+
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
             gl::BindVertexArray(0);
         }
@@ -148,20 +160,8 @@ impl Model {
         squares: 0.0,
         sub_dvd: false,
         lines: 0.0,
-        color: Vec3::ONE,
     };
 
-    pub fn new(color: Vec3) -> Model {
-        Model {
-            color,
-            meshes: Vec::new(),
-            textured: false,
-            checkered: false,
-            squares: 0.0,
-            sub_dvd: false,
-            lines: 0.0,
-        }
-    }
     pub fn add_mesh(&mut self, mesh: Mesh) {
         self.meshes.push(mesh);
     }
@@ -177,13 +177,35 @@ impl Model {
         }
     }
 }
+pub fn add_tri(mesh: &mut Mesh, p1: Vertex, p2: Vertex, p3: Vertex) {
+    let normal = (p1.norm + p2.norm + p3.norm) / 3.0;
+
+    mesh.vertices.push(Vertex {
+        pos: p1.pos,
+        norm: normal,
+        tex: p1.tex,
+        col: p1.col,
+    });
+    mesh.vertices.push(Vertex {
+        pos: p2.pos,
+        norm: normal,
+        tex: p2.tex,
+        col: p2.col,
+    });
+    mesh.vertices.push(Vertex {
+        pos: p3.pos,
+        norm: normal,
+        tex: p3.tex,
+        col: p3.col,
+    });
+}
 
 //use crate::src::player::{Bone, Player};
 use std::path::Path;
 
 extern crate collada;
 /// helper function to get vertex for collada object
-fn get_attributs(obj: &collada::Object, index: &collada::VTNIndex) -> Vertex {
+fn get_attributs(obj: &collada::Object, index: &collada::VTNIndex, color: Vec3) -> Vertex {
     let i = index.0;
     let j = index.1.unwrap();
     let k = index.2.unwrap();
@@ -201,10 +223,12 @@ fn get_attributs(obj: &collada::Object, index: &collada::VTNIndex) -> Vertex {
             obj.normals[k].z as f32,
         ),
 
+        col: color,
+
         tex: vec2(obj.tex_vertices[j].x as f32, obj.tex_vertices[j].y as f32),
     }
 }
-pub fn from_dae(path: &Path) -> Model {
+pub fn from_dae(path: &Path, color: Vec3) -> Model {
     let doc = collada::document::ColladaDocument::from_path(path).unwrap();
     let mut model = Model::DEFAULT;
     for obj in doc.get_obj_set().unwrap().objects {
@@ -225,11 +249,11 @@ pub fn from_dae(path: &Path) -> Model {
                             match shape {
                                 collada::Shape::Triangle(i, j, k) => {
                                     //first
-                                    mesh.vertices.push(get_attributs(&obj, &i));
+                                    mesh.vertices.push(get_attributs(&obj, &i, color));
                                     //sec vert
-                                    mesh.vertices.push(get_attributs(&obj, &j));
+                                    mesh.vertices.push(get_attributs(&obj, &j, color));
                                     //third vert
-                                    mesh.vertices.push(get_attributs(&obj, &k));
+                                    mesh.vertices.push(get_attributs(&obj, &k, color));
                                 }
                                 _ => {}
                             }
@@ -281,6 +305,20 @@ pub fn from_gltf(path: &str, model: &mut Model) {
                     })
                 }
             }
+            //temporary storage for colors
+            let  mut tmp_colors: Vec<Vec3> = vec![];
+            //extract normals
+            if let Some(gltf::mesh::util::ReadColors::RgbF32(gltf::accessor::Iter::Standard(itr))) =
+                reader.read_colors(0)
+            {
+                for color in itr {
+                    tmp_colors.push(Vec3 {
+                        x: color[0],
+                        y: color[1],
+                        z: color[2],
+                    })
+                }
+            }
             //temporary storage for texure coordinates
             let mut tmp_tex_coords: Vec<Vec2> = vec![];
             //extract
@@ -309,6 +347,7 @@ pub fn from_gltf(path: &str, model: &mut Model) {
                     norm: tmp_normals[i],
                     pos: tmp_positions[i],
                     tex: tmp_tex_coords[i],
+                    col: tmp_colors[i],
                 })
             }
             model.meshes.push(tmp_mesh.clone());
