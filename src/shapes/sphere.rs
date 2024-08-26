@@ -50,7 +50,7 @@ pub fn load_sphere(lats: u32, longs: u32) -> Mesh {
 }
 
 pub fn load_icosphere(divs: i32) -> Mesh {
-    let lat_angle = 2.0 * (0.5 as f32).atan();
+    let lat_angle = (0.5 as f32).atan();
     let long_angle = radians(72.0);
     let mut tmp = Mesh::DEFAULT;
 
@@ -65,8 +65,8 @@ pub fn load_icosphere(divs: i32) -> Mesh {
     vertex.norm = vertex.pos;
     tmp.vertices.push(vertex);
 
-    let mut y = (radians(90.0) - lat_angle).sin();
-    let mut hyp = (radians(90.0) - lat_angle).cos();
+    let mut y = lat_angle.sin();
+    let mut hyp = lat_angle.cos();
     for j in 0..5 {
         let x = hyp * ((j as f32) * long_angle).cos();
         let z = hyp * ((j as f32) * long_angle).sin();
@@ -76,8 +76,8 @@ pub fn load_icosphere(divs: i32) -> Mesh {
         tmp.vertices.push(vertex);
     }
 
-    y = (radians(90.0) - 2.0 * lat_angle).sin();
-    hyp = (radians(90.0) - 2.0 * lat_angle).cos();
+    y = (-lat_angle).sin();
+    hyp = (-lat_angle).cos();
     for j in 0..5 {
         let x = hyp * ((j as f32) * long_angle + (long_angle / 2.0)).cos();
         let z = hyp * ((j as f32) * long_angle + (long_angle / 2.0)).sin();
@@ -105,19 +105,59 @@ pub fn load_icosphere(divs: i32) -> Mesh {
     add_tri(&mut mesh, tmp.vertices[3], tmp.vertices[8], tmp.vertices[4]);
     add_tri(&mut mesh, tmp.vertices[4], tmp.vertices[8], tmp.vertices[9]);
     add_tri(&mut mesh, tmp.vertices[4], tmp.vertices[9], tmp.vertices[5]);
-    add_tri(&mut mesh, tmp.vertices[5], tmp.vertices[9], tmp.vertices[10]);
-    add_tri(&mut mesh, tmp.vertices[5], tmp.vertices[10], tmp.vertices[1]);
-    add_tri(&mut mesh, tmp.vertices[1], tmp.vertices[10], tmp.vertices[6]);
+    add_tri(
+        &mut mesh,
+        tmp.vertices[5],
+        tmp.vertices[9],
+        tmp.vertices[10],
+    );
+    add_tri(
+        &mut mesh,
+        tmp.vertices[5],
+        tmp.vertices[10],
+        tmp.vertices[1],
+    );
+    add_tri(
+        &mut mesh,
+        tmp.vertices[1],
+        tmp.vertices[10],
+        tmp.vertices[6],
+    );
 
-    add_tri(&mut mesh, tmp.vertices[11], tmp.vertices[6], tmp.vertices[7]);
-    add_tri(&mut mesh, tmp.vertices[11], tmp.vertices[7], tmp.vertices[8]);
-    add_tri(&mut mesh, tmp.vertices[11], tmp.vertices[8], tmp.vertices[9]);
-    add_tri(&mut mesh, tmp.vertices[11], tmp.vertices[9], tmp.vertices[10]);
-    add_tri(&mut mesh, tmp.vertices[11], tmp.vertices[10], tmp.vertices[6]);
+    add_tri(
+        &mut mesh,
+        tmp.vertices[11],
+        tmp.vertices[6],
+        tmp.vertices[7],
+    );
+    add_tri(
+        &mut mesh,
+        tmp.vertices[11],
+        tmp.vertices[7],
+        tmp.vertices[8],
+    );
+    add_tri(
+        &mut mesh,
+        tmp.vertices[11],
+        tmp.vertices[8],
+        tmp.vertices[9],
+    );
+    add_tri(
+        &mut mesh,
+        tmp.vertices[11],
+        tmp.vertices[9],
+        tmp.vertices[10],
+    );
+    add_tri(
+        &mut mesh,
+        tmp.vertices[11],
+        tmp.vertices[10],
+        tmp.vertices[6],
+    );
 
     let mut final_mesh = Mesh::DEFAULT;
 
-    for _ in 0..divs{
+    for _ in 0..divs {
         final_mesh.vertices.clear();
         let range = 0..(mesh.vertices.len() / 3);
 
@@ -134,11 +174,11 @@ pub fn load_icosphere(divs: i32) -> Mesh {
             add_tri(&mut final_mesh, p1, v2, p3);
             add_tri(&mut final_mesh, p1, p2, p3);
             add_tri(&mut final_mesh, p2, p3, v3);
-        };
+        }
         mesh = final_mesh.clone();
     }
 
-    final_mesh
+    mesh
 }
 
 fn divide(v1: Vertex, v2: Vertex) -> Vertex {
@@ -158,7 +198,7 @@ fn divide(v1: Vertex, v2: Vertex) -> Vertex {
     v3.pos.y *= scale;
     v3.pos.z *= scale;
 
-    v3.norm= v3.pos;
+    v3.norm = v3.pos;
 
     v3
 }

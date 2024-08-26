@@ -133,22 +133,22 @@ float ortho_shadow() {
 vec3 directional_light() {
     vec3 result = vec3(0.0);
 
-    vec3 ambient = vec3(0.15) * L_color;
+    vec3 ambient = vec3(0.15) * L_color * col;
 
     vec3 norm = normalize(fs_in.normal);
     vec3 lightDir = normalize(-L_direction);
     float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * L_color;
+    vec3 diffuse = diff * L_color * col;
 
     vec3 viewDir = normalize(viewPos - fs_in.fragPos);
     vec3 halfwaydir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(norm, halfwaydir), 0.0), 16.0);
-    vec3 specular = spec * L_color;
+    vec3 specular = spec * L_color * col;
 
     if(shadowsEnabled)
-        result = (ambient + (1.0 - ortho_shadow()) * (diffuse + specular)) * col;
+        result = ambient + (1.0 - ortho_shadow()) * (diffuse + specular);
     else
-        result += (ambient + diffuse + specular) * col;
+        result += ambient + diffuse + specular;
 
     return result;
 }

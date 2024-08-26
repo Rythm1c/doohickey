@@ -1,9 +1,7 @@
 //extern crate tobj;
 use crate::gl;
-
-use crate::math::{mat4::*, quaternion::*, vec2::*, vec3::*};
-
-const MAX_BONE_INFLUENCE: usize = 4;
+use crate::gl::types::*;
+use crate::math::{vec2::*, vec3::*};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -20,8 +18,7 @@ pub enum Shape {
     Sphere { radius: f32 },
     Cube { dimensions: Vec3 },
     None,
-    /*  Quad,
-    Other, */
+    /*  Quad, */
 }
 
 #[derive(PartialEq, Clone)]
@@ -35,13 +32,8 @@ pub struct Mesh {
 }
 pub struct Model {
     pub meshes: Vec<Mesh>,
-    pub shape: Shape,
-    pub color: Vec3,
-    pub transform: Mat4,
-    pub pos: Vec3,
-    pub rotation: Quat,
-    pub velocity: Vec3,
     pub textured: bool,
+    pub color: Vec3,
     pub checkered: bool,
     pub squares: f32,
     pub sub_dvd: bool,
@@ -64,19 +56,22 @@ impl Mesh {
 
             gl::BindVertexArray(self.vao);
 
+            let float_size = std::mem::size_of::<f32>();
+            let vert_size = std::mem::size_of::<Vertex>();
+
             gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
             gl::BufferData(
                 gl::ARRAY_BUFFER,
-                (self.vertices.len() * std::mem::size_of::<Vertex>()) as gl::types::GLsizeiptr,
-                self.vertices.as_ptr() as *const gl::types::GLvoid,
+                (self.vertices.len() * vert_size) as GLsizeiptr,
+                self.vertices.as_ptr() as *const GLvoid,
                 gl::STATIC_DRAW,
             );
 
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
             gl::BufferData(
                 gl::ELEMENT_ARRAY_BUFFER,
-                (self.indices.len() * std::mem::size_of::<u32>()) as gl::types::GLsizeiptr,
-                self.indices.as_ptr() as *const gl::types::GLvoid,
+                (self.indices.len() * std::mem::size_of::<u32>()) as GLsizeiptr,
+                self.indices.as_ptr() as *const GLvoid,
                 gl::STATIC_DRAW,
             );
 
@@ -86,7 +81,7 @@ impl Mesh {
                 3,
                 gl::FLOAT,
                 gl::FALSE,
-                std::mem::size_of::<Vertex>() as gl::types::GLsizei,
+                vert_size as i32,
                 std::ptr::null(),
             );
 
@@ -96,8 +91,8 @@ impl Mesh {
                 3,
                 gl::FLOAT,
                 gl::FALSE,
-                std::mem::size_of::<Vertex>() as gl::types::GLsizei,
-                (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
+                vert_size as i32,
+                (3 * float_size) as *const GLvoid,
             );
 
             gl::EnableVertexAttribArray(2);
@@ -106,8 +101,8 @@ impl Mesh {
                 2,
                 gl::FLOAT,
                 gl::FALSE,
-                std::mem::size_of::<Vertex>() as gl::types::GLsizei,
-                (6 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
+                vert_size as i32,
+                (6 * float_size) as *const GLvoid,
             );
 
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
@@ -146,55 +141,29 @@ impl Drop for Mesh {
     }
 }
 impl Model {
-    pub const default: Self = Self {
+    pub const DEFAULT: Self = Self {
         meshes: Vec::new(),
-        transform: Mat4::IDENTITY,
-        color: Vec3::ONE,
-        velocity: Vec3::ZERO,
-        pos: Vec3::ZERO,
-        shape: Shape::None,
-        rotation: Quat::ZERO,
         textured: false,
         checkered: false,
         squares: 0.0,
         sub_dvd: false,
         lines: 0.0,
+        color: Vec3::ONE,
     };
 
-    pub fn new(_shape: Shape, _pos: Vec3, col: Vec3) -> Result<Model, String> {
-        let t = Mat4::IDENTITY;
-
-        Ok(Model {
+    pub fn new(color: Vec3) -> Model {
+        Model {
+            color,
             meshes: Vec::new(),
-            transform: t,
-            color: col,
-            velocity: Vec3::ZERO,
-            pos: _pos,
-            shape: _shape,
-            rotation: Quat::ZERO,
             textured: false,
             checkered: false,
             squares: 0.0,
             sub_dvd: false,
             lines: 0.0,
-        })
-    }
-
-    pub fn update_properties(&mut self) {
-        self.pos = self.pos + self.velocity;
-        self.transform = Mat4::new();
-        self.transform = self.transform * translate(&self.pos);
-        self.transform = self.transform * rotate(self.rotation.s, self.rotation.axis());
-
-        match self.shape {
-            Shape::Cube { dimensions } => {
-                self.transform = self.transform * scale(&dimensions);
-            }
-            Shape::Sphere { radius } => {
-                self.transform = self.transform * scale(&vec3(radius, radius, radius));
-            }
-            _ => {}
         }
+    }
+    pub fn add_mesh(&mut self, mesh: Mesh) {
+        self.meshes.push(mesh);
     }
 
     pub fn prepere_render_resources(&mut self) {
@@ -209,7 +178,7 @@ impl Model {
     }
 }
 
-use crate::src::player::{Bone, Player};
+//use crate::src::player::{Bone, Player};
 use std::path::Path;
 
 extern crate collada;
@@ -237,14 +206,9 @@ fn get_attributs(obj: &collada::Object, index: &collada::VTNIndex) -> Vertex {
 }
 pub fn from_dae(path: &Path) -> Model {
     let doc = collada::document::ColladaDocument::from_path(path).unwrap();
-    let mut model = Model::default;
+    let mut model = Model::DEFAULT;
     for obj in doc.get_obj_set().unwrap().objects {
         let mut mesh = Mesh::DEFAULT;
-        println!(
-            "num of verts {}\nnum of weights {}",
-            obj.vertices.len(),
-            obj.joint_weights.len()
-        );
         for geometry in &obj.geometry {
             for primitive in &geometry.mesh {
                 match primitive {
@@ -277,29 +241,6 @@ pub fn from_dae(path: &Path) -> Model {
 
         model.meshes.push(mesh);
     }
-    // load skeletal data if any
-    /*  let skeletons = collada::document::ColladaDocument::get_skeletons(&doc).unwrap();
-    // assuming theres only one skeleton in file
-    for skeleton in &skeletons {
-        for i in 0..skeleton.joints.len() {
-            let bone = Bone {
-                name: skeleton.joints[i].name.clone(),
-                parent: skeleton.joints[i].parent_index,
-                transform: Mat4 {
-                    data: skeleton.joints[i].inverse_bind_pose,
-                },
-                default: Mat4 {
-                    data: skeleton.bind_poses[i],
-                },
-            };
-            println!(
-                "id: {}  parent index: {}  index {}",
-                bone.name, skeleton.joints[i].parent_index, i
-            );
-            player.skeleton.push(bone);
-        }
-        //  println!("bone id {}", joint.name);
-    } */
 
     model
 }
@@ -315,14 +256,11 @@ pub fn from_gltf(path: &str, model: &mut Model) {
 
         let primitives = mesh.primitives();
         primitives.for_each(|primitive| {
-            // let indices = primitive.indices();
             let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
             //temporary array to hold position data
             let mut tmp_positions: Vec<Vec3> = vec![];
             // extract positions
-            if let Some(positions) = reader.read_positions()
-            /* .map(|v| dbg!(v)) */
-            {
+            if let Some(positions) = reader.read_positions() {
                 for pos in positions {
                     tmp_positions.push(Vec3 {
                         x: pos[0],
@@ -334,9 +272,7 @@ pub fn from_gltf(path: &str, model: &mut Model) {
             //temporary storage for normals
             let mut tmp_normals: Vec<Vec3> = vec![];
             //extract normals
-            if let Some(normals) = reader.read_normals()
-            /* .map(|n| dbg!(n)) */
-            {
+            if let Some(normals) = reader.read_normals() {
                 for norm in normals {
                     tmp_normals.push(Vec3 {
                         x: norm[0],
@@ -350,7 +286,6 @@ pub fn from_gltf(path: &str, model: &mut Model) {
             //extract
             if let Some(gltf::mesh::util::ReadTexCoords::F32(gltf::accessor::Iter::Standard(itr))) =
                 reader.read_tex_coords(0)
-            /* .map(|tc| dbg!(tc)) */
             {
                 for texcoord in itr {
                     tmp_tex_coords.push(Vec2 {
@@ -363,7 +298,6 @@ pub fn from_gltf(path: &str, model: &mut Model) {
             //extract
             if let Some(gltf::mesh::util::ReadIndices::U32(gltf::accessor::Iter::Standard(itr))) =
                 reader.read_indices()
-            /* .map(|i| dbg!(i)) */
             {
                 for index in itr {
                     tmp_mesh.indices.push(index);

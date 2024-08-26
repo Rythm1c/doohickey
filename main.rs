@@ -55,14 +55,13 @@ fn main() {
 
         for event in event_pump.poll_iter() {
             input::window_input(&event, &mut win_info);
-            input::mouse_input(&event, &mut world.cam);
+            input::mouse_input(&event, &mut world.camera);
         }
 
         world
             .update_cam(win_info.get_ratio())
             .update_animations(delta)
             .update_physics()
-            .update_objects()
             .update_shadows();
 
         unsafe {
