@@ -2,6 +2,7 @@ pub mod animations;
 pub mod assets;
 pub mod camera;
 pub mod engine;
+pub mod foreign;
 pub mod framebuffer;
 pub mod input;
 pub mod lights;

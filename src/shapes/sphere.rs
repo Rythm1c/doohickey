@@ -151,12 +151,7 @@ pub fn load_icosphere(divs: i32, color: Vec3) -> Mesh {
 }
 
 fn divide(v1: Vertex, v2: Vertex) -> Vertex {
-    let mut v3 = Vertex {
-        pos: Vec3::ZERO,
-        norm: Vec3::ZERO,
-        tex: Vec2::ZERO,
-        col: Vec3::ONE,
-    };
+    let mut v3 = Vertex::DEFAULT;
 
     v3.pos.x = v1.pos.x + v2.pos.x;
     v3.pos.y = v1.pos.y + v2.pos.y;

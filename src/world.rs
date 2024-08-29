@@ -1,7 +1,8 @@
 use crate::math::{mat4::*, vec3::*};
-use crate::src::shapes::{cube::*, sphere::*};
+use crate::src::shapes::{cube::load_cube, sphere::*, torus::torus};
 use crate::src::{
-    animations, assets::Assets, camera, lights, model::*, object::*, physics, shaders, shadows,
+    animations, assets::Assets, camera, foreign::*, lights, model::*, object::*, physics, shaders,
+    shadows,
 };
 
 use std::path::Path;
@@ -20,8 +21,8 @@ impl World {
     pub fn new(ratio: f32) -> Result<World, String> {
         let camera = camera::Camera::new(
             vec3(0.0, 0.0, 1.0),
-            vec3(0.0, 1.0, 0.0),
-            vec3(0.0, 5.0, -30.0),
+            vec3(0.0, 5.0, 0.0),
+            vec3(0.0, 20.0, -30.0),
             0.5,
         )
         .unwrap();
@@ -42,56 +43,66 @@ impl World {
         model.add_mesh(load_sphere(100, 100, vec3(1.0, 1.0, 1.0)));
         model.squares = 20.0;
         model.checkered = true;
-        let mut character = Object::new();
+        let mut object = Object::new();
 
-        character
+        object
             .change_pos(vec3(4.0, 30.0, 10.0))
             .change_shape(Shape::Sphere { radius: (4.0) })
             .update_model(model);
-        assets.add_object("ball", character.clone());
+        assets.add_object("ball", object.clone());
 
         model = Model::DEFAULT;
         model.add_mesh(load_icosphere(3, vec3(1.0, 0.35, 0.06)));
-        character
+        object
             .change_pos(vec3(15.0, 40.0, 10.0))
             .change_shape(Shape::Sphere { radius: (7.0) })
             .update_model(model);
-        assets.add_object("ball2", character.clone());
+        assets.add_object("ball2", object.clone());
 
         model = Model::DEFAULT;
         model.add_mesh(load_cube(false, vec3(1.0, 0.13, 0.48)));
-        character
-            .change_pos(vec3(-15.0, 40.0, 10.0))
+        object
+            .change_pos(vec3(-15.0, 40.0, 20.0))
             .change_shape(Shape::Cube {
                 dimensions: vec3(6.0, 6.0, 6.0),
             })
             .update_model(model);
-        assets.add_object("cube", character.clone());
+        assets.add_object("cube", object.clone());
 
         model = Model::DEFAULT;
         model.add_mesh(load_cube(true, Vec3::ZERO));
-        character
+        object
             .change_pos(vec3(5.0, 5.0, 5.0))
             .change_shape(Shape::Cube {
                 dimensions: Vec3::new(5.0, 5.0, 5.0),
             })
             .update_model(model);
-        assets.add_object("cube2", character.clone());
+        assets.add_object("cube2", object.clone());
+
+        model = Model::DEFAULT;
+        model.add_mesh(torus(50, vec3(0.64, 1.0, 0.13)));
+        object
+            .change_pos(vec3(-15.0, 5.0, -5.0))
+            .change_shape(Shape::Cube {
+                dimensions: Vec3::new(10.0, 10.0, 10.0),
+            })
+            .update_model(model);
+        assets.add_object("torus", object.clone());
 
         model = Model::DEFAULT;
         model.add_mesh(load_cube(false, vec3(0.9, 0.9, 0.9)));
         model.sub_dvd = true;
         model.lines = 70.0;
-        character
+        object
             .change_pos(vec3(0.0, -2.0, 0.0))
             .change_shape(Shape::Cube {
                 dimensions: Vec3::new(1000.0, 2.0, 1000.0),
             })
             .update_model(model.clone());
-        assets.add_object("platform", character);
+        assets.add_object("platform", object);
 
-        assets.characters.values_mut().for_each(|character| {
-            character.model.prepere_render_resources();
+        assets.objects.values_mut().for_each(|object| {
+            object.model.prepere_render_resources();
         });
 
         assets.add_pointlight(lights::PointLight {
@@ -119,7 +130,7 @@ impl World {
             .change_shape(Shape::Cube {
                 dimensions: vec3(0.1, 0.1, 0.1),
             })
-            .update_model(from_dae(Path::new("Running.dae"), vec3(1.0, 1.0, 1.0)));
+            .update_model(from_extern_src(Path::new("Running.fbx")));
         player.model.prepere_render_resources();
 
         let sun = lights::DirectionalLight {
@@ -127,6 +138,9 @@ impl World {
             color: vec3(1.0, 1.0, 1.0),
             dir: vec3(0.3, -0.7, 0.4),
         };
+        //from_dae(Path::new("Running.dae"), vec3(1.0, 1.0, 1.0))
+
+        let projection = perspective(45.0, ratio, 0.1, 1000.0);
 
         Ok(World {
             sun,
@@ -136,7 +150,7 @@ impl World {
             s_obj,
             assets,
             elapsed: 0.0,
-            projection: perspective(45.0, ratio, 0.1, 1000.0),
+            projection,
         })
     }
     pub fn update_cam(&mut self, ratio: f32) -> &mut Self {
@@ -170,22 +184,22 @@ impl World {
         physics::collision_sphere_sphere(
             String::from("ball"),
             String::from("ball2"),
-            &mut self.assets.characters,
+            &mut self.assets.objects,
         );
         physics::collision_sphere_aabb(
             String::from("ball"),
             String::from("platform"),
-            &mut self.assets.characters,
+            &mut self.assets.objects,
         );
         physics::collision_sphere_aabb(
             String::from("ball2"),
             String::from("platform"),
-            &mut self.assets.characters,
+            &mut self.assets.objects,
         );
         physics::collision_aabb_aabb(
             String::from("cube"),
             String::from("platform"),
-            &mut self.assets.characters,
+            &mut self.assets.objects,
         );
 
         physics::gravity(&mut self.assets.get_object("cube").transform.velocity);
@@ -208,13 +222,13 @@ impl World {
             .update_mat4("model", self.player.transform.get());
         self.player.model.render();
 
-        self.assets.characters.values_mut().for_each(|character| {
-            self.s_shadow
-                .update_mat4("model", character.transform.get());
-            character.model.render();
+        self.assets.objects.values_mut().for_each(|object| {
+            self.s_shadow.update_mat4("model", object.transform.get());
+            object.model.render();
         });
         // end of render
         shadows::Shadow::detach();
+
         self
     }
 
@@ -243,9 +257,9 @@ impl World {
         self.player.model.render();
 
         // object specific
-        self.assets.characters.values_mut().for_each(|character| {
-            model_to_shader(character, &mut self.s_obj);
-            character.model.render();
+        self.assets.objects.values_mut().for_each(|object| {
+            model_to_shader(object, &mut self.s_obj);
+            object.model.render();
         })
     }
 }

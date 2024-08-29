@@ -14,11 +14,10 @@ pub fn load_cube(color_cube: bool, color: Vec3) -> Mesh {
     }
 
     if color_cube {
-        for face_col in 0..6 {
-            mesh.vertices[face_col * 4 + 0].col = FACE_COLORS[face_col];
-            mesh.vertices[face_col * 4 + 1].col = FACE_COLORS[face_col];
-            mesh.vertices[face_col * 4 + 2].col = FACE_COLORS[face_col];
-            mesh.vertices[face_col * 4 + 3].col = FACE_COLORS[face_col];
+        for i in 0..6 {
+            for j in 0..4 {
+                mesh.vertices[i * 4 + j].col = FACE_COLORS[i];
+            }
         }
     }
 
@@ -43,37 +42,7 @@ pub fn cube_sphere(divs: u32, color_cube: bool, color: Vec3) -> Mesh {
         mesh.vertices.push(p1);
     }
 
-    if color_cube {
-        for face_col in 0..6 {
-            mesh.vertices[face_col * 6 + 0].col = FACE_COLORS[face_col];
-            mesh.vertices[face_col * 6 + 1].col = FACE_COLORS[face_col];
-            mesh.vertices[face_col * 6 + 2].col = FACE_COLORS[face_col];
-
-            mesh.vertices[face_col * 6 + 4].col = FACE_COLORS[face_col];
-            mesh.vertices[face_col * 6 + 4].col = FACE_COLORS[face_col];
-            mesh.vertices[face_col * 6 + 5].col = FACE_COLORS[face_col];
-        }
-    }
-
-    for _ in 0..divs {
-        let mut final_mesh = Mesh::DEFAULT;
-        let range = 0..(mesh.vertices.len() / 3);
-        for face in range {
-            let v1 = mesh.vertices[face * 3 + 0];
-            let v2 = mesh.vertices[face * 3 + 1];
-            let v3 = mesh.vertices[face * 3 + 2];
-
-            let p1 = divide(v1, v2);
-            let p2 = divide(v1, v3);
-            let p3 = divide(v2, v3);
-
-            add_tri(&mut final_mesh, v1, p1, p2);
-            add_tri(&mut final_mesh, p1, v2, p3);
-            add_tri(&mut final_mesh, p1, p2, p3);
-            add_tri(&mut final_mesh, p2, p3, v3);
-        }
-        mesh = final_mesh;
-    }
+    // work in progress....
 
     mesh
 }

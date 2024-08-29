@@ -2,32 +2,32 @@ use crate::src::{lights::PointLight, object::Object};
 use std::collections::HashMap;
 
 pub struct Assets {
-    pub characters: HashMap<String, Object>,
+    pub objects: HashMap<String, Object>,
     pub point_lights: Vec<PointLight>,
 }
 
 impl Assets {
     pub fn new() -> Self {
         Self {
-            characters: HashMap::new(),
+            objects: HashMap::new(),
             point_lights: Vec::new(),
         }
     }
 
     pub fn add_object(&mut self, n: &str, o: Object) {
-        if self.characters.contains_key(&String::from(n)) {
+        if self.objects.contains_key(&String::from(n)) {
             println!("name already exists!");
         } else {
-            self.characters.insert(String::from(n), o);
+            self.objects.insert(String::from(n), o);
         }
     }
     pub fn get_object(&mut self, n: &str) -> &mut Object {
-        self.characters.get_mut(&String::from(n)).unwrap()
+        self.objects.get_mut(&String::from(n)).unwrap()
     }
 
     pub fn remove_object(&mut self, n: String) {
-        if self.characters.contains_key(&n) {
-            self.characters.remove(&n);
+        if self.objects.contains_key(&n) {
+            self.objects.remove(&n);
         } else {
             println!("no character with such name exists!")
         }
