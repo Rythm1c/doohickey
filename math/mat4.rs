@@ -5,6 +5,7 @@ pub struct Mat4 {
     pub data: [[f32; 4]; 4],
 }
 
+#[allow(dead_code)]
 pub fn mat4(
     xx: f32,
     xy: f32,
@@ -52,6 +53,9 @@ impl Mat4 {
                 [0.0, 0.0, 0.0, 1.0],
             ],
         }
+    }
+    pub fn from(values: &[[f32; 4]; 4]) -> Self {
+        Self { data: *values }
     }
 }
 use std::ops::*;
@@ -133,8 +137,8 @@ impl Mul<Mat4> for Mat4 {
         }
     }
 }
-
-pub fn column_to_row_major(m: &Mat4) -> Mat4 {
+#[allow(dead_code)]
+pub fn transpose(m: &Mat4) -> Mat4 {
     Mat4 {
         data: [
             [m.data[0][0], m.data[1][0], m.data[2][0], m.data[3][0]],
@@ -145,6 +149,7 @@ pub fn column_to_row_major(m: &Mat4) -> Mat4 {
     }
 }
 
+#[allow(dead_code)]
 pub fn translate(p: &Vec3) -> Mat4 {
     Mat4 {
         data: [
@@ -165,6 +170,7 @@ pub fn scale(s: &Vec3) -> Mat4 {
         ],
     }
 }
+#[allow(dead_code)]
 //rotation matrices using euler angles
 ///rotation around the x-axis using specified angle
 pub fn rotation_x(angle: f32) -> Mat4 {
@@ -183,6 +189,7 @@ pub fn rotation_x(angle: f32) -> Mat4 {
         ],
     };
 }
+#[allow(dead_code)]
 ///rotation around the y-axis using specified angle
 pub fn rotation_y(angle: f32) -> Mat4 {
     let xx = radians(angle).cos();
@@ -200,6 +207,7 @@ pub fn rotation_y(angle: f32) -> Mat4 {
         ],
     };
 }
+#[allow(dead_code)]
 ///rotation around the Z-axis using specified angle
 pub fn rotation_z(angle: f32) -> Mat4 {
     let xx = radians(angle).cos();

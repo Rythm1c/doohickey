@@ -4,7 +4,7 @@ use crate::{
 };
 
 pub fn torus(divs: u32, col: Vec3) -> Mesh {
-    let mut mesh = Mesh::DEFAULT;
+    let mut mesh = Mesh::default();
 
     let angle = 360.0 / (divs as f32 - 1.0);
 

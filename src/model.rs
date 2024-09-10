@@ -1,6 +1,6 @@
-//extern crate tobj;
 use crate::gl;
 use crate::gl::types::*;
+use crate::math::mat4::Mat4;
 use crate::math::{vec2::*, vec3::*};
 
 #[repr(C)]
@@ -10,6 +10,9 @@ pub struct Vertex {
     pub norm: Vec3,
     pub tex: Vec2,
     pub col: Vec3,
+
+    pub weights: [f32; 4],
+    pub bone_ids: [i32; 4],
 }
 impl Vertex {
     pub const DEFAULT: Self = Self {
@@ -17,9 +20,12 @@ impl Vertex {
         norm: Vec3::ZERO,
         tex: Vec2::ZERO,
         col: Vec3::ONE,
+
+        weights: [0.0; 4],
+        bone_ids: [-1; 4],
     };
 }
-/// mostly for collision detection
+/// mostly for collision detection  
 /// specify the most appropriate shape to determine the bounding volume for collisions
 #[derive(PartialEq, Clone, Copy)]
 pub enum Shape {
@@ -28,12 +34,18 @@ pub enum Shape {
     None,
     /*  Quad, */
 }
+#[derive(Clone)]
+pub struct BoneInfo {
+    pub name: String,
+    pub parent: usize,
+    pub bind_pose: Mat4,
+}
 
-#[derive(PartialEq, Clone)]
+#[derive(Clone)]
 pub struct Mesh {
-    //containers for render data
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,
+
     vao: u32,
     vbo: u32,
     ebo: u32,
@@ -47,15 +59,18 @@ pub struct Model {
     pub squares: f32,
     pub sub_dvd: bool,
     pub lines: f32,
+    pub skeleton: Vec<BoneInfo>,
 }
 impl Mesh {
-    pub const DEFAULT: Self = Self {
-        vertices: Vec::new(),
-        indices: Vec::new(),
-        vao: 0,
-        vbo: 0,
-        ebo: 0,
-    };
+    pub fn default() -> Self {
+        Self {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+            vao: 0,
+            vbo: 0,
+            ebo: 0,
+        }
+    }
 
     pub fn create(&mut self) {
         unsafe {
@@ -67,6 +82,7 @@ impl Mesh {
 
             let float_size = std::mem::size_of::<f32>();
             let vert_size = std::mem::size_of::<Vertex>();
+            //let int_size = std::mem::size_of::<i32>();
 
             gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
             gl::BufferData(
@@ -124,6 +140,26 @@ impl Mesh {
                 (8 * float_size) as *const GLvoid,
             );
 
+            // for animations
+            gl::EnableVertexAttribArray(4);
+            gl::VertexAttribPointer(
+                4,
+                4,
+                gl::FLOAT,
+                gl::FALSE,
+                vert_size as i32,
+                (11 * float_size) as *const GLvoid,
+            );
+
+            gl::EnableVertexAttribArray(5);
+            gl::VertexAttribIPointer(
+                5,
+                4,
+                gl::INT,
+                vert_size as i32,
+                (15 * float_size) as *const GLvoid,
+            );
+
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
             gl::BindVertexArray(0);
         }
@@ -160,14 +196,18 @@ impl Drop for Mesh {
     }
 }
 impl Model {
-    pub const DEFAULT: Self = Self {
-        meshes: Vec::new(),
-        textured: false,
-        checkered: false,
-        squares: 0.0,
-        sub_dvd: false,
-        lines: 0.0,
-    };
+    pub fn default() -> Self {
+        Self {
+            meshes: Vec::new(),
+            textured: false,
+            checkered: false,
+            squares: 0.0,
+            sub_dvd: false,
+            lines: 0.0,
+
+            skeleton: Vec::new(),
+        }
+    }
 
     pub fn add_mesh(&mut self, mesh: Mesh) {
         self.meshes.push(mesh);
@@ -192,18 +232,27 @@ pub fn add_tri(mesh: &mut Mesh, p1: Vertex, p2: Vertex, p3: Vertex) {
         norm: normal,
         tex: p1.tex,
         col: p1.col,
+
+        weights: p1.weights,
+        bone_ids: p1.bone_ids,
     });
     mesh.vertices.push(Vertex {
         pos: p2.pos,
         norm: normal,
         tex: p2.tex,
         col: p2.col,
+
+        weights: p2.weights,
+        bone_ids: p2.bone_ids,
     });
     mesh.vertices.push(Vertex {
         pos: p3.pos,
         norm: normal,
         tex: p3.tex,
         col: p3.col,
+
+        weights: p3.weights,
+        bone_ids: p3.bone_ids,
     });
 }
 

@@ -31,7 +31,7 @@ impl Camera {
         })
     }
 
-    pub fn get_view_mat(&self) -> Mat4 {
+    pub fn get_view(&self) -> Mat4 {
         look_at(&self.pos, &(self.pos + self.front), &self.up)
     }
 

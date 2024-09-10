@@ -1,5 +1,6 @@
 use crate::math::{mat4::*, quaternion::*, vec3::*};
 use crate::src::model::{Model, Shape};
+//#[allow(dead_code)]
 
 #[derive(Clone)]
 pub struct Object {
@@ -11,7 +12,7 @@ impl Object {
     pub fn new() -> Self {
         Self {
             transform: Transform::DEFAULT,
-            model: Model::DEFAULT,
+            model: Model::default(),
         }
     }
     pub fn change_pos(&mut self, n_pos: Vec3) -> &mut Self {
@@ -34,15 +35,13 @@ pub struct Transform {
     pub velocity: Vec3,
     pub shape: Shape,
     //for rotations
-    pub axis: Vec3,
-    pub angle: f32,
+    pub orientation: Quat,
 }
 
 impl Transform {
     const DEFAULT: Self = Self {
         pos: Vec3::ZERO,
-        axis: Vec3::ZERO,
-        angle: 0.0,
+        orientation: Quat::ZERO,
         velocity: Vec3::ZERO,
         shape: Shape::None,
     };
@@ -50,8 +49,7 @@ impl Transform {
         Self {
             pos,
             shape,
-            angle: 0.0,
-            axis: Vec3::ZERO,
+            orientation: Quat::ZERO,
             velocity: Vec3::ZERO,
         }
     }
@@ -60,9 +58,9 @@ impl Transform {
 
         let translation = translate(&self.pos);
 
-        let rotation = rotate(self.angle, self.axis);
+        let rotation = rotate(self.orientation);
 
-        let size = match self.shape {
+        let resize = match self.shape {
             Shape::Cube { dimensions } => scale(&dimensions),
 
             Shape::Sphere { radius } => scale(&vec3(radius, radius, radius)),
@@ -70,6 +68,6 @@ impl Transform {
             Shape::None => scale(&Vec3::ZERO),
         };
 
-        translation * rotation * size
+        translation * rotation * resize
     }
 }

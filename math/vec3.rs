@@ -20,12 +20,8 @@ impl Vec3 {
         z: 1.0,
     };
 
-    pub fn new(_x: f32, _y: f32, _z: f32) -> Self {
-        Self {
-            x: _x,
-            y: _y,
-            z: _z,
-        }
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
+        Self { x, y, z }
     }
     // vector length
     pub fn len(&self) -> f32 {
@@ -41,10 +37,14 @@ impl Vec3 {
             z: self.z * inverse_legth,
         }
     }
+
+    pub fn mix(&self, other: Self, c: f32) -> Self {
+        (*self * (1.0 - c)) + (other * c)
+    }
 }
 
-pub fn vec3(_x: f32, _y: f32, _z: f32) -> Vec3 {
-    Vec3::new(_x, _y, _z)
+pub fn vec3(x: f32, y: f32, z: f32) -> Vec3 {
+    Vec3::new(x, y, z)
 }
 // dot product with another vector
 pub fn dot(v1: &Vec3, v2: &Vec3) -> f32 {

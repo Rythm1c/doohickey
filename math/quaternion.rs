@@ -1,4 +1,4 @@
-use crate::math::{mat4::*, misc::*, vec3::*};
+use crate::math::{mat4::*, vec3::*};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Quat {
@@ -8,13 +8,8 @@ pub struct Quat {
     pub s: f32,
 }
 
-pub fn quat(_x: f32, _y: f32, _z: f32, _s: f32) -> Quat {
-    Quat {
-        x: (_x),
-        y: (_y),
-        z: (_z),
-        s: (_s),
-    }
+pub fn quat(x: f32, y: f32, z: f32, s: f32) -> Quat {
+    Quat { x, y, z, s }
 }
 
 impl Quat {
@@ -25,13 +20,23 @@ impl Quat {
         s: 0.0,
     };
 
-    pub fn new(_x: f32, _y: f32, _z: f32, _s: f32) -> Self {
-        Self {
-            x: (_x),
-            y: (_y),
-            z: (_z),
-            s: (_s),
-        }
+    pub fn new(x: f32, y: f32, z: f32, s: f32) -> Self {
+        Self { x, y, z, s }
+    }
+    /// halves the angle and creates a quaternion from it and the specified axis  
+    /// also axis is normalized so no worries
+    pub fn create(angle: f32, axis: Vec3) -> Self {
+        let s = radians(angle / 2.0).sin();
+        let c = radians(angle / 2.0).cos();
+
+        let unit_axis = axis.unit();
+
+        let x = s * unit_axis.x;
+        let y = s * unit_axis.y;
+        let z = s * unit_axis.z;
+        let s = c;
+
+        Self { x, y, z, s }
     }
 
     pub fn norm(&self) -> f32 {
@@ -56,12 +61,18 @@ impl Quat {
         }
     }
 
+    pub fn nlerp(&self, other: Self, c: f32) -> Quat {
+        (*self + (other - *self) * c).unit()
+    }
+
     pub fn axis(&self) -> Vec3 {
         vec3(self.x, self.y, self.z)
     }
 }
 
 use std::ops::*;
+
+use super::misc::radians;
 impl Sub for Quat {
     type Output = Quat;
     fn sub(self, rhs: Self) -> Self::Output {
@@ -121,15 +132,7 @@ impl Mul<Quat> for Quat {
 }
 /// rotate around a specified axis
 /// creates a rotation matrix from a quaternion
-pub fn rotate(angle: f32, axis: Vec3) -> Mat4 {
-    let s = radians(angle / 2.0).sin();
-
-    let q = Quat::new(
-        axis.x * s,
-        axis.y * s,
-        axis.z * s,
-        radians(angle / 2.0).cos(),
-    );
+pub fn rotate(q: Quat) -> Mat4 {
     // first row
     let xx = 1.0 - 2.0 * (q.y.powf(2.0) + q.z.powf(2.0));
     let xy = 2.0 * (q.x * q.y - q.s * q.z);

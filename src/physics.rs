@@ -8,18 +8,6 @@ struct AABB {
     max: Vec3,
 }
 
-fn radius(shape: model::Shape) -> Result<f32, String> {
-    match shape {
-        model::Shape::Sphere { radius } => Ok(radius),
-        _ => Err(String::from("not a sphere!")),
-    }
-}
-fn size(shape: model::Shape) -> Result<Vec3, String> {
-    match shape {
-        model::Shape::Cube { dimensions } => Ok(dimensions),
-        _ => Err(String::from("not a cube!")),
-    }
-}
 //get a bounding box
 fn get_aabb(pos: Vec3, size: Vec3) -> AABB {
     let mut minimum = vec3(0.0, 0.0, 0.0);
@@ -161,5 +149,17 @@ pub fn collision_aabb_aabb(
         new_velocity = models.get_mut(&aabb1).unwrap().transform.velocity * 0.8;
         models.get_mut(&aabb1).unwrap().transform.pos = difference + pos1;
         models.get_mut(&aabb1).unwrap().transform.velocity = reflect(&new_velocity, &normal);
+    }
+}
+fn radius(shape: model::Shape) -> Result<f32, String> {
+    match shape {
+        model::Shape::Sphere { radius } => Ok(radius),
+        _ => Err(String::from("not a sphere!")),
+    }
+}
+fn size(shape: model::Shape) -> Result<Vec3, String> {
+    match shape {
+        model::Shape::Cube { dimensions } => Ok(dimensions),
+        _ => Err(String::from("not a cube!")),
     }
 }

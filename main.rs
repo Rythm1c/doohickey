@@ -50,6 +50,8 @@ fn main() {
 
     let mut delta = 0.0;
 
+    //println!("test {}", 10.0 % 3.5);
+
     while win_info.running {
         let now = Instant::now();
 
@@ -69,7 +71,9 @@ fn main() {
             gl::ClearColor(0.1, 0.1, 0.1, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
+
         world.render();
+        world.render_skeletal_animations();
 
         window.gl_swap_window();
 
