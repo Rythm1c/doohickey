@@ -3,9 +3,8 @@ extern crate sdl2;
 
 use src::{
     input::{self, WinInfo},
-    world,
+    timer, world,
 };
-use std::time::Instant;
 
 mod math;
 mod src;
@@ -46,14 +45,12 @@ fn main() {
 
     let mut event_pump = sdl.event_pump().unwrap();
 
-    let mut world = world::World::new(win_info.get_ratio()).unwrap();
+    let mut world = world::World::new(win_info.get_ratio());
 
-    let mut delta = 0.0;
-
-    //println!("test {}", 10.0 % 3.5);
+    let mut timer = timer::Timer::new();
 
     while win_info.running {
-        let now = Instant::now();
+        timer.update();
 
         for event in event_pump.poll_iter() {
             input::window_input(&event, &mut win_info);
@@ -62,7 +59,7 @@ fn main() {
 
         world
             .update_cam(win_info.get_ratio())
-            .update_animations(delta)
+            .update_animations(&timer)
             .update_physics()
             .update_shadows();
 
@@ -77,7 +74,6 @@ fn main() {
 
         window.gl_swap_window();
 
-        delta = now.elapsed().as_secs_f32();
-        //println!("fps : {}", (1.0 / delta));
+        //println!("fps : {}", (1.0 / timer.delta));
     }
 }

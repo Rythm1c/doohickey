@@ -1,5 +1,5 @@
 use crate::math::vec3::*;
-use crate::src::model;
+
 use crate::src::object;
 use std::collections::HashMap;
 
@@ -45,8 +45,8 @@ pub fn collision_sphere_sphere(
         (models.get(&s1).unwrap().transform.pos - models.get(&s2).unwrap().transform.pos).len();
     // get the average of size attributes
     // since the Model struct doesn't have a radius member
-    let radius1 = radius(models.get(&s1).unwrap().transform.shape).unwrap();
-    let radius2 = radius(models.get(&s2).unwrap().transform.shape).unwrap();
+    let radius1 = radius(&models.get(&s1).unwrap().transform.size);
+    let radius2 = radius(&models.get(&s2).unwrap().transform.size);
     let sum_radii = radius1 + radius2;
     // if distance between objects(spheres) is less than the sum of both radii
     // then a collision  has occured
@@ -59,10 +59,10 @@ pub fn collision_sphere_sphere(
         models.get_mut(&s1).unwrap().transform.pos = s2_pos + (ab * -sum_radii);
         models.get_mut(&s2).unwrap().transform.pos = s1_pos + (ab * sum_radii);
         // reflect velocity and reduce magnitude
-        let rv1 = reflect(&models.get_mut(&s1).unwrap().transform.velocity, &(-ab));
-        let rv2 = reflect(&models.get_mut(&s2).unwrap().transform.velocity, &ab);
-        models.get_mut(&s1).unwrap().transform.velocity = rv1 * 0.8;
-        models.get_mut(&s2).unwrap().transform.velocity = rv2 * 0.8;
+        let rv1 = reflect(&models.get_mut(&s1).unwrap().velocity, &(-ab));
+        let rv2 = reflect(&models.get_mut(&s2).unwrap().velocity, &ab);
+        models.get_mut(&s1).unwrap().velocity = rv1 * 0.8;
+        models.get_mut(&s2).unwrap().velocity = rv2 * 0.8;
     }
 }
 // check collision betweem sphere and axis aligned bounding box
@@ -71,8 +71,8 @@ pub fn collision_sphere_aabb(
     aabb: String,
     models: &mut HashMap<String, object::Object>,
 ) {
-    let radius = radius(models.get(&sphere).unwrap().transform.shape).unwrap();
-    let aabb_size = size(models.get(&aabb).unwrap().transform.shape).unwrap();
+    let radius = radius(&models.get(&sphere).unwrap().transform.size);
+    let aabb_size = models.get(&aabb).unwrap().transform.size;
 
     let sphere_pos = models.get(&sphere).unwrap().transform.pos;
     let aabb_pos = models.get(&aabb).unwrap().transform.pos;
@@ -88,10 +88,10 @@ pub fn collision_sphere_aabb(
         // BA=AO+BO=-OB+OA
         difference = sphere_pos - closest_point;
         let normal = difference.unit();
-        let new_velocity = models.get(&sphere).unwrap().transform.velocity * 0.8;
+        let new_velocity = models.get(&sphere).unwrap().velocity * 0.8;
 
         models.get_mut(&sphere).unwrap().transform.pos = sphere_pos + normal * radius - difference;
-        models.get_mut(&sphere).unwrap().transform.velocity = reflect(&new_velocity, &normal);
+        models.get_mut(&sphere).unwrap().velocity = reflect(&new_velocity, &normal);
     }
 }
 //check and resolve collisions between two axis aligned bounding boxes
@@ -102,8 +102,8 @@ pub fn collision_aabb_aabb(
 ) {
     let pos1 = models.get(&aabb1).unwrap().transform.pos;
     let pos2 = models.get(&aabb2).unwrap().transform.pos;
-    let size1 = size(models.get(&aabb1).unwrap().transform.shape).unwrap();
-    let size2 = size(models.get(&aabb2).unwrap().transform.shape).unwrap();
+    let size1 = models.get(&aabb1).unwrap().transform.size;
+    let size2 = models.get(&aabb2).unwrap().transform.size;
 
     let box1 = get_aabb(pos1.clone(), size1.clone());
     let box2 = get_aabb(pos2.clone(), size2.clone());
@@ -146,20 +146,11 @@ pub fn collision_aabb_aabb(
             difference = vec3(0.0, 0.0, -dz);
         }
         //finally update
-        new_velocity = models.get_mut(&aabb1).unwrap().transform.velocity * 0.8;
+        new_velocity = models.get_mut(&aabb1).unwrap().velocity * 0.8;
         models.get_mut(&aabb1).unwrap().transform.pos = difference + pos1;
-        models.get_mut(&aabb1).unwrap().transform.velocity = reflect(&new_velocity, &normal);
+        models.get_mut(&aabb1).unwrap().velocity = reflect(&new_velocity, &normal);
     }
 }
-fn radius(shape: model::Shape) -> Result<f32, String> {
-    match shape {
-        model::Shape::Sphere { radius } => Ok(radius),
-        _ => Err(String::from("not a sphere!")),
-    }
-}
-fn size(shape: model::Shape) -> Result<Vec3, String> {
-    match shape {
-        model::Shape::Cube { dimensions } => Ok(dimensions),
-        _ => Err(String::from("not a cube!")),
-    }
+fn radius(size: &Vec3) -> f32 {
+    (size.x + size.y + size.z) / 3.0
 }

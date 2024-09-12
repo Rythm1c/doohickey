@@ -2,7 +2,7 @@ use crate::math::{mat4::*, quaternion::Quat, vec3::*};
 use crate::src::shapes::{cube::load_cube, sphere::*, torus::torus};
 use crate::src::{
     animations::*, assets::Assets, camera, foreign::*, lights, model::*, object::*, physics,
-    shaders, shadows,
+    shaders, shadows, timer::Timer,
 };
 
 use std::path::Path;
@@ -14,11 +14,11 @@ pub struct World {
     projection: Mat4,
     sun: lights::DirectionalLight,
     assets: Assets,
-    elapsed: f32,
+    animator: Animator,
 }
 
 impl World {
-    pub fn new(ratio: f32) -> Result<World, String> {
+    pub fn new(ratio: f32) -> Self {
         let camera = camera::Camera::new(
             vec3(0.0, 0.0, 1.0),
             vec3(0.0, 5.0, 0.0),
@@ -56,7 +56,7 @@ impl World {
 
         object
             .change_pos(vec3(4.0, 30.0, 10.0))
-            .change_shape(Shape::Sphere { radius: (4.0) })
+            .change_size(vec3(4.0, 4.0, 4.0))
             .update_model(model);
         assets.add_object("ball", object.clone());
 
@@ -64,7 +64,7 @@ impl World {
         model.add_mesh(load_icosphere(3, vec3(1.0, 0.35, 0.06)));
         object
             .change_pos(vec3(15.0, 40.0, 10.0))
-            .change_shape(Shape::Sphere { radius: (7.0) })
+            .change_size(vec3(7.0, 7.0, 7.0))
             .update_model(model);
         assets.add_object("ball2", object.clone());
 
@@ -72,9 +72,7 @@ impl World {
         model.add_mesh(load_cube(false, vec3(1.0, 0.13, 0.48)));
         object
             .change_pos(vec3(-15.0, 40.0, 20.0))
-            .change_shape(Shape::Cube {
-                dimensions: vec3(6.0, 6.0, 6.0),
-            })
+            .change_size(vec3(6.0, 6.0, 6.0))
             .update_model(model);
         assets.add_object("cube", object.clone());
 
@@ -82,9 +80,7 @@ impl World {
         model.add_mesh(load_cube(true, Vec3::ZERO));
         object
             .change_pos(vec3(5.0, 5.0, 5.0))
-            .change_shape(Shape::Cube {
-                dimensions: Vec3::new(5.0, 5.0, 5.0),
-            })
+            .change_size(vec3(5.0, 5.0, 5.0))
             .update_model(model);
         assets.add_object("cube2", object.clone());
 
@@ -92,9 +88,7 @@ impl World {
         model.add_mesh(torus(50, vec3(0.64, 1.0, 0.13)));
         object
             .change_pos(vec3(-15.0, 5.0, -5.0))
-            .change_shape(Shape::Cube {
-                dimensions: Vec3::new(10.0, 10.0, 10.0),
-            })
+            .change_size(vec3(10.0, 10.0, 10.0))
             .update_model(model);
         assets.add_object("torus", object.clone());
 
@@ -104,15 +98,24 @@ impl World {
         model.lines = 70.0;
         object
             .change_pos(vec3(0.0, -2.0, 0.0))
-            .change_shape(Shape::Cube {
-                dimensions: Vec3::new(1000.0, 2.0, 1000.0),
-            })
+            .change_size(vec3(1000.0, 2.0, 1000.0))
             .update_model(model.clone());
         assets.add_object("platform", object);
 
         assets.objects.values_mut().for_each(|object| {
             object.model.prepere_render_resources();
         });
+
+        let mut player = Object::new();
+        player
+            .change_pos(vec3(0.0, 12.0, 3.0))
+            .change_size(vec3(0.1, 0.1, 0.1));
+        player.model = model_from(Path::new("man/scene.gltf"), Vec3::ONE);
+        player.model.prepere_render_resources();
+        player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
+
+        let animation = Animation::new(Path::new("man/scene.gltf"), &mut player.model);
+        let animator = Animator::new(&animation);
 
         assets.add_pointlight(lights::PointLight {
             pos: vec3(30.0, 20.0, -20.0),
@@ -133,19 +136,6 @@ impl World {
             col: vec3(0.0, 1.0, 0.5),
         });
 
-        let mut player = Object::new();
-        player
-            .change_pos(vec3(0.0, 12.0, 3.0))
-            .change_shape(Shape::Cube {
-                dimensions: vec3(0.1, 0.1, 0.1),
-            });
-        player.model = from_collada(Path::new("mannequin/Idle.dae"));
-        player.model.prepere_render_resources();
-        player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
-
-        //let running = Animation::new(Path::new("ybot/Idle.fbx"), &mut player.model);
-        //let animator = Animator::new(&running);
-
         let sun = lights::DirectionalLight {
             shadows: shadows::Shadow::new(1900, 1200),
             color: vec3(1.0, 1.0, 1.0),
@@ -154,14 +144,14 @@ impl World {
 
         let projection = perspective(45.0, ratio, 0.1, 1000.0);
 
-        Ok(World {
+        Self {
+            animator,
             sun,
             camera,
             player,
             assets,
-            elapsed: 0.0,
             projection,
-        })
+        }
     }
     pub fn update_cam(&mut self, ratio: f32) -> &mut Self {
         self.projection = perspective(45.0, ratio, 0.1, 1000.0);
@@ -169,24 +159,14 @@ impl World {
 
         self
     }
-    pub fn update_animations(&mut self, dt: f32) -> &mut Self {
-        self.elapsed += dt;
+    pub fn update_animations(&mut self, timer: &Timer) -> &mut Self {
+        let center = vec3(0.0, 20.0, 20.0);
+        let axis = vec3(0.0, 1.0, 0.0);
+        let transform = &mut self.assets.get_object("cube2").transform;
 
-        spin(
-            self.elapsed,
-            90.0,
-            vec3(0.0, 1.0, 1.0),
-            &mut self.assets.get_object("cube2").transform,
-        );
-
-        rotate_around(
-            vec3(0.0, 20.0, 20.0),
-            50.0,
-            22.5,
-            vec3(0.0, 1.0, 0.0),
-            self.elapsed,
-            &mut self.assets.get_object("cube2").transform.pos,
-        );
+        spin(timer.elapsed, 90.0, vec3(0.0, 1.0, 1.0), transform);
+        rotate_around(center, 50.0, 22.5, axis, timer.elapsed, &mut transform.pos);
+        self.animator.update_animation(timer.delta);
 
         self
     }
@@ -198,9 +178,13 @@ impl World {
         physics::collision_sphere_aabb(String::from("ball2"), String::from("platform"), objects);
         physics::collision_aabb_aabb(String::from("cube"), String::from("platform"), objects);
 
-        physics::gravity(&mut self.assets.get_object("cube").transform.velocity);
-        physics::gravity(&mut self.assets.get_object("ball").transform.velocity);
-        physics::gravity(&mut self.assets.get_object("ball2").transform.velocity);
+        physics::gravity(&mut self.assets.get_object("cube").velocity);
+        physics::gravity(&mut self.assets.get_object("ball").velocity);
+        physics::gravity(&mut self.assets.get_object("ball2").velocity);
+
+        self.assets.objects.values_mut().for_each(|object| {
+            object.update_pos_with_velocity();
+        });
 
         self
     }
@@ -249,8 +233,8 @@ impl World {
             pl_to_shader(lights[i], shader, i);
         }
 
-        model_to_shader(&mut self.player, shader);
-        self.player.model.render();
+        /*  model_to_shader(&mut self.player, shader);
+        self.player.model.render(); */
 
         // object specific
         objects.values_mut().for_each(|object| {
@@ -282,7 +266,12 @@ impl World {
             pl_to_shader(lights[i], shader, i);
         }
 
-        //for i in 0..200 {}
+        for i in 0..200 {
+            shader.update_mat4(
+                format!("finalBonesMatrices[{i}]").as_str(),
+                self.animator.final_mats[i],
+            );
+        }
 
         model_to_shader(&mut self.player, shader);
         self.player.model.render();

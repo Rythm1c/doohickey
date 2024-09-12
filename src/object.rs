@@ -1,11 +1,13 @@
-use crate::math::{mat4::*, quaternion::*, vec3::*};
-use crate::src::model::{Model, Shape};
+use crate::math::vec3::Vec3;
+use crate::src::model::Model;
+use crate::src::transform::Transform;
 //#[allow(dead_code)]
 
 #[derive(Clone)]
 pub struct Object {
     pub model: Model,
     pub transform: Transform,
+    pub velocity: Vec3,
 }
 
 impl Object {
@@ -13,61 +15,23 @@ impl Object {
         Self {
             transform: Transform::DEFAULT,
             model: Model::default(),
+            velocity: Vec3::ZERO,
         }
     }
     pub fn change_pos(&mut self, n_pos: Vec3) -> &mut Self {
         self.transform.pos = n_pos;
         self
     }
-    pub fn change_shape(&mut self, n_shape: Shape) -> &mut Self {
-        self.transform.shape = n_shape;
+    pub fn change_size(&mut self, n_size: Vec3) -> &mut Self {
+        self.transform.size = n_size;
         self
     }
 
     pub fn update_model(&mut self, model: Model) {
         self.model = model;
     }
-}
 
-#[derive(Clone)]
-pub struct Transform {
-    pub pos: Vec3,
-    pub velocity: Vec3,
-    pub shape: Shape,
-    //for rotations
-    pub orientation: Quat,
-}
-
-impl Transform {
-    const DEFAULT: Self = Self {
-        pos: Vec3::ZERO,
-        orientation: Quat::ZERO,
-        velocity: Vec3::ZERO,
-        shape: Shape::None,
-    };
-    pub fn new(shape: Shape, pos: Vec3) -> Self {
-        Self {
-            pos,
-            shape,
-            orientation: Quat::ZERO,
-            velocity: Vec3::ZERO,
-        }
-    }
-    pub fn get(&mut self) -> Mat4 {
-        self.pos = self.pos + self.velocity;
-
-        let translation = translate(&self.pos);
-
-        let rotation = rotate(self.orientation);
-
-        let resize = match self.shape {
-            Shape::Cube { dimensions } => scale(&dimensions),
-
-            Shape::Sphere { radius } => scale(&vec3(radius, radius, radius)),
-
-            Shape::None => scale(&Vec3::ZERO),
-        };
-
-        translation * rotation * resize
+    pub fn update_pos_with_velocity(&mut self) {
+        self.transform.pos = self.transform.pos + self.velocity;
     }
 }

@@ -8,14 +8,12 @@ edition = "2021"
 [dependencies]
 gl = "0.14.0"
 sdl2 = "0.37.0"
-#russimp = "3.2.0"
+gltf = "1.4.1"
+#collada = "0.15.0"
+russimp = "3.2.0"
 #egui = "0.28.1"
 #image = "0.25.2"
-#tobj = "4.0.2"
-gltf = "1.4.1"
 #freetype = "0.7.2"
-collada = "0.15.0"
-
 [[bin]]
 name = "rust-engine"
 path = "main.rs"

@@ -29,12 +29,6 @@ pub fn load_cube(color_cube: bool, color: Vec3) -> Mesh {
     mesh
 }
 /// work in progress...
-/* pub fn cube_sphere(divs: u32, color_cube: bool, color: Vec3) -> Mesh {
-    let mut mesh = Mesh::DEFAULT;
-
-
-    mesh
-} */
 
 const FACE_COLORS: [Vec3; 6] = [
     Vec3 {

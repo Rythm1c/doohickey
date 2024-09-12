@@ -2,6 +2,7 @@ use crate::gl;
 use crate::gl::types::*;
 use crate::math::mat4::Mat4;
 use crate::math::{vec2::*, vec3::*};
+use std::collections::HashMap;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -27,18 +28,11 @@ impl Vertex {
 }
 /// mostly for collision detection  
 /// specify the most appropriate shape to determine the bounding volume for collisions
-#[derive(PartialEq, Clone, Copy)]
-pub enum Shape {
-    Sphere { radius: f32 },
-    Cube { dimensions: Vec3 },
-    None,
-    /*  Quad, */
-}
+
 #[derive(Clone)]
 pub struct BoneInfo {
-    pub name: String,
-    pub parent: usize,
-    pub bind_pose: Mat4,
+    pub id: i32,
+    pub offset: Mat4,
 }
 
 #[derive(Clone)]
@@ -59,7 +53,9 @@ pub struct Model {
     pub squares: f32,
     pub sub_dvd: bool,
     pub lines: f32,
-    pub skeleton: Vec<BoneInfo>,
+    pub skeleton: HashMap<String, BoneInfo>,
+   // pub inverse: Vec<Mat4>,
+    pub bone_count: i32,
 }
 impl Mesh {
     pub fn default() -> Self {
@@ -205,7 +201,9 @@ impl Model {
             sub_dvd: false,
             lines: 0.0,
 
-            skeleton: Vec::new(),
+            bone_count: 0,
+            //inverse: Vec::new(),
+            skeleton: HashMap::new(),
         }
     }
 

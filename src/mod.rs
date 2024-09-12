@@ -12,4 +12,6 @@ pub mod physics;
 pub mod shaders;
 pub mod shadows;
 pub mod shapes;
+pub mod timer;
+pub mod transform;
 pub mod world;

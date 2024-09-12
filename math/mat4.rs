@@ -1,4 +1,4 @@
-use crate::math::{misc::*, vec3::*};
+use crate::math::{misc::*, quaternion::Quat, vec3::*};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Mat4 {
@@ -57,6 +57,42 @@ impl Mat4 {
     pub fn from(values: &[[f32; 4]; 4]) -> Self {
         Self { data: *values }
     }
+
+    pub fn to_quat(&self) -> Quat {
+        let data = &self.data;
+
+        let s = 0.5 * (1.0 + data[0][0] + data[1][1] + data[2][2]).sqrt();
+        if s > 0.0 {
+            let coeff = 1.0 / (4.0 * s);
+            let x = coeff * (data[2][1] - data[1][2]);
+            let y = coeff * (data[0][2] - data[2][0]);
+            let z = coeff * (data[1][0] - data[0][1]);
+            return Quat { x, y, z, s };
+        }
+        let x = 0.5 * (1.0 + data[0][0] - data[1][1] - data[2][2]).sqrt();
+        if x > 0.0 {
+            let coeff = 1.0 / (4.0 * x);
+            let y = coeff * (data[0][1] + data[1][0]);
+            let z = coeff * (data[0][2] + data[2][0]);
+            let s = coeff * (data[2][1] - data[1][2]);
+            return Quat { x, y, z, s };
+        }
+        let y = 0.5 * (1.0 - data[0][0] + data[1][1] - data[2][2]).sqrt();
+        if y > 0.0 {
+            let coeff = 1.0 / (4.0 * y);
+            let x = coeff * (data[0][1] + data[1][0]);
+            let z = coeff * (data[1][2] + data[2][1]);
+            let s = coeff * (data[0][2] - data[2][0]);
+            return Quat { x, y, z, s };
+        }
+        // if all else fails just use z
+        let z = 0.5 * (1.0 - data[0][0] - data[1][1] + data[2][2]).sqrt();
+        let coeff = 1.0 / (4.0 * z);
+        let x = coeff * (data[0][2] + data[2][0]);
+        let y = coeff * (data[1][2] + data[2][1]);
+        let s = coeff * (data[1][0] - data[0][1]);
+        return Quat { x, y, z, s };
+    }
 }
 use std::ops::*;
 impl Mul<Mat4> for f32 {
@@ -95,11 +131,11 @@ impl Mul<Mat4> for f32 {
 
 /// matrix multiplication helper.
 /// multiply corresponding row and column elements
-fn c_r(column: usize, row: usize, m1: &Mat4, m2: &Mat4) -> f32 {
-    let v1 = m1.data[column][0] * m2.data[0][row];
-    let v2 = m1.data[column][1] * m2.data[1][row];
-    let v3 = m1.data[column][2] * m2.data[2][row];
-    let v4 = m1.data[column][3] * m2.data[3][row];
+fn c_r(row: usize, column: usize, m1: &Mat4, m2: &Mat4) -> f32 {
+    let v1 = m1.data[row][0] * m2.data[0][column];
+    let v2 = m1.data[row][1] * m2.data[1][column];
+    let v3 = m1.data[row][2] * m2.data[2][column];
+    let v4 = m1.data[row][3] * m2.data[3][column];
 
     v1 + v2 + v3 + v4
 }
@@ -137,6 +173,76 @@ impl Mul<Mat4> for Mat4 {
         }
     }
 }
+impl Mul<f32> for Mat4 {
+    type Output = Mat4;
+    fn mul(self, rhs: f32) -> Self::Output {
+        let mut result = Mat4::IDENTITY;
+
+        for i in 0..4 {
+            for j in 0..4 {
+                result.data[i][j] = self.data[i][j] * rhs;
+            }
+        }
+
+        result
+    }
+}
+fn m4_3x3minor(
+    x: &[[f32; 4]; 4],
+    r0: usize,
+    r1: usize,
+    r2: usize,
+    c0: usize,
+    c1: usize,
+    c2: usize,
+) -> f32 {
+    let a = x[r0][c0] * (x[r1][c1] * x[r2][c2] - x[r2][c1] * x[r1][c2]);
+    let b = x[r0][c1] * (x[r1][c0] * x[r2][c2] - x[r2][c0] * x[r1][c2]);
+    let c = x[r0][c2] * (x[r1][c0] * x[r2][c1] - x[r2][c0] * x[r1][c1]);
+
+    a - b + c
+}
+fn determinant(m: &Mat4) -> f32 {
+    let a = m.data[0][0] * m4_3x3minor(&m.data, 1, 2, 3, 1, 2, 3);
+    let b = m.data[1][0] * m4_3x3minor(&m.data, 0, 2, 3, 1, 2, 3);
+    let c = m.data[2][0] * m4_3x3minor(&m.data, 0, 1, 3, 1, 2, 3);
+    let d = m.data[3][0] * m4_3x3minor(&m.data, 0, 1, 2, 1, 2, 3);
+
+    a - b + c - d
+}
+fn adjugate(m: &Mat4) -> Mat4 {
+    //Cof (M[i, j]) = Minor(M[i, j]] * pow(-1, i + j)
+    let mut cofactor = Mat4::IDENTITY;
+    cofactor.data[0][0] = m4_3x3minor(&m.data, 1, 2, 3, 1, 2, 3);
+    cofactor.data[0][1] = -m4_3x3minor(&m.data, 1, 2, 3, 0, 2, 3);
+    cofactor.data[0][2] = m4_3x3minor(&m.data, 1, 2, 3, 0, 1, 3);
+    cofactor.data[0][3] = -m4_3x3minor(&m.data, 1, 2, 3, 0, 1, 2);
+    cofactor.data[1][0] = -m4_3x3minor(&m.data, 0, 2, 3, 1, 2, 3);
+    cofactor.data[1][1] = m4_3x3minor(&m.data, 0, 2, 3, 0, 2, 3);
+    cofactor.data[1][2] = -m4_3x3minor(&m.data, 0, 2, 3, 0, 1, 3);
+    cofactor.data[1][3] = m4_3x3minor(&m.data, 0, 2, 3, 0, 1, 2);
+    cofactor.data[2][0] = m4_3x3minor(&m.data, 0, 1, 3, 1, 2, 3);
+    cofactor.data[2][1] = -m4_3x3minor(&m.data, 0, 1, 3, 0, 2, 3);
+    cofactor.data[2][2] = m4_3x3minor(&m.data, 0, 1, 3, 0, 1, 3);
+    cofactor.data[2][3] = -m4_3x3minor(&m.data, 0, 1, 3, 0, 1, 2);
+    cofactor.data[3][0] = -m4_3x3minor(&m.data, 0, 1, 2, 1, 2, 3);
+    cofactor.data[3][1] = m4_3x3minor(&m.data, 0, 1, 2, 0, 2, 3);
+    cofactor.data[3][2] = -m4_3x3minor(&m.data, 0, 1, 2, 0, 1, 3);
+    cofactor.data[3][3] = m4_3x3minor(&m.data, 0, 1, 2, 0, 1, 2);
+
+    transpose(&cofactor)
+}
+pub fn inverse(m: &Mat4) -> Mat4 {
+    let det = determinant(m);
+
+    if det == 0.0 {
+        return Mat4::IDENTITY;
+    }
+    let adj = adjugate(m);
+
+    adj * (1.0 / det)
+}
+
 #[allow(dead_code)]
 pub fn transpose(m: &Mat4) -> Mat4 {
     Mat4 {

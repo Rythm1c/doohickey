@@ -68,6 +68,32 @@ impl Quat {
     pub fn axis(&self) -> Vec3 {
         vec3(self.x, self.y, self.z)
     }
+
+    /// rotate around a specified axis
+    /// creates a rotation matrix from a quaternion
+    pub fn to_mat(&self) -> Mat4 {
+        // first row
+        let xx = 1.0 - 2.0 * (self.y.powf(2.0) + self.z.powf(2.0));
+        let xy = 2.0 * (self.x * self.y - self.s * self.z);
+        let xz = 2.0 * (self.x * self.z + self.s * self.y);
+        // second row
+        let yx = 2.0 * (self.x * self.y + self.s * self.z);
+        let yy = 1.0 - 2.0 * (self.x.powf(2.0) + self.z.powf(2.0));
+        let yz = 2.0 * (self.y * self.z - self.s * self.x);
+        // third row
+        let zx = 2.0 * (self.x * self.z - self.s * self.y);
+        let zy = 2.0 * (self.y * self.z + self.s * self.x);
+        let zz = 1.0 - 2.0 * (self.x.powf(2.0) + self.y.powf(2.0));
+
+        Mat4 {
+            data: [
+                [xx, xy, xz, 0.0],
+                [yx, yy, yz, 0.0],
+                [zx, zy, zz, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ],
+        }
+    }
 }
 
 use std::ops::*;
@@ -128,30 +154,5 @@ impl Mul<Quat> for Quat {
             z: self.s * rhs.z + self.z * rhs.s + self.x * rhs.y - self.y * rhs.x,
             s: self.s * rhs.s - self.x * rhs.x - self.y * rhs.y - self.z * rhs.z,
         }
-    }
-}
-/// rotate around a specified axis
-/// creates a rotation matrix from a quaternion
-pub fn rotate(q: Quat) -> Mat4 {
-    // first row
-    let xx = 1.0 - 2.0 * (q.y.powf(2.0) + q.z.powf(2.0));
-    let xy = 2.0 * (q.x * q.y - q.s * q.z);
-    let xz = 2.0 * (q.x * q.z + q.s * q.y);
-    // second row
-    let yx = 2.0 * (q.x * q.y + q.s * q.z);
-    let yy = 1.0 - 2.0 * (q.x.powf(2.0) + q.z.powf(2.0));
-    let yz = 2.0 * (q.y * q.z - q.s * q.x);
-    // third row
-    let zx = 2.0 * (q.x * q.z - q.s * q.y);
-    let zy = 2.0 * (q.y * q.z + q.s * q.x);
-    let zz = 1.0 - 2.0 * (q.x.powf(2.0) + q.y.powf(2.0));
-
-    Mat4 {
-        data: [
-            [xx, xy, xz, 0.0],
-            [yx, yy, yz, 0.0],
-            [zx, zy, zz, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ],
     }
 }
