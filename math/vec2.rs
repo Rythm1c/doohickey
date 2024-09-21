@@ -10,4 +10,8 @@ pub fn vec2(_x: f32, _y: f32) -> Vec2 {
 
 impl Vec2 {
     pub const ZERO: Vec2 = Vec2 { x: 0.0, y: 0.0 };
+
+    pub fn from(a: &[f32; 2]) -> Self {
+        Self { x: a[0], y: a[1] }
+    }
 }

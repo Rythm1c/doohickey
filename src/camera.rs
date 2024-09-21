@@ -36,8 +36,8 @@ impl Camera {
     }
 
     pub fn rotate(&mut self, mouse_pos_x: i32, mouse_pos_y: i32) {
-        let xoffset: f32 = 0.15 * (mouse_pos_x) as f32;
-        let yoffset: f32 = 0.15 * (mouse_pos_y) as f32;
+        let xoffset = 0.15 * (mouse_pos_x) as f32;
+        let yoffset = 0.15 * (mouse_pos_y) as f32;
 
         self.yaw += radians(xoffset);
         self.pitch += radians(yoffset);
@@ -46,9 +46,9 @@ impl Camera {
 
         let mut new_front = vec3(0.0, 0.0, 0.0);
 
-        new_front.x = self.pitch.cos() * self.yaw.cos();
-        new_front.y = self.pitch.sin();
-        new_front.z = self.pitch.cos() * self.yaw.sin();
+        new_front.x = f32::cos(self.pitch) * f32::cos(self.yaw);
+        new_front.y = f32::sin(self.pitch);
+        new_front.z = f32::cos(self.pitch) * f32::sin(self.yaw);
 
         self.front = new_front.unit();
     }

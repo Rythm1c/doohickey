@@ -1,3 +1,9 @@
+// _______________________________________________________________________________________________________
+// _______________________________________________________________________________________________________
+// got alot of help from the "gabor szauer - hands on c++ game animation programming packt" book
+// most of this is just the books code translated to rust with a few changes here and there.
+// and https://songho.ca/opengl/ was also pretty helpfull
+
 use crate::math::{misc::*, quaternion::Quat, vec3::*};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -44,20 +50,11 @@ impl Mat4 {
         ],
     };
 
-    pub fn new() -> Self {
-        Self {
-            data: [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
-        }
-    }
     pub fn from(values: &[[f32; 4]; 4]) -> Self {
         Self { data: *values }
     }
-
+    /// changes signs past 180 degrees  
+    /// not sure why though
     pub fn to_quat(&self) -> Quat {
         let data = &self.data;
 
@@ -94,6 +91,7 @@ impl Mat4 {
         return Quat { x, y, z, s };
     }
 }
+use std::fmt::Display;
 use std::ops::*;
 impl Mul<Mat4> for f32 {
     type Output = Mat4;
@@ -187,14 +185,40 @@ impl Mul<f32> for Mat4 {
         result
     }
 }
+
+impl Display for Mat4 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "[{}, {}, {}, {}]\n[{}, {}, {}, {}]\n[{}, {}, {}, {}]\n[{}, {}, {}, {}]",
+            self.data[0][0],
+            self.data[0][1],
+            self.data[0][2],
+            self.data[0][3],
+            self.data[1][0],
+            self.data[1][1],
+            self.data[1][2],
+            self.data[1][3],
+            self.data[2][0],
+            self.data[2][1],
+            self.data[2][2],
+            self.data[2][3],
+            self.data[3][0],
+            self.data[3][1],
+            self.data[3][2],
+            self.data[3][3],
+        )
+    }
+}
+
 fn m4_3x3minor(
     x: &[[f32; 4]; 4],
-    r0: usize,
-    r1: usize,
-    r2: usize,
     c0: usize,
     c1: usize,
     c2: usize,
+    r0: usize,
+    r1: usize,
+    r2: usize,
 ) -> f32 {
     let a = x[r0][c0] * (x[r1][c1] * x[r2][c2] - x[r2][c1] * x[r1][c2]);
     let b = x[r0][c1] * (x[r1][c0] * x[r2][c2] - x[r2][c0] * x[r1][c2]);
@@ -204,9 +228,9 @@ fn m4_3x3minor(
 }
 fn determinant(m: &Mat4) -> f32 {
     let a = m.data[0][0] * m4_3x3minor(&m.data, 1, 2, 3, 1, 2, 3);
-    let b = m.data[1][0] * m4_3x3minor(&m.data, 0, 2, 3, 1, 2, 3);
-    let c = m.data[2][0] * m4_3x3minor(&m.data, 0, 1, 3, 1, 2, 3);
-    let d = m.data[3][0] * m4_3x3minor(&m.data, 0, 1, 2, 1, 2, 3);
+    let b = m.data[0][1] * m4_3x3minor(&m.data, 0, 2, 3, 1, 2, 3);
+    let c = m.data[0][2] * m4_3x3minor(&m.data, 0, 1, 3, 1, 2, 3);
+    let d = m.data[0][3] * m4_3x3minor(&m.data, 0, 1, 2, 1, 2, 3);
 
     a - b + c - d
 }
@@ -214,20 +238,20 @@ fn adjugate(m: &Mat4) -> Mat4 {
     //Cof (M[i, j]) = Minor(M[i, j]] * pow(-1, i + j)
     let mut cofactor = Mat4::IDENTITY;
     cofactor.data[0][0] = m4_3x3minor(&m.data, 1, 2, 3, 1, 2, 3);
-    cofactor.data[0][1] = -m4_3x3minor(&m.data, 1, 2, 3, 0, 2, 3);
-    cofactor.data[0][2] = m4_3x3minor(&m.data, 1, 2, 3, 0, 1, 3);
-    cofactor.data[0][3] = -m4_3x3minor(&m.data, 1, 2, 3, 0, 1, 2);
-    cofactor.data[1][0] = -m4_3x3minor(&m.data, 0, 2, 3, 1, 2, 3);
+    cofactor.data[1][0] = -m4_3x3minor(&m.data, 1, 2, 3, 0, 2, 3);
+    cofactor.data[2][0] = m4_3x3minor(&m.data, 1, 2, 3, 0, 1, 3);
+    cofactor.data[3][0] = -m4_3x3minor(&m.data, 1, 2, 3, 0, 1, 2);
+    cofactor.data[0][1] = -m4_3x3minor(&m.data, 0, 2, 3, 1, 2, 3);
     cofactor.data[1][1] = m4_3x3minor(&m.data, 0, 2, 3, 0, 2, 3);
-    cofactor.data[1][2] = -m4_3x3minor(&m.data, 0, 2, 3, 0, 1, 3);
-    cofactor.data[1][3] = m4_3x3minor(&m.data, 0, 2, 3, 0, 1, 2);
-    cofactor.data[2][0] = m4_3x3minor(&m.data, 0, 1, 3, 1, 2, 3);
-    cofactor.data[2][1] = -m4_3x3minor(&m.data, 0, 1, 3, 0, 2, 3);
+    cofactor.data[2][1] = -m4_3x3minor(&m.data, 0, 2, 3, 0, 1, 3);
+    cofactor.data[3][1] = m4_3x3minor(&m.data, 0, 2, 3, 0, 1, 2);
+    cofactor.data[0][2] = m4_3x3minor(&m.data, 0, 1, 3, 1, 2, 3);
+    cofactor.data[1][2] = -m4_3x3minor(&m.data, 0, 1, 3, 0, 2, 3);
     cofactor.data[2][2] = m4_3x3minor(&m.data, 0, 1, 3, 0, 1, 3);
-    cofactor.data[2][3] = -m4_3x3minor(&m.data, 0, 1, 3, 0, 1, 2);
-    cofactor.data[3][0] = -m4_3x3minor(&m.data, 0, 1, 2, 1, 2, 3);
-    cofactor.data[3][1] = m4_3x3minor(&m.data, 0, 1, 2, 0, 2, 3);
-    cofactor.data[3][2] = -m4_3x3minor(&m.data, 0, 1, 2, 0, 1, 3);
+    cofactor.data[3][2] = -m4_3x3minor(&m.data, 0, 1, 3, 0, 1, 2);
+    cofactor.data[0][3] = -m4_3x3minor(&m.data, 0, 1, 2, 1, 2, 3);
+    cofactor.data[1][3] = m4_3x3minor(&m.data, 0, 1, 2, 0, 2, 3);
+    cofactor.data[2][3] = -m4_3x3minor(&m.data, 0, 1, 2, 0, 1, 3);
     cofactor.data[3][3] = m4_3x3minor(&m.data, 0, 1, 2, 0, 1, 2);
 
     transpose(&cofactor)
@@ -397,7 +421,7 @@ pub fn orthogonal(l: f32, r: f32, t: f32, b: f32, n: f32, f: f32) -> Mat4 {
 }
 
 pub fn perspective(fov: f32, aspect_ratio: f32, near: f32, far: f32) -> Mat4 {
-    let tangent = radians(fov / 2.0).tan();
+    let tangent = f32::tan(radians(fov / 2.0));
     let top = near * tangent;
     let right = top * aspect_ratio;
 

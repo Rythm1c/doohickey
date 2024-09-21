@@ -68,7 +68,7 @@ void main() {
     result = (result * (1.0 - backgroundfract)) + (background * backgroundfract);
 
     color = vec4(result, 1.0);
-    //color = vec4(1.0, 0.81, 0.59, 1.0);
+    //color = vec4(0.37, 0.74, 1.0, 1.0);
 }
 
 // function definations

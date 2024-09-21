@@ -20,7 +20,7 @@ out vs_Out {
     vec4 lightSpace;
 } vs_out;
 
-const int MAX_BONES = 200;
+const int MAX_BONES = 300;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 finalBonesMatrices[MAX_BONES];
 

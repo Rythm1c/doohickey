@@ -1,7 +1,7 @@
 use crate::math::{mat4::*, quaternion::Quat, vec3::*};
 use crate::src::shapes::{cube::load_cube, sphere::*, torus::torus};
 use crate::src::{
-    animations::*, assets::Assets, camera, foreign::*, lights, model::*, object::*, physics,
+    animation::*, assets::Assets, camera, foreign::*, lights, model::*, object::*, physics,
     shaders, shadows, timer::Timer,
 };
 
@@ -14,7 +14,7 @@ pub struct World {
     projection: Mat4,
     sun: lights::DirectionalLight,
     assets: Assets,
-    animator: Animator,
+    //animator: Animator,
 }
 
 impl World {
@@ -61,7 +61,7 @@ impl World {
         assets.add_object("ball", object.clone());
 
         model = Model::default();
-        model.add_mesh(load_icosphere(3, vec3(1.0, 0.35, 0.06)));
+        model.add_mesh(load_icosphere(4, vec3(1.0, 0.35, 0.06)));
         object
             .change_pos(vec3(15.0, 40.0, 10.0))
             .change_size(vec3(7.0, 7.0, 7.0))
@@ -107,15 +107,21 @@ impl World {
         });
 
         let mut player = Object::new();
+        let file = GltfFile::new(Path::new("models/alien/Alien.gltf"));
+        // model.skeleton.update_inverse_bind_pose();
+        player.model.meshes = file.meshes();
+        player.skeleton.rest_pose = file.exctract_rest_pose();
+        player.skeleton.inverse_bind_pose = file.extract_inverse_bind_mats();
+        player.skeleton.joint_names = file.load_joint_names();
+        player.animations = file.extrat_animations();
         player
             .change_pos(vec3(0.0, 12.0, 3.0))
-            .change_size(vec3(0.1, 0.1, 0.1));
-        player.model = model_from(Path::new("man/scene.gltf"), Vec3::ONE);
+            .change_size(vec3(4.5, 4.5, 4.5));
+
+        //player.model.recolor(vec3(0.37, 0.74, 1.0));
         player.model.prepere_render_resources();
         player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
-
-        let animation = Animation::new(Path::new("man/scene.gltf"), &mut player.model);
-        let animator = Animator::new(&animation);
+        player.play_animation = true;
 
         assets.add_pointlight(lights::PointLight {
             pos: vec3(30.0, 20.0, -20.0),
@@ -145,7 +151,7 @@ impl World {
         let projection = perspective(45.0, ratio, 0.1, 1000.0);
 
         Self {
-            animator,
+            // animator,
             sun,
             camera,
             player,
@@ -164,9 +170,18 @@ impl World {
         let axis = vec3(0.0, 1.0, 0.0);
         let transform = &mut self.assets.get_object("cube2").transform;
 
-        spin(timer.elapsed, 90.0, vec3(0.0, 1.0, 1.0), transform);
-        rotate_around(center, 50.0, 22.5, axis, timer.elapsed, &mut transform.pos);
-        self.animator.update_animation(timer.delta);
+        basic::spin(timer.elapsed, 90.0, vec3(0.0, 1.0, 0.0), transform);
+
+        basic::rotate_around(
+            center,
+            50.0,
+            22.5,
+            axis,
+            timer.elapsed,
+            &mut transform.translation,
+        );
+        self.player.update_animation(timer.elapsed);
+        //  self.animator.update_animation(timer.delta);
 
         self
     }
@@ -266,11 +281,9 @@ impl World {
             pl_to_shader(lights[i], shader, i);
         }
 
-        for i in 0..200 {
-            shader.update_mat4(
-                format!("finalBonesMatrices[{i}]").as_str(),
-                self.animator.final_mats[i],
-            );
+        let mats = &self.player.get_pose();
+        for i in 0..mats.len() {
+            shader.update_mat4(format!("finalBonesMatrices[{i}]").as_str(), mats[i]);
         }
 
         model_to_shader(&mut self.player, shader);

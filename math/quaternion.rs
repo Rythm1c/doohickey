@@ -1,3 +1,10 @@
+//----------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------
+// home made quaternion math lib cause i have a big ego.
+// "john vince - quaternions for for computer graphics" was a massive help along with
+// "gabor szauer - hands on c++ game animation programming packt", both great books.
+
+
 use crate::math::{mat4::*, vec3::*};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -23,13 +30,18 @@ impl Quat {
     pub fn new(x: f32, y: f32, z: f32, s: f32) -> Self {
         Self { x, y, z, s }
     }
+    /// get quaternion from array
+    pub fn from(a: &[f32; 4]) -> Self {
+        quat(a[0], a[1], a[2], a[3])
+    }
     /// halves the angle and creates a quaternion from it and the specified axis  
-    /// also axis is normalized so no worries
+    /// and also axis is normalized so no worries  
+    /// resulting quaternion intended to be used with 'to_mat' function
     pub fn create(angle: f32, axis: Vec3) -> Self {
-        let s = radians(angle / 2.0).sin();
-        let c = radians(angle / 2.0).cos();
+        let s = f32::sin(radians(angle / 2.0));
+        let c = f32::cos(radians(angle / 2.0));
 
-        let unit_axis = axis.unit();
+        let unit_axis = Vec3::unit(&axis);
 
         let x = s * unit_axis.x;
         let y = s * unit_axis.y;
@@ -40,8 +52,13 @@ impl Quat {
     }
 
     pub fn norm(&self) -> f32 {
-        (self.x.powf(2.0) + self.y.powf(2.0) + self.z.powf(2.0) + self.s.powf(2.0)).sqrt()
+        let x2 = f32::powf(self.x, 2.0);
+        let y2 = f32::powf(self.y, 2.0);
+        let z2 = f32::powf(self.z, 2.0);
+        let s2 = f32::powf(self.s, 2.0);
+        f32::sqrt(x2 + y2 + z2 + s2)
     }
+
     pub fn unit(&self) -> Self {
         let coeff = 1.0 / self.norm();
 
@@ -52,13 +69,24 @@ impl Quat {
             s: (coeff * self.s),
         }
     }
-    pub fn inverse(&self) -> Self {
+
+    pub fn conjugate(&self) -> Self {
         Self {
             x: (-self.x),
             y: (-self.y),
             z: (-self.z),
             s: (self.s),
         }
+    }
+
+    pub fn inverse(&self) -> Self {
+        let len_sq = self.x * self.x + self.y * self.y + self.z * self.z + self.s * self.s;
+        let inv_len = 1.0 / len_sq;
+        self.conjugate() * inv_len
+    }
+
+    pub fn dot(&self, rhs: &Self) -> f32 {
+        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z + self.s * rhs.s
     }
 
     pub fn nlerp(&self, other: Self, c: f32) -> Quat {
@@ -72,18 +100,21 @@ impl Quat {
     /// rotate around a specified axis
     /// creates a rotation matrix from a quaternion
     pub fn to_mat(&self) -> Mat4 {
+        let x2 = f32::powf(self.x, 2.0);
+        let y2 = f32::powf(self.y, 2.0);
+        let z2 = f32::powf(self.z, 2.0);
         // first row
-        let xx = 1.0 - 2.0 * (self.y.powf(2.0) + self.z.powf(2.0));
+        let xx = 1.0 - 2.0 * (y2 + z2);
         let xy = 2.0 * (self.x * self.y - self.s * self.z);
         let xz = 2.0 * (self.x * self.z + self.s * self.y);
         // second row
         let yx = 2.0 * (self.x * self.y + self.s * self.z);
-        let yy = 1.0 - 2.0 * (self.x.powf(2.0) + self.z.powf(2.0));
+        let yy = 1.0 - 2.0 * (x2 + z2);
         let yz = 2.0 * (self.y * self.z - self.s * self.x);
         // third row
         let zx = 2.0 * (self.x * self.z - self.s * self.y);
         let zy = 2.0 * (self.y * self.z + self.s * self.x);
-        let zz = 1.0 - 2.0 * (self.x.powf(2.0) + self.y.powf(2.0));
+        let zz = 1.0 - 2.0 * (x2 + y2);
 
         Mat4 {
             data: [
@@ -123,6 +154,17 @@ impl Add for Quat {
     }
 }
 
+impl Neg for Quat {
+    type Output = Quat;
+    fn neg(self) -> Self::Output {
+        Self {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+            s: -self.s,
+        }
+    }
+}
 impl Mul<f32> for Quat {
     type Output = Quat;
     fn mul(self, rhs: f32) -> Self::Output {
@@ -145,6 +187,19 @@ impl Mul<Quat> for f32 {
         }
     }
 }
+impl Mul<Vec3> for Quat {
+    type Output = Vec3;
+    /// same as  
+    /// r = (q * v' * q^-1).xyz
+    fn mul(self, rhs: Vec3) -> Self::Output {
+        let a = self.axis() * 2.0 * dot(&self.axis(), &rhs);
+        let b = rhs * (self.s * self.s - dot(&self.axis(), &self.axis()));
+        let c = cross(&self.axis(), &rhs) * 2.0 * self.s;
+
+        a + b + c
+    }
+}
+
 impl Mul<Quat> for Quat {
     type Output = Quat;
     fn mul(self, rhs: Quat) -> Self::Output {

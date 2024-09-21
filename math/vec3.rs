@@ -23,6 +23,14 @@ impl Vec3 {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z }
     }
+    /// get 3D vector form array
+    pub fn from(a: &[f32; 3]) -> Self {
+        Self {
+            x: a[0],
+            y: a[1],
+            z: a[2],
+        }
+    }
     // vector length
     pub fn len(&self) -> f32 {
         (self.x.powf(2.0) + self.y.powf(2.0) + self.z.powf(2.0)).sqrt()
@@ -37,7 +45,7 @@ impl Vec3 {
             z: self.z * inverse_legth,
         }
     }
-
+    /// linear interpolation between 2 vectors
     pub fn mix(&self, other: Self, c: f32) -> Self {
         (*self * (1.0 - c)) + (other * c)
     }
@@ -112,7 +120,16 @@ impl Mul<Vec3> for f32 {
         }
     }
 }
-
+impl Mul<Vec3> for Vec3 {
+    type Output = Self;
+    fn mul(self, rhs: Vec3) -> Self::Output {
+        Self {
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+            z: self.z * rhs.z,
+        }
+    }
+}
 impl Div<f32> for Vec3 {
     type Output = Vec3;
     fn div(self, rhs: f32) -> Self {

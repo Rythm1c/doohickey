@@ -1,272 +1,319 @@
-use crate::math::mat4::{inverse, Mat4};
-use crate::math::{vec2::*, vec3::*};
-use crate::src::model::*;
+use gltf::animation::util::rotations;
 
-use std::collections::HashMap;
+use crate::math::mat4::{transpose, Mat4};
+use crate::math::{quaternion::*, vec2::*, vec3::*};
+use crate::src::animation::pose::Pose;
+use crate::src::model::*;
+use crate::src::transform::Transform;
+
+use super::animation::clip::Clip;
+use super::animation::curves::Interpolation;
+use super::animation::frame::{QuaternionFrame, VectorFrame};
+use super::animation::track_transform::TransformTrack;
+
 use std::path::Path;
-//...............................................................................................
-//...............................................................................................
+//_______________________________________________________________________________________________
+//_______________________________________________________________________________________________
 //gltf specific functions
 extern crate gltf;
-#[allow(dead_code)]
-pub fn from_gltf(path: &Path) -> Model {
-    let mut model = Model::default();
 
-    let (document, buffers, ..) = gltf::import(path).unwrap();
+/// 0: documnet, 1: buffers, 2: images
+pub struct GltfFile(
+    gltf::Document,
+    Vec<gltf::buffer::Data>,
+    Vec<gltf::image::Data>,
+);
 
-    document.meshes().for_each(|mesh| {
-        //prepare for next batch of data
-        let mut tmp_mesh = Mesh::default();
+impl GltfFile {
+    pub fn new(path: &Path) -> GltfFile {
+        let (document, buffers, images) = gltf::import(path).unwrap();
 
-        let primitives = mesh.primitives();
-        primitives.for_each(|primitive| {
-            let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-            //temporary array to hold position data
-            let mut tmp_positions: Vec<Vec3> = vec![];
-            // extract positions
-            if let Some(positions) = reader.read_positions() {
-                for pos in positions {
-                    tmp_positions.push(Vec3 {
-                        x: pos[0],
-                        y: pos[1],
-                        z: pos[2],
-                    });
-                }
-            };
-            //temporary storage for normals
-            let mut tmp_normals: Vec<Vec3> = vec![];
-            //extract normals
-            if let Some(normals) = reader.read_normals() {
-                for norm in normals {
-                    tmp_normals.push(Vec3 {
-                        x: norm[0],
-                        y: norm[1],
-                        z: norm[2],
-                    });
-                }
-            }
-            //temporary storage for colors
-            let mut tmp_colors: Vec<Vec3> = vec![];
-            //extract normals
-            if let Some(gltf::mesh::util::ReadColors::RgbF32(gltf::accessor::Iter::Standard(itr))) =
-                reader.read_colors(0)
-            {
-                for color in itr {
-                    tmp_colors.push(Vec3 {
-                        x: color[0],
-                        y: color[1],
-                        z: color[2],
-                    });
-                }
-            }
-            //temporary storage for texure coordinates
-            let mut tmp_tex_coords: Vec<Vec2> = vec![];
-            //extract
-            if let Some(gltf::mesh::util::ReadTexCoords::F32(gltf::accessor::Iter::Standard(itr))) =
-                reader.read_tex_coords(0)
-            {
-                for texcoord in itr {
-                    tmp_tex_coords.push(Vec2 {
-                        x: texcoord[0],
-                        y: texcoord[1],
-                    });
-                }
-            }
+        GltfFile(document, buffers, images)
+    }
 
-            //extract
-            if let Some(gltf::mesh::util::ReadIndices::U32(gltf::accessor::Iter::Standard(itr))) =
-                reader.read_indices()
-            {
-                for index in itr {
-                    tmp_mesh.indices.push(index);
-                }
-            }
+    pub fn meshes(&self) -> Vec<Mesh> {
+        let mut meshes = Vec::new();
 
-            for i in 0..tmp_positions.len() {
-                let pos = tmp_positions[i];
-                let norm = tmp_normals[i];
-                let mut col = Vec3::ONE;
-                if i < tmp_colors.len() {
-                    col = tmp_colors[i];
-                }
-                let mut tex = Vec2::ZERO;
-                if i < tmp_colors.len() {
-                    tex = tmp_tex_coords[i];
-                }
+        let document = &self.0;
+        let buffers = &self.1;
 
-                tmp_mesh.vertices.push(Vertex {
-                    norm,
-                    pos,
-                    tex,
-                    col,
-                    bone_ids: [-1; 4],
-                    weights: [0.0; 4],
-                });
-            }
-            model.meshes.push(tmp_mesh.clone());
-        })
-    });
+        let mut skins = Vec::new();
+        skins.resize(document.skins().count(), Vec::new());
 
-    model
-}
+        println!("num of skins {}", document.skins().count());
 
-//...............................................................................................
-//...............................................................................................
-
-extern crate russimp;
-use russimp::scene::PostProcess;
-
-pub fn model_from(path: &Path, color: Vec3) -> Model {
-    let mut model = Model::default();
-
-    let file_path = path.to_str().unwrap();
-    let scene = russimp::scene::Scene::from_file(
-        file_path,
-        vec![
-            PostProcess::Triangulate,
-            PostProcess::GenerateSmoothNormals,
-            PostProcess::FlipUVs,
-            PostProcess::FlipWindingOrder,
-            PostProcess::JoinIdenticalVertices,
-            PostProcess::OptimizeGraph,
-        ],
-    )
-    .unwrap();
-
-    let node = &scene.root.unwrap();
-    let meshes = &scene.meshes;
-
-    process_node(node, meshes, &mut model);
-    model.meshes.iter_mut().for_each(|mesh| {
-        mesh.vertices.iter_mut().for_each(|vert| {
-            vert.col = color;
-        });
-    });
-
-    model
-}
-
-fn process_node(
-    node: &russimp::node::Node,
-    scene_meshes: &Vec<russimp::mesh::Mesh>,
-    model: &mut Model,
-) {
-    node.meshes.iter().for_each(|mesh| {
-        let node_mesh = &scene_meshes[*mesh as usize];
-        // process mesh and push to mesh stack
-        let mut new_mesh = process_mesh(node_mesh);
-
-        // push bone data to model skeleton for animations
-        process_bones(
-            node_mesh,
-            &mut model.bone_count,
-            &mut new_mesh.vertices,
-            &mut model.skeleton,
-        );
-
-        model.meshes.push(new_mesh);
-    });
-
-    node.children.borrow().iter().for_each(|child| {
-        process_node(child, scene_meshes, model);
-    });
-}
-/// not getting per vertex colors for now
-fn process_mesh(mesh: &russimp::mesh::Mesh) -> Mesh {
-    let mut final_mesh = Mesh::default();
-    // get vertices
-    let mut temp_verts: Vec<Vec3> = Vec::new();
-    mesh.vertices.iter().for_each(|vert| {
-        let pos = vec3(vert.x, vert.y, vert.z);
-        temp_verts.push(pos);
-    });
-    // get normals
-    let mut temp_norms: Vec<Vec3> = Vec::new();
-    mesh.normals.iter().for_each(|norm| {
-        let normal = vec3(norm.x, norm.y, norm.z);
-        temp_norms.push(normal);
-    });
-    // texture coordinates
-    let mut temp_texs: Vec<Vec2> = Vec::new();
-    mesh.texture_coords.iter().for_each(|tex_coords| {
-        if let Some(texs) = tex_coords {
-            texs.iter().for_each(|tex| {
-                let final_tex = vec2(tex.x, tex.y);
-                temp_texs.push(final_tex);
+        document.skins().for_each(|skin| {
+            let mut joints = Vec::new();
+            skin.joints().for_each(|joint| {
+                joints.push(joint.index() as i32);
             });
-        }
-    });
-    // assuming there is the same number of normals , texture coordinates and position vectors
-    let range = 0..temp_verts.len();
-    for i in range {
-        let mut vertex = Vertex::DEFAULT;
-        vertex.pos = temp_verts[i];
-        vertex.norm = temp_norms[i];
+            skins[0] = joints;
+        });
 
-        if i < temp_texs.len() {
-            vertex.tex = temp_texs[i];
-        }
+        document.meshes().for_each(|mesh| {
+            let primitives = mesh.primitives();
+            //assuming it only contains one skin
+            let ids = &skins[0];
 
-        final_mesh.vertices.push(vertex);
+            primitives.for_each(|primitive| {
+                //prepare for next batch of data
+                let mut mesh = Mesh::default();
+
+                let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
+
+                // extract positions
+                if let Some(positions) = reader.read_positions() {
+                    positions.for_each(|pos| {
+                        mesh.vertices.push(Vertex {
+                            pos: Vec3::from(&pos),
+                            ..Vertex::DEFAULT
+                        });
+                    });
+                };
+
+                //extract normals
+                if let Some(normals) = reader.read_normals() {
+                    normals.enumerate().for_each(|(i, norm)| {
+                        mesh.vertices[i].norm = Vec3::from(&norm);
+                    });
+                }
+
+                //extract colors
+                if let Some(colors) = reader.read_colors(0) {
+                    colors.into_rgb_f32().enumerate().for_each(|(i, color)| {
+                        mesh.vertices[i].col = Vec3::from(&color);
+                    });
+                }
+                //extract texture coordinates
+                if let Some(texels) = reader.read_tex_coords(0) {
+                    texels.into_f32().enumerate().for_each(|(i, texel)| {
+                        mesh.vertices[i].tex = Vec2::from(&texel);
+                    });
+                }
+
+                //extract weights
+                if let Some(weights) = reader.read_weights(0) {
+                    weights.into_f32().enumerate().for_each(|(i, weight)| {
+                        mesh.vertices[i].weights = weight;
+                    });
+                }
+
+                //extract bone ids
+                if let Some(boneids) = reader.read_joints(0) {
+                    boneids.into_u16().enumerate().for_each(|(i, batch)| {
+                        mesh.vertices[i].bone_ids = [
+                            ids[batch[0] as usize],
+                            ids[batch[1] as usize],
+                            ids[batch[2] as usize],
+                            ids[batch[3] as usize],
+                        ];
+                    });
+                }
+
+                //extract indices
+                if let Some(indices) = reader.read_indices() {
+                    mesh.indices = indices.into_u32().collect();
+                }
+
+                meshes.push(mesh);
+            });
+        });
+
+        meshes
     }
 
-    mesh.faces.iter().for_each(|face| {
-        face.0.iter().for_each(|index| {
-            final_mesh.indices.push(*index);
-        })
-    });
+    //-----------------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------
+    // pose loading function along with its helpers
 
-    final_mesh
-}
-fn process_bones(
-    node_mesh: &russimp::mesh::Mesh,
-    counter: &mut i32,
-    vertices: &mut Vec<Vertex>,
-    skeleton: &mut HashMap<String, BoneInfo>,
-) {
-    node_mesh.bones.iter().for_each(|bone| {
-        let bone_id;
-        if !skeleton.contains_key(&bone.name) {
-            // and also add the bone itself to the skeleton stack
-            let bone_info = BoneInfo {
-                id: *counter,
-                offset: get_mat(&bone.offset_matrix),
-            };
+    pub fn load_joint_names(&self) -> Vec<String> {
+        let document = &self.0;
 
-            skeleton.insert(bone.name.to_string(), bone_info);
+        let mut names = Vec::new();
 
-            bone_id = *counter;
-        } else {
-            bone_id = skeleton.get(&bone.name).unwrap().id;
-        }
-        assert!(bone_id != -1);
+        document.nodes().for_each(|node| {
+            names.push(node.name().unwrap().to_string());
+        });
 
-        bone.weights.iter().for_each(|weight| {
-            let vert_id = weight.vertex_id as usize;
-            // set each vertex's bone id and weight
-            // 4 because thats the max bone influence
+        names
+    }
+    //-----------------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------
 
-            for i in 0..4 {
-                if vertices[vert_id].bone_ids[i] < 0 {
-                    vertices[vert_id].bone_ids[i] = bone_id;
-                    vertices[vert_id].weights[i] = weight.weight;
-                }
+    /// helper for getting transform form a node
+    pub fn get_local_transform(node: &gltf::Node) -> Transform {
+        let mut result = Transform::DEFAULT;
+
+        let transform = node.transform().decomposed();
+        result.translation = Vec3::from(&transform.0);
+        result.orientation = Quat::from(&transform.1);
+        result.scaling = Vec3::from(&transform.2);
+
+        result
+    }
+
+    pub fn exctract_rest_pose(&self) -> Pose {
+        let document = &self.0;
+
+        let mut pose = Pose::new();
+        pose.resize(document.nodes().count());
+
+        document.nodes().for_each(|node| {
+            let transform = Self::get_local_transform(&node);
+            pose.joints[node.index()] = transform;
+
+            node.children().for_each(|child| {
+                pose.parents[child.index()] = node.index() as i32;
+            });
+        });
+
+        pose
+    }
+
+    pub fn extract_inverse_bind_mats(&self) -> Vec<Mat4> {
+        let document = &self.0;
+        let buffers = &self.1;
+
+        let mut inv_poses = Vec::new();
+        inv_poses.resize(document.nodes().count(), Mat4::IDENTITY);
+
+        // assumes theres only one skin
+        // need to fix this
+        document.skins().for_each(|skin| {
+            let reader = skin.reader(|buffer| Some(&buffers[buffer.index()]));
+
+            let mut inv_bind_mats = Vec::new();
+            if let Some(inverse_bind_mats) = reader.read_inverse_bind_matrices() {
+                inv_bind_mats = inverse_bind_mats.collect();
+            }
+
+            for (i, joint) in skin.joints().enumerate() {
+                let inv_mat = &Mat4::from(&inv_bind_mats[i]);
+
+                inv_poses[joint.index()] = transpose(inv_mat);
             }
         });
 
-        // next bone id
-        *counter += 1;
-    });
-}
+        inv_poses
+    }
 
-/// convert russimp 4x4 matrix to custom matrix
-pub fn get_mat(mat: &russimp::Matrix4x4) -> Mat4 {
-    Mat4 {
-        data: [
-            [mat.a1, mat.a2, mat.a3, mat.a4],
-            [mat.b1, mat.b2, mat.b3, mat.b4],
-            [mat.c1, mat.c2, mat.c3, mat.c4],
-            [mat.d1, mat.d2, mat.d3, mat.d4],
-        ],
+    //-----------------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------
+    // loading animations data
+    // its been 2 weeks now typing without seeing any pretty animation on the screen
+    // this is starting to feel like a big mistake
+    // skill issue or not i dont care just please fuckking work
+
+    fn extract_animation(&self, channel: &gltf::animation::Channel) -> TransformTrack {
+        let buffers = &self.1;
+        let sampler = &channel.sampler();
+
+        let mut interpolation = Interpolation::Constant;
+        if sampler.interpolation() == gltf::animation::Interpolation::Linear {
+            interpolation = Interpolation::Linear;
+        } else if sampler.interpolation() == gltf::animation::Interpolation::CubicSpline {
+            interpolation = Interpolation::Cubic;
+        }
+
+        //let is_sampler_cubic = interpolation == Interpolation::Cubic;
+
+        let mut key_frames_times: Vec<f32> = Vec::new();
+        let reader = channel.reader(|buffer| Some(&buffers[buffer.index()]));
+
+        if let Some(inputs) = reader.read_inputs() {
+            match inputs {
+                gltf::accessor::Iter::Standard(times) => {
+                    key_frames_times = times.collect();
+                }
+                gltf::accessor::Iter::Sparse(_) => {
+                    println!("sparce key frames not supported");
+                }
+            }
+        };
+
+        let mut track_transform = TransformTrack::new();
+        //track_transform.resize(key_frames_times.len());
+
+        track_transform.id = channel.target().node().index() as u32;
+
+        track_transform.position.interpolation = interpolation;
+        track_transform.rotation.interpolation = interpolation;
+        track_transform.scaling.interpolation = interpolation;
+
+        if let Some(outputs) = reader.read_outputs() {
+            match outputs {
+                gltf::animation::util::ReadOutputs::Translations(translations) => {
+                    track_transform
+                        .position
+                        .frames
+                        .resize(translations.len(), VectorFrame::new());
+                    translations.enumerate().for_each(|(i, translation)| {
+                        track_transform.position.frames[i].m_value = translation;
+                        track_transform.position.frames[i].time = key_frames_times[i];
+                    });
+                }
+                gltf::animation::util::ReadOutputs::Rotations(rotations) => {
+                    let rotations = rotations.into_f32();
+                    track_transform
+                        .rotation
+                        .frames
+                        .resize(rotations.len(), QuaternionFrame::new());
+                    rotations.enumerate().for_each(|(i, rotation)| {
+                        track_transform.rotation.frames[i].m_value = rotation;
+                        track_transform.rotation.frames[i].time = key_frames_times[i];
+                    });
+                }
+                gltf::animation::util::ReadOutputs::Scales(scalings) => {
+                    track_transform
+                        .scaling
+                        .frames
+                        .resize(scalings.len(), VectorFrame::ONE);
+                    scalings.enumerate().for_each(|(i, scaling)| {
+                        track_transform.scaling.frames[i].m_value = scaling;
+                        track_transform.scaling.frames[i].time = key_frames_times[i];
+                    });
+                }
+
+                gltf::animation::util::ReadOutputs::MorphTargetWeights(_) => {}
+            }
+        }
+
+        track_transform
+    }
+
+    pub fn extrat_animations(&self) -> Vec<Clip> {
+        let document = &self.0;
+
+        let mut clips = Vec::new();
+        document.animations().for_each(|animation| {
+            let mut clip = Clip::new();
+            clip.name = animation.name().unwrap().to_string();
+            animation.channels().for_each(|channel| {
+                clip.tracks.push(self.extract_animation(&channel));
+            });
+            clip.re_calculate_duration();
+            clips.push(clip);
+        });
+
+        println!("\n");
+        for track in &clips[0].tracks {
+            println!("translation frames infos {}", track.position.frames.len());
+            for frame in &track.position.frames {
+                println!("time:{} value:{:?}", frame.time, frame.m_value);
+            }
+            println!("rotation frames infos");
+            for frame in &track.rotation.frames {
+                println!("time:{} value:{:?}", frame.time, frame.m_value);
+            }
+
+            println!("scaling frames infos");
+            for frame in &track.scaling.frames {
+                println!("time:{} value:{:?}", frame.time, frame.m_value);
+            }
+        }
+
+        clips
     }
 }
+//-----------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------

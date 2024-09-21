@@ -1,4 +1,4 @@
-pub mod animations;
+pub mod animation;
 pub mod assets;
 pub mod camera;
 pub mod engine;
@@ -12,6 +12,7 @@ pub mod physics;
 pub mod shaders;
 pub mod shadows;
 pub mod shapes;
+pub mod skeleton;
 pub mod timer;
 pub mod transform;
 pub mod world;

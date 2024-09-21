@@ -1,8 +1,8 @@
 use crate::gl;
-use crate::gl::types::*;
-use crate::math::mat4::Mat4;
+
 use crate::math::{vec2::*, vec3::*};
-use std::collections::HashMap;
+use std::mem::offset_of;
+use std::os::raw::c_void;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -26,14 +26,6 @@ impl Vertex {
         bone_ids: [-1; 4],
     };
 }
-/// mostly for collision detection  
-/// specify the most appropriate shape to determine the bounding volume for collisions
-
-#[derive(Clone)]
-pub struct BoneInfo {
-    pub id: i32,
-    pub offset: Mat4,
-}
 
 #[derive(Clone)]
 pub struct Mesh {
@@ -53,9 +45,6 @@ pub struct Model {
     pub squares: f32,
     pub sub_dvd: bool,
     pub lines: f32,
-    pub skeleton: HashMap<String, BoneInfo>,
-   // pub inverse: Vec<Mat4>,
-    pub bone_count: i32,
 }
 impl Mesh {
     pub fn default() -> Self {
@@ -76,23 +65,21 @@ impl Mesh {
 
             gl::BindVertexArray(self.vao);
 
-            let float_size = std::mem::size_of::<f32>();
             let vert_size = std::mem::size_of::<Vertex>();
-            //let int_size = std::mem::size_of::<i32>();
 
             gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
             gl::BufferData(
                 gl::ARRAY_BUFFER,
-                (self.vertices.len() * vert_size) as GLsizeiptr,
-                self.vertices.as_ptr() as *const GLvoid,
+                (self.vertices.len() * vert_size) as isize,
+                self.vertices.as_ptr() as *const c_void,
                 gl::STATIC_DRAW,
             );
 
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
             gl::BufferData(
                 gl::ELEMENT_ARRAY_BUFFER,
-                (self.indices.len() * std::mem::size_of::<u32>()) as GLsizeiptr,
-                self.indices.as_ptr() as *const GLvoid,
+                (self.indices.len() * std::mem::size_of::<u32>()) as isize,
+                self.indices.as_ptr() as *const c_void,
                 gl::STATIC_DRAW,
             );
 
@@ -113,7 +100,7 @@ impl Mesh {
                 gl::FLOAT,
                 gl::FALSE,
                 vert_size as i32,
-                (3 * float_size) as *const GLvoid,
+                offset_of!(Vertex, norm) as *const c_void,
             );
 
             gl::EnableVertexAttribArray(2);
@@ -123,7 +110,7 @@ impl Mesh {
                 gl::FLOAT,
                 gl::FALSE,
                 vert_size as i32,
-                (6 * float_size) as *const GLvoid,
+                offset_of!(Vertex, tex) as *const c_void,
             );
 
             gl::EnableVertexAttribArray(3);
@@ -133,7 +120,7 @@ impl Mesh {
                 gl::FLOAT,
                 gl::FALSE,
                 vert_size as i32,
-                (8 * float_size) as *const GLvoid,
+                offset_of!(Vertex, col) as *const c_void,
             );
 
             // for animations
@@ -144,7 +131,7 @@ impl Mesh {
                 gl::FLOAT,
                 gl::FALSE,
                 vert_size as i32,
-                (11 * float_size) as *const GLvoid,
+                offset_of!(Vertex, weights) as *const c_void,
             );
 
             gl::EnableVertexAttribArray(5);
@@ -153,7 +140,7 @@ impl Mesh {
                 4,
                 gl::INT,
                 vert_size as i32,
-                (15 * float_size) as *const GLvoid,
+                offset_of!(Vertex, bone_ids) as *const c_void,
             );
 
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
@@ -200,10 +187,6 @@ impl Model {
             squares: 0.0,
             sub_dvd: false,
             lines: 0.0,
-
-            bone_count: 0,
-            //inverse: Vec::new(),
-            skeleton: HashMap::new(),
         }
     }
 
@@ -220,6 +203,13 @@ impl Model {
         for mesh in self.meshes.iter_mut() {
             mesh.render();
         }
+    }
+    pub fn recolor(&mut self, color: Vec3) {
+        self.meshes.iter_mut().for_each(|mesh| {
+            mesh.vertices.iter_mut().for_each(|vertex| {
+                vertex.col = color;
+            });
+        });
     }
 }
 pub fn add_tri(mesh: &mut Mesh, p1: Vertex, p2: Vertex, p3: Vertex) {
