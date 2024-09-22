@@ -1,5 +1,8 @@
 # rusty-engine
 game engine written in rust using opengl and sdl2.
+
+![alt text](https://github.com/Rythm1c/rusty-engine/blob/main/images/mannequin_running.png)
+
 code is very ugly so would be advisable not to look...
 You have been warned!   
 coding is a hooby for me as you can tell from my nooby code, so long as i can see cool things on the screen i don't care.
