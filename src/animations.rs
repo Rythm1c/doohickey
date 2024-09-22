@@ -1,4 +1,10 @@
-extern crate russimp;
+// tried using the russimp crate but it had alot of issues so had to switch to parsers for specific file formats to 
+// make sure they were loaded correctly and changed the whole animation implimentation which took several life times
+// this code only worked on a few very specific gltf files and never animated any fbx files properly, always ended up deformed
+// also russimp could not parse collada(dae) files for some reason hmmmm.....
+// maybe it was me i dont know. never again 
+
+/*extern crate russimp;
 use russimp::animation::NodeAnim;
 use russimp::scene::PostProcess;
 
@@ -370,3 +376,4 @@ pub fn rotate_around(
 
     *pos = result.axis() * radius + center;
 }
+*/
