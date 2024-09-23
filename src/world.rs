@@ -106,7 +106,7 @@ impl World {
         });
 
         let mut player = Object::new();
-        let file = collada::ColladaFile::new(Path::new("models/xbot/Running.dae"));
+        let file = dae::ColladaFile::new(Path::new("models/xbot/Running.dae"));
 
         player.model.meshes = file.extract_meshes();
         player.skeleton.rest_pose = file.extract_rest_pose();

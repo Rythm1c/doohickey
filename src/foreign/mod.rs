@@ -1,2 +1,2 @@
-pub mod collada;
+pub mod dae;
 pub mod gltf;
