@@ -4,7 +4,6 @@
 // "john vince - quaternions for for computer graphics" was a massive help along with
 // "gabor szauer - hands on c++ game animation programming packt", both great books.
 
-
 use crate::math::{mat4::*, vec3::*};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -33,6 +32,9 @@ impl Quat {
     /// get quaternion from array
     pub fn from(a: &[f32; 4]) -> Self {
         quat(a[0], a[1], a[2], a[3])
+    }
+    pub fn to_array(&self) -> [f32; 4] {
+        [self.x, self.y, self.z, self.s]
     }
     /// halves the angle and creates a quaternion from it and the specified axis  
     /// and also axis is normalized so no worries  

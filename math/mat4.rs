@@ -210,7 +210,7 @@ impl Display for Mat4 {
         )
     }
 }
-
+#[allow(dead_code)]
 fn m4_3x3minor(
     x: &[[f32; 4]; 4],
     c0: usize,
@@ -226,6 +226,7 @@ fn m4_3x3minor(
 
     a - b + c
 }
+#[allow(dead_code)]
 fn determinant(m: &Mat4) -> f32 {
     let a = m.data[0][0] * m4_3x3minor(&m.data, 1, 2, 3, 1, 2, 3);
     let b = m.data[0][1] * m4_3x3minor(&m.data, 0, 2, 3, 1, 2, 3);
@@ -234,6 +235,7 @@ fn determinant(m: &Mat4) -> f32 {
 
     a - b + c - d
 }
+#[allow(dead_code)]
 fn adjugate(m: &Mat4) -> Mat4 {
     //Cof (M[i, j]) = Minor(M[i, j]] * pow(-1, i + j)
     let mut cofactor = Mat4::IDENTITY;
@@ -256,6 +258,7 @@ fn adjugate(m: &Mat4) -> Mat4 {
 
     transpose(&cofactor)
 }
+#[allow(dead_code)]
 pub fn inverse(m: &Mat4) -> Mat4 {
     let det = determinant(m);
 

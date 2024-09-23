@@ -19,6 +19,7 @@ pub fn lerp(s: f32, e: f32, pct: f32) -> f32 {
     s + (e - s) * pct
 }
 
+#[allow(dead_code)]
 pub fn hermite(t: f32, p1: f32, s1: f32, p2: f32, s2: f32) -> f32 {
     p1 * ((1.0 + 2.0 * t) * ((1.0 - t) * (1.0 - t)))
         + s1 * (t * ((1.0 - t) * (1.0 - t)))

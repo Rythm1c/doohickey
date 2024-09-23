@@ -1,12 +1,11 @@
 use crate::math::mat4::Mat4;
 use crate::math::vec3::Vec3;
+
 use crate::src::animation::clip::Clip;
+use crate::src::animation::pose::Pose;
 use crate::src::model::Model;
 use crate::src::skeleton::Skeleton;
 use crate::src::transform::Transform;
-
-use super::animation::pose::Pose;
-//#[allow(dead_code)]
 
 #[derive(Clone)]
 pub struct Object {
@@ -29,7 +28,7 @@ impl Object {
             skeleton: Skeleton::new(),
             animations: Vec::new(),
             play_animation: false,
-            current_anim: 2,
+            current_anim: 0,
             final_pose: Pose::new(),
         }
     }
@@ -51,26 +50,47 @@ impl Object {
     }
 
     pub fn update_animation(&mut self, time: f32) {
-        self.final_pose = self.skeleton.rest_pose.clone();
-
-        self.animations[self.current_anim].sample(&mut self.final_pose, time);
+        if self.play_animation {
+            self.final_pose = self.skeleton.rest_pose.clone();
+            // extract animation for each joint(bone)
+            self.animations[self.current_anim].sample(&mut self.final_pose, time);
+        }
     }
 
     pub fn get_pose(&mut self) -> Vec<Mat4> {
         let mut final_mats = Vec::new();
 
         let len = self.skeleton.rest_pose.joints.len();
+        //black holders for mats which arent being used
         final_mats.resize(len, Mat4::IDENTITY);
 
         if self.play_animation {
+            // the match statements are a slight attempt at optimization, to reduce the amount of matrix multiplication going on ofcourse
+            // only multiply with the joint that are actually sent to the shader
+            // not sure if this is significant though
             for i in 0..len {
-                let world = self.final_pose.get_global_tranform(i);
-                final_mats[i] = world.to_mat() * self.skeleton.inverse_bind_pose[i];
+                if let Some(inverse_pose) = self.skeleton.inverse_bind_pose[i] {
+                    // only get global transforms for joints being used
+                    // to reduce iterations perfomed ofcourse
+                    let world = self.final_pose.get_global_tranform(i);
+
+                    final_mats[i] = world.to_mat() * inverse_pose;
+                } else {
+                    // do nothing if joint contains no inverse bind pose
+                    // final_mats[i] = world.to_mat() ;
+                }
             }
         } else {
             for i in 0..len {
-                let world = self.skeleton.rest_pose.get_global_tranform(i);
-                final_mats[i] = world.to_mat() * self.skeleton.inverse_bind_pose[i];
+                // only get global transforms for joints being used
+                if let Some(inverse_pose) = self.skeleton.inverse_bind_pose[i] {
+                    let world = self.skeleton.rest_pose.get_global_tranform(i);
+
+                    final_mats[i] = world.to_mat() * inverse_pose;
+                } else {
+                    // do nothing if joint contains no inverse bind pose
+                    // final_mats[i] = world.to_mat();
+                }
             }
         }
 

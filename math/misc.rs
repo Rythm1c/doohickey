@@ -21,3 +21,11 @@ pub fn maximum(a: f32, b: f32) -> f32 {
 pub fn clamp(v: f32, min: f32, max: f32) -> f32 {
     maximum(min, minimum(v, max))
 }
+
+pub fn step(a: f32, b: f32) -> i32 {
+    if b < a {
+        return 0;
+    } else {
+        return 1;
+    }
+}

@@ -4,7 +4,6 @@ use crate::src::{
     animation::*, assets::Assets, camera, foreign::*, lights, model::*, object::*, physics,
     shaders, shadows, timer::Timer,
 };
-
 use std::path::Path;
 // abit messy but who cares
 // not sure why im bothering with comments as if anyone is going to read any of this
@@ -49,7 +48,7 @@ impl World {
         assets.add_shader("animation", s_animation);
 
         let mut model = Model::default();
-        model.add_mesh(load_sphere(100, 100, vec3(1.0, 1.0, 1.0)));
+        model.add_mesh(load_sphere(200, 200, vec3(1.0, 1.0, 1.0), None));
         model.squares = 20.0;
         model.checkered = true;
         let mut object = Object::new();
@@ -107,16 +106,16 @@ impl World {
         });
 
         let mut player = Object::new();
-        let file = GltfFile::new(Path::new("models/alien/Alien.gltf"));
-        // model.skeleton.update_inverse_bind_pose();
-        player.model.meshes = file.meshes();
-        player.skeleton.rest_pose = file.exctract_rest_pose();
+        let file = collada::ColladaFile::new(Path::new("models/xbot/Running.dae"));
+
+        player.model.meshes = file.extract_meshes();
+        player.skeleton.rest_pose = file.extract_rest_pose();
         player.skeleton.inverse_bind_pose = file.extract_inverse_bind_mats();
-        player.skeleton.joint_names = file.load_joint_names();
-        player.animations = file.extrat_animations();
+        player.skeleton.joint_names = file.extract_joint_names();
+        player.animations.push(file.extract_animations());
         player
             .change_pos(vec3(0.0, 12.0, 3.0))
-            .change_size(vec3(4.5, 4.5, 4.5));
+            .change_size(vec3(0.1, 0.1, 0.1));
 
         //player.model.recolor(vec3(0.37, 0.74, 1.0));
         player.model.prepere_render_resources();
@@ -151,7 +150,6 @@ impl World {
         let projection = perspective(45.0, ratio, 0.1, 1000.0);
 
         Self {
-            // animator,
             sun,
             camera,
             player,
@@ -170,7 +168,7 @@ impl World {
         let axis = vec3(0.0, 1.0, 0.0);
         let transform = &mut self.assets.get_object("cube2").transform;
 
-        basic::spin(timer.elapsed, 90.0, vec3(0.0, 1.0, 0.0), transform);
+        basic::spin(timer.elapsed, 90.0, vec3(0.0, 1.0, -0.5), transform);
 
         basic::rotate_around(
             center,
@@ -180,8 +178,8 @@ impl World {
             timer.elapsed,
             &mut transform.translation,
         );
+
         self.player.update_animation(timer.elapsed);
-        //  self.animator.update_animation(timer.delta);
 
         self
     }
@@ -283,7 +281,7 @@ impl World {
 
         let mats = &self.player.get_pose();
         for i in 0..mats.len() {
-            shader.update_mat4(format!("finalBonesMatrices[{i}]").as_str(), mats[i]);
+            shader.update_mat4(format!("boneMats[{i}]").as_str(), mats[i]);
         }
 
         model_to_shader(&mut self.player, shader);
@@ -302,6 +300,7 @@ fn model_to_shader(o: &mut Object, shader: &mut shaders::Program) {
 }
 
 use shaders::{Program, Shader};
+
 /// function assumes there will only be a vertex and fragment shader  
 /// no geometry shader capabilities for this engine yet and not planning on adding anytime soon
 fn create_shader(vert: &Path, frag: &Path) -> Program {

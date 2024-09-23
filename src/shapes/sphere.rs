@@ -1,14 +1,15 @@
 use crate::math::{misc::*, vec3::*};
 use crate::src::model::*;
+use crate::src::shapes::patterns::*;
 
-pub fn load_sphere(lats: u32, longs: u32, color: Vec3) -> Mesh {
+pub fn load_sphere(lats: u32, longs: u32, color: Vec3, pattern: Option<Pattern>) -> Mesh {
     let mut mesh = Mesh::default();
 
     let lat_angle: f32 = 180.0 / (lats as f32 - 1.0);
     let long_angle: f32 = 360.0 / (longs as f32 - 1.0);
     // tmp vertex
     let mut vert: Vertex = Vertex::DEFAULT;
-    vert.col = color;
+
     // get vertices
     for i in 0..lats {
         let theta = 90.0 - (i as f32) * lat_angle;
@@ -24,6 +25,13 @@ pub fn load_sphere(lats: u32, longs: u32, color: Vec3) -> Mesh {
             vert.pos.z = xy * alpha.to_radians().sin();
 
             vert.tex.x = j as f32 / (longs as f32 - 1.0);
+            // for shading
+            if let Some(choice) = pattern {
+                let s = shaded(vert.tex, choice);
+                vert.col = s * color;
+            } else {
+                vert.col = color;
+            }
 
             vert.norm = vert.pos;
 
@@ -159,6 +167,7 @@ fn divide(v1: Vertex, v2: Vertex) -> Vertex {
 }
 /// work in progress...  
 /// thinking of a way to arange those triangles is a pain in the ass
+#[allow(dead_code)]
 pub fn dodecahedron(divs: i32, color: Vec3) -> Mesh {
     let icosphere = load_icosphere(divs, color);
     let mut mesh = Mesh::default();
@@ -176,6 +185,7 @@ pub fn dodecahedron(divs: i32, color: Vec3) -> Mesh {
 
     mesh
 }
+#[allow(dead_code)]
 fn centroid(face: [Vertex; 3]) -> Vertex {
     let mut average = Vertex::DEFAULT;
 

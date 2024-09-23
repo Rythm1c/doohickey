@@ -14,15 +14,17 @@ impl Pose {
         }
     }
     pub fn get_global_tranform(&mut self, i: usize) -> Transform {
-        let mut result = self.joints[i].clone();
+        let mut result = self.joints[i];
         let mut p = self.parents[i];
 
-        while p >= 0 {
+        //infinitly loop until a parent index of -1(root joint containing not parent) is found
+        loop {
+            if p < 0 {
+                return result;
+            }
             result = Transform::combine(&self.joints[p as usize], &result);
             p = self.parents[p as usize];
         }
-
-        result
     }
     pub fn resize(&mut self, new_len: usize) {
         self.parents.resize(new_len, -1);

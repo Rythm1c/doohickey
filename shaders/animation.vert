@@ -22,19 +22,19 @@ out vs_Out {
 
 const int MAX_BONES = 300;
 const int MAX_BONE_INFLUENCE = 4;
-uniform mat4 finalBonesMatrices[MAX_BONES];
+uniform mat4 boneMats[MAX_BONES];
 
 void main() {
 
-    mat4 BoneTransform = finalBonesMatrices[boneIds[0]] * weights[0];
-    BoneTransform += finalBonesMatrices[boneIds[1]] * weights[1];
-    BoneTransform += finalBonesMatrices[boneIds[2]] * weights[2];
-    BoneTransform += finalBonesMatrices[boneIds[3]] * weights[3];
+    mat4 skin = boneMats[boneIds[0]] * weights[0];
+    skin += boneMats[boneIds[1]] * weights[1];
+    skin += boneMats[boneIds[2]] * weights[2];
+    skin += boneMats[boneIds[3]] * weights[3];
 
-    mat4 viewModel = view * transform;
-    gl_Position = projection * viewModel * BoneTransform * vec4(pos, 1.0);
+    mat4 final_mat = transform * skin;
+    gl_Position = projection * view * final_mat * vec4(pos, 1.0);
 
-    vs_out.normal = mat3(transpose(inverse(transform))) * norm;
+    vs_out.normal = mat3(transpose(inverse(final_mat))) * norm;
     vs_out.fragCol = col;
     vs_out.texCoords = tc;
 

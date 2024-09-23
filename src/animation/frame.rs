@@ -5,6 +5,8 @@ pub struct Frame<const N: usize> {
     pub m_out: [f32; N],
     pub time: f32,
 }
+
+#[allow(unused)]
 pub type ScalarFrame = Frame<1>;
 pub type VectorFrame = Frame<3>;
 pub type QuaternionFrame = Frame<4>;

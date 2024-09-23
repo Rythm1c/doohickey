@@ -37,8 +37,6 @@ impl TransformTrack {
         }
     }
 
-    //  pub fn set_time(&mut self)
-
     pub fn get_start_time(&self) -> f32 {
         let mut result = 0.0;
         let mut is_set = false;
@@ -98,7 +96,6 @@ impl TransformTrack {
 
         if self.position.frames.len() > 1 {
             result.translation = self.position.sample::<Vec3>(time, looping);
-            // println!("{}", self.position.frame_index(time, looping).unwrap());
         }
 
         if self.rotation.frames.len() > 1 {

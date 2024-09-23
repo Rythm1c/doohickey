@@ -31,7 +31,7 @@ impl Clip {
         }
 
         let time = self.adjust_time_to_fit_range(time);
-        println!("");
+
         let len = self.tracks.len();
         for i in 0..len {
             let j = self.tracks[i].id;

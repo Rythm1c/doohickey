@@ -19,6 +19,7 @@ pub struct Track<const N: usize> {
     pub interpolation: curves::Interpolation,
 }
 
+#[allow(unused)]
 pub type ScalarTrack = Track<1>;
 pub type VectorTrack = Track<3>;
 pub type QuatTrack = Track<4>;

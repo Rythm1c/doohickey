@@ -31,6 +31,9 @@ impl Vec3 {
             z: a[2],
         }
     }
+    pub fn to_array(&self) -> [f32; 3] {
+        [self.x, self.y, self.z]
+    }
     // vector length
     pub fn len(&self) -> f32 {
         (self.x.powf(2.0) + self.y.powf(2.0) + self.z.powf(2.0)).sqrt()
