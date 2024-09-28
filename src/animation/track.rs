@@ -124,7 +124,6 @@ impl<const N: usize> Track<N> {
 
         if len <= 0 {
             // there has been an error
-
             return Err(String::from("error finding frame index!"));
         }
 
@@ -155,7 +154,6 @@ impl<const N: usize> Track<N> {
         }
 
         // there has been an error
-
         Err(String::from("error finding frame index!"))
     }
 

@@ -14,10 +14,11 @@ use std::path::Path;
 //_______________________________________________________________________________________________
 // gltf loader definations
 // not perfect but works well enough for most files
+// still a work in progress
 extern crate gltf;
 
 /// 0: documnet, 1: buffers, 2: images
-/// planning on implimenting an image loader soon
+/// planning on implimenting an image loader soon an materials
 #[allow(unused)]
 pub struct GltfFile(
     gltf::Document,
@@ -27,7 +28,40 @@ pub struct GltfFile(
 
 impl GltfFile {
     pub fn new(path: &Path) -> GltfFile {
+        let path = path.to_str().unwrap();
         let (document, buffers, images) = gltf::import(path).unwrap();
+
+        println!("information about {}", path.split("/").last().unwrap());
+
+        println!("number of meshes {}", document.meshes().count());
+
+        let joint_count = document.nodes().count();
+        if joint_count == 0 {
+            println!("no joints were found ");
+        } else {
+            println!("number of joints {joint_count}");
+        }
+
+        let animation_count = document.animations().count();
+        if animation_count == 0 {
+            println!("no animations were found");
+        } else {
+            println!("number of animations {animation_count}");
+        }
+
+        let skin_count = document.skins().count();
+        if skin_count == 0 {
+            println!("no skins were found");
+        } else {
+            println!("number of skins {skin_count}")
+        }
+
+        let material_count = document.materials().count();
+        if material_count == 0 {
+            println!("no materials found")
+        } else {
+            println!("number of material {material_count}");
+        }
 
         GltfFile(document, buffers, images)
     }
@@ -40,8 +74,6 @@ impl GltfFile {
 
         let mut skins = Vec::new();
         skins.resize(document.skins().count(), Vec::new());
-
-        println!("num of skins {}", document.skins().count());
 
         document.skins().for_each(|skin| {
             let mut joints = Vec::new();
@@ -61,7 +93,7 @@ impl GltfFile {
                 let mut mesh = Mesh::default();
 
                 let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-
+                //primitive.material().index();
                 // extract positions
                 if let Some(positions) = reader.read_positions() {
                     positions.for_each(|pos| {
@@ -127,8 +159,14 @@ impl GltfFile {
         meshes
     }
 
-    //-----------------------------------------------------------------------------------------------
-    //-----------------------------------------------------------------------------------------------
+    /* pub fn extract_materials(&self) {
+        let document = &self.0;
+
+        document.materials().for_each(|material|{material.;});
+    } */
+
+    //_______________________________________________________________________________________________
+    //_______________________________________________________________________________________________
     // pose loading function along with its helpers
 
     pub fn extract_joint_names(&self) -> Vec<String> {
@@ -142,8 +180,8 @@ impl GltfFile {
 
         names
     }
-    //-----------------------------------------------------------------------------------------------
-    //-----------------------------------------------------------------------------------------------
+    //_______________________________________________________________________________________________
+    //_______________________________________________________________________________________________
 
     /// helper for getting transform form a node
     pub fn get_local_transform(node: &gltf::Node) -> Transform {
@@ -202,12 +240,13 @@ impl GltfFile {
         inv_poses
     }
 
-    //-----------------------------------------------------------------------------------------------
-    //-----------------------------------------------------------------------------------------------
+    //_______________________________________________________________________________________________
+    //_______________________________________________________________________________________________
     // loading animations data
     // its been 2 weeks now typing without seeing any pretty animation on the screen
     // this is starting to feel like a big mistake
-    // skill issue or not i dont care just please fuckking work
+    // skill issue or not i dont care just please fuckking WORK!
+    // it finally works btw :)
 
     fn extract_animation(&self, channel: &gltf::animation::Channel) -> TransformTrack {
         let buffers = &self.1;
@@ -300,5 +339,3 @@ impl GltfFile {
         clips
     }
 }
-//-----------------------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------------------------

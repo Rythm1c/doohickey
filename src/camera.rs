@@ -19,8 +19,20 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(f: Vec3, u: Vec3, p: Vec3, v: f32) -> Result<Camera, String> {
-        Ok(Camera {
+    pub fn default() -> Self {
+        Self {
+            front: vec3(0.0, 0.0, 1.0),
+            up: vec3(0.0, 1.0, 0.0),
+            pos: vec3(0.0, 4.0, 0.0),
+            velocity: 0.5,
+            pitch: 0.0,
+            yaw: radians(90.0),
+            dir: Direction::None,
+        }
+    }
+
+    pub fn new(f: Vec3, u: Vec3, p: Vec3, v: f32) -> Self {
+        Camera {
             front: f,
             up: u,
             pos: p,
@@ -28,7 +40,7 @@ impl Camera {
             pitch: 0.0,
             yaw: radians(90.0),
             dir: Direction::None,
-        })
+        }
     }
 
     pub fn get_view(&self) -> Mat4 {

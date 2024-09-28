@@ -7,6 +7,9 @@ use crate::src::model::Model;
 use crate::src::skeleton::Skeleton;
 use crate::src::transform::Transform;
 
+// this could use some work
+// got to find a better way to impliment this and mesh struct.... and the model struct
+// this whole thing could use some work im just sort of doing my own stuff
 #[derive(Clone)]
 pub struct Object {
     pub model: Model,

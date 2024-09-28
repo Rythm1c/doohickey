@@ -26,10 +26,13 @@ uniform bool textured;
 // getting a checkered pattern on an objects surface
 uniform bool checkered;
 uniform float squares;
+uniform float sqr_shade;
 float checkered_fn();
 // drawing a grid line on an objects surface
 uniform bool subDivided;
 uniform float lines;
+uniform float line_thickness;
+uniform float line_shade;
 float line_fn();
 // blending with background based on distance from camera
 // also can be used to create a lazy fog effect
@@ -46,21 +49,17 @@ float ortho_shadow();
 void main() {
     vec3 result = vec3(0.0);
 
-    if(textured) {
-       // result = texture(image, vs_in.texCoords).rgb;
-    } else {
-        result += directional_light();
+    //result += directional_light();
 
-        //for(int i = 0; i < pointLightCount; i++) result += calc_pointlight(pointLights[i]);
-    }
+    for(int i = 0; i < pointLightCount; i++) result += calc_pointlight(pointLights[i]);
 
     if(checkered) {
         if(checkered_fn() == 1)
-            result *= 0.3;
+            result *= sqr_shade;
     }
     if(subDivided) {
         if(line_fn() == 0)
-            result *= 0.1;
+            result *= line_shade;
     }
 
     vec3 background = vec3(0.1);
@@ -87,8 +86,8 @@ float checkered_fn() {
 }
 float line_fn() {
     float line = 1.0 / lines;
-    vec2 a = step(vec2(0.005), fract(fs_in.texCoords / line));
-    vec2 b = step(vec2(0.005), 1.0 - fract(fs_in.texCoords / line));
+    vec2 a = step(vec2(line_thickness), fract(fs_in.texCoords / line));
+    vec2 b = step(vec2(line_thickness), 1.0 - fract(fs_in.texCoords / line));
     return a.x * a.y * b.x * b.y;
 }
 

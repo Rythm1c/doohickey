@@ -74,6 +74,8 @@ fn main() {
 
         window.gl_swap_window();
 
-        //println!("fps : {}", (1.0 / timer.delta));
+        let fps = 1.0 / timer.delta;
+        eprint!("\rfps : {fps}");
     }
+    eprintln!("\nFinished");
 }

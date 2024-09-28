@@ -41,10 +41,6 @@ pub struct Mesh {
 pub struct Model {
     pub meshes: Vec<Mesh>,
     pub textured: bool,
-    pub checkered: bool,
-    pub squares: f32,
-    pub sub_dvd: bool,
-    pub lines: f32,
 }
 impl Mesh {
     pub fn default() -> Self {
@@ -124,6 +120,8 @@ impl Mesh {
             );
 
             // for animations
+            // _________________________________________________
+            // _________________________________________________
             gl::EnableVertexAttribArray(4);
             gl::VertexAttribPointer(
                 4,
@@ -142,6 +140,8 @@ impl Mesh {
                 vert_size as i32,
                 offset_of!(Vertex, bone_ids) as *const c_void,
             );
+            // _________________________________________________
+            // _________________________________________________
 
             gl::BindBuffer(gl::ARRAY_BUFFER, 0);
             gl::BindVertexArray(0);
@@ -183,10 +183,6 @@ impl Model {
         Self {
             meshes: Vec::new(),
             textured: false,
-            checkered: false,
-            squares: 0.0,
-            sub_dvd: false,
-            lines: 0.0,
         }
     }
 
@@ -243,5 +239,3 @@ pub fn add_tri(mesh: &mut Mesh, p1: Vertex, p2: Vertex, p3: Vertex) {
         bone_ids: p3.bone_ids,
     });
 }
-
-//use crate::src::player::{Bone, Player};

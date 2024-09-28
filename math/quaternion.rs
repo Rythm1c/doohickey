@@ -23,7 +23,7 @@ impl Quat {
         x: 0.0,
         y: 0.0,
         z: 0.0,
-        s: 0.0,
+        s: 1.0,
     };
 
     pub fn new(x: f32, y: f32, z: f32, s: f32) -> Self {

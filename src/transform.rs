@@ -91,7 +91,6 @@ impl Transform {
                 [0.0, 0.0, 0.0, 1.0],
             ],
         }
-       // translate(&self.translation) * self.orientation.to_mat() * scale(&self.scaling)
     }
 
     pub fn inverse(&self) -> Self {

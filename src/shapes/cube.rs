@@ -1,8 +1,9 @@
 use crate::math::{vec2::*, vec3::*};
 use crate::src::model::*;
 
-pub fn load_cube(color_cube: bool, color: Vec3) -> Mesh {
+pub fn cube(color_cube: bool, color: Vec3) -> Mesh {
     let mut mesh = Mesh::default();
+
     //front face
     for v in &DATA {
         mesh.vertices.push(Vertex {
@@ -28,6 +29,7 @@ pub fn load_cube(color_cube: bool, color: Vec3) -> Mesh {
 
     mesh
 }
+
 /// work in progress...
 
 const FACE_COLORS: [Vec3; 6] = [

@@ -1,14 +1,14 @@
 use crate::math::{misc::*, vec3::*};
 use crate::src::model::*;
-use crate::src::shapes::patterns::*;
 
-pub fn load_sphere(lats: u32, longs: u32, color: Vec3, pattern: Option<Pattern>) -> Mesh {
+pub fn sphere(lats: u32, longs: u32, color: Vec3) -> Mesh {
     let mut mesh = Mesh::default();
 
     let lat_angle: f32 = 180.0 / (lats as f32 - 1.0);
     let long_angle: f32 = 360.0 / (longs as f32 - 1.0);
     // tmp vertex
     let mut vert: Vertex = Vertex::DEFAULT;
+    vert.col = color;
 
     // get vertices
     for i in 0..lats {
@@ -25,13 +25,6 @@ pub fn load_sphere(lats: u32, longs: u32, color: Vec3, pattern: Option<Pattern>)
             vert.pos.z = xy * alpha.to_radians().sin();
 
             vert.tex.x = j as f32 / (longs as f32 - 1.0);
-            // for shading
-            if let Some(choice) = pattern {
-                let s = shaded(vert.tex, choice);
-                vert.col = s * color;
-            } else {
-                vert.col = color;
-            }
 
             vert.norm = vert.pos;
 
@@ -50,11 +43,11 @@ pub fn load_sphere(lats: u32, longs: u32, color: Vec3, pattern: Option<Pattern>)
             mesh.indices.push((i + 1) * longs + (j + 1) % longs);
         }
     }
-
     mesh
 }
 
-pub fn load_icosphere(divs: i32, color: Vec3) -> Mesh {
+// no texture vertices for now
+pub fn icosphere(divs: i32, color: Vec3) -> Mesh {
     let lat_angle = (0.5 as f32).atan();
     let long_angle = radians(72.0);
     let mut tmp = Mesh::default();
@@ -94,7 +87,6 @@ pub fn load_icosphere(divs: i32, color: Vec3) -> Mesh {
     tmp.vertices.push(vertex);
     // arranges verts into triangles
     let mut mesh = Mesh::default();
-
     let triangles: Vec<[usize; 3]> = vec![
         [0, 1, 2],
         [0, 2, 3],
@@ -164,40 +156,6 @@ fn divide(v1: Vertex, v2: Vertex) -> Vertex {
     v3.norm = v3.pos;
 
     v3
-}
-/// work in progress...  
-/// thinking of a way to arange those triangles is a pain in the ass
-#[allow(dead_code)]
-pub fn dodecahedron(divs: i32, color: Vec3) -> Mesh {
-    let icosphere = load_icosphere(divs, color);
-    let mut mesh = Mesh::default();
-    //assuming its a triangle
-    let faces = 0..(icosphere.vertices.len() / 3);
-
-    for face in faces {
-        let verts = [
-            icosphere.vertices[face * 3 + 0],
-            icosphere.vertices[face * 3 + 1],
-            icosphere.vertices[face * 3 + 2],
-        ];
-        mesh.vertices.push(centroid(verts));
-    }
-
-    mesh
-}
-#[allow(dead_code)]
-fn centroid(face: [Vertex; 3]) -> Vertex {
-    let mut average = Vertex::DEFAULT;
-
-    for vert in face {
-        average.pos = average.pos + vert.pos;
-        average.col = average.col + vert.col;
-    }
-    average.pos = project_to_sphere(average.pos / 3.0);
-    average.col = average.col / 3.0;
-    average.norm = average.pos;
-
-    average
 }
 
 fn project_to_sphere(v: Vec3) -> Vec3 {

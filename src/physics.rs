@@ -1,6 +1,6 @@
 use crate::math::vec3::*;
 
-use crate::src::object;
+use crate::src::shapes::shape::Shape;
 use std::collections::HashMap;
 
 struct AABB {
@@ -39,48 +39,40 @@ pub fn gravity(v: &mut Vec3) {
 // none of the function conserve momentum and are very primitive
 // nothing too fancy
 
-pub fn collision_sphere_sphere(
-    s1: String,
-    s2: String,
-    models: &mut HashMap<String, object::Object>,
-) {
+pub fn collision_sphere_sphere(s1: String, s2: String, shapes: &mut HashMap<String, Shape>) {
     // get the distance between the two spheres
-    let distance = (models.get(&s1).unwrap().transform.translation
-        - models.get(&s2).unwrap().transform.translation)
+    let distance = (shapes.get(&s1).unwrap().transform.translation
+        - shapes.get(&s2).unwrap().transform.translation)
         .len();
     // get the average of size attributes
     // since the Model struct doesn't have a radius member
-    let radius1 = radius(&models.get(&s1).unwrap().transform.scaling);
-    let radius2 = radius(&models.get(&s2).unwrap().transform.scaling);
+    let radius1 = radius(&shapes.get(&s1).unwrap().transform.scaling);
+    let radius2 = radius(&shapes.get(&s2).unwrap().transform.scaling);
     let sum_radii = radius1 + radius2;
     // if distance between objects(spheres) is less than the sum of both radii
     // then a collision  has occured
     if distance < sum_radii {
-        let s2_pos = models.get(&s2).unwrap().transform.translation;
-        let s1_pos = models.get(&s1).unwrap().transform.translation;
+        let s2_pos = shapes.get(&s2).unwrap().transform.translation;
+        let s1_pos = shapes.get(&s1).unwrap().transform.translation;
         // |AB| = |OB|-|OA|
         let ab = (s2_pos - s1_pos).unit();
         //update each objects position to outside the others bounds
-        models.get_mut(&s1).unwrap().transform.translation = s2_pos + (ab * -sum_radii);
-        models.get_mut(&s2).unwrap().transform.translation = s1_pos + (ab * sum_radii);
+        shapes.get_mut(&s1).unwrap().transform.translation = s2_pos + (ab * -sum_radii);
+        shapes.get_mut(&s2).unwrap().transform.translation = s1_pos + (ab * sum_radii);
         // reflect velocity and reduce magnitude
-        let rv1 = reflect(&models.get_mut(&s1).unwrap().velocity, &(-ab));
-        let rv2 = reflect(&models.get_mut(&s2).unwrap().velocity, &ab);
-        models.get_mut(&s1).unwrap().velocity = rv1 * 0.8;
-        models.get_mut(&s2).unwrap().velocity = rv2 * 0.8;
+        let rv1 = reflect(&shapes.get_mut(&s1).unwrap().velocity, &(-ab));
+        let rv2 = reflect(&shapes.get_mut(&s2).unwrap().velocity, &ab);
+        shapes.get_mut(&s1).unwrap().velocity = rv1 * 0.8;
+        shapes.get_mut(&s2).unwrap().velocity = rv2 * 0.8;
     }
 }
 // check collision betweem sphere and axis aligned bounding box
-pub fn collision_sphere_aabb(
-    sphere: String,
-    aabb: String,
-    models: &mut HashMap<String, object::Object>,
-) {
-    let radius = radius(&models.get(&sphere).unwrap().transform.scaling);
-    let aabb_size = models.get(&aabb).unwrap().transform.scaling;
+pub fn collision_sphere_aabb(sphere: String, aabb: String, shapes: &mut HashMap<String, Shape>) {
+    let radius = radius(&shapes.get(&sphere).unwrap().transform.scaling);
+    let aabb_size = shapes.get(&aabb).unwrap().transform.scaling;
 
-    let sphere_pos = models.get(&sphere).unwrap().transform.translation;
-    let aabb_pos = models.get(&aabb).unwrap().transform.translation;
+    let sphere_pos = shapes.get(&sphere).unwrap().transform.translation;
+    let aabb_pos = shapes.get(&aabb).unwrap().transform.translation;
 
     // BA = AO + BO = -OB + OA
     let mut difference = sphere_pos - aabb_pos;
@@ -93,23 +85,19 @@ pub fn collision_sphere_aabb(
         // BA=AO+BO=-OB+OA
         difference = sphere_pos - closest_point;
         let normal = difference.unit();
-        let new_velocity = models.get(&sphere).unwrap().velocity * 0.8;
+        let new_velocity = shapes.get(&sphere).unwrap().velocity * 0.8;
 
-        models.get_mut(&sphere).unwrap().transform.translation =
+        shapes.get_mut(&sphere).unwrap().transform.translation =
             sphere_pos + normal * radius - difference;
-        models.get_mut(&sphere).unwrap().velocity = reflect(&new_velocity, &normal);
+        shapes.get_mut(&sphere).unwrap().velocity = reflect(&new_velocity, &normal);
     }
 }
 //check and resolve collisions between two axis aligned bounding boxes
-pub fn collision_aabb_aabb(
-    aabb1: String,
-    aabb2: String,
-    models: &mut HashMap<String, object::Object>,
-) {
-    let pos1 = models.get(&aabb1).unwrap().transform.translation;
-    let pos2 = models.get(&aabb2).unwrap().transform.translation;
-    let size1 = models.get(&aabb1).unwrap().transform.scaling;
-    let size2 = models.get(&aabb2).unwrap().transform.scaling;
+pub fn collision_aabb_aabb(aabb1: String, aabb2: String, shapes: &mut HashMap<String, Shape>) {
+    let pos1 = shapes.get(&aabb1).unwrap().transform.translation;
+    let pos2 = shapes.get(&aabb2).unwrap().transform.translation;
+    let size1 = shapes.get(&aabb1).unwrap().transform.scaling;
+    let size2 = shapes.get(&aabb2).unwrap().transform.scaling;
 
     let box1 = get_aabb(pos1.clone(), size1.clone());
     let box2 = get_aabb(pos2.clone(), size2.clone());
@@ -152,8 +140,8 @@ pub fn collision_aabb_aabb(
             difference = vec3(0.0, 0.0, -dz);
         }
         //finally update
-        new_velocity = models.get_mut(&aabb1).unwrap().velocity * 0.8;
-        models.get_mut(&aabb1).unwrap().transform.translation = difference + pos1;
-        models.get_mut(&aabb1).unwrap().velocity = reflect(&new_velocity, &normal);
+        new_velocity = shapes.get_mut(&aabb1).unwrap().velocity * 0.8;
+        shapes.get_mut(&aabb1).unwrap().transform.translation = difference + pos1;
+        shapes.get_mut(&aabb1).unwrap().velocity = reflect(&new_velocity, &normal);
     }
 }

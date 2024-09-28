@@ -9,6 +9,7 @@ use crate::src::transform::Transform;
 /// spin object
 pub fn spin(elapsed: f32, angle: f32, axis: Vec3, transform: &mut Transform) {
     transform.orientation = Quat::create(angle * elapsed, axis);
+    //transform.orientation = transform.orientation.unit();
 }
 /// rotate object around a specified center and angle per sec(velocity) along an axis
 pub fn rotate_around(

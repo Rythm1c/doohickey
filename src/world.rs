@@ -1,30 +1,28 @@
 use crate::math::{mat4::*, quaternion::Quat, vec3::*};
-use crate::src::shapes::{cube::load_cube, sphere::*, torus::torus};
+use crate::src::shapes::{cube::cube, shape::Pattern, shape::Shape, sphere::*, torus::torus};
 use crate::src::{
-    animation::*, assets::Assets, camera, foreign::*, lights, model::*, object::*, physics,
-    shaders, shadows, timer::Timer,
+    animation::*, assets::Assets, camera::Camera, foreign::*, lights, object::*, physics, shaders,
+    shadows, timer::Timer,
 };
+
+use std::collections::HashMap;
 use std::path::Path;
+
 // abit messy but who cares
 // not sure why im bothering with comments as if anyone is going to read any of this
 pub struct World {
-    pub camera: camera::Camera,
+    pub camera: Camera,
     player: Object,
     projection: Mat4,
     sun: lights::DirectionalLight,
     assets: Assets,
-    //animator: Animator,
+    shapes: HashMap<String, Shape>,
 }
 
 impl World {
     pub fn new(ratio: f32) -> Self {
-        let camera = camera::Camera::new(
-            vec3(0.0, 0.0, 1.0),
-            vec3(0.0, 5.0, 0.0),
-            vec3(0.0, 20.0, -30.0),
-            0.5,
-        )
-        .unwrap();
+        let mut camera = Camera::default();
+        camera.pos = vec3(0.0, 20.0, -30.0);
 
         let mut assets = Assets::new();
 
@@ -47,80 +45,54 @@ impl World {
         assets.add_shader("shadow", s_shadow);
         assets.add_shader("animation", s_animation);
 
-        let mut model = Model::default();
-        model.add_mesh(load_sphere(200, 200, vec3(1.0, 1.0, 1.0), None));
-        model.squares = 20.0;
-        model.checkered = true;
-        let mut object = Object::new();
+        let mut shapes = HashMap::new();
+        let mut shape = Shape::new();
+        shape
+            .reshape(sphere(200, 200, vec3(1.0, 1.0, 1.0)))
+            .reposition(vec3(4.0, 30.0, 10.0))
+            .rescale(vec3(4.0, 4.0, 4.0))
+            .change_pattern(Pattern::Checkered(0.3, 20));
+        shapes.insert(String::from("ball"), shape);
 
-        object
-            .change_pos(vec3(4.0, 30.0, 10.0))
-            .change_size(vec3(4.0, 4.0, 4.0))
-            .update_model(model);
-        assets.add_object("ball", object.clone());
+        let mut shape = Shape::new();
+        shape
+            .reshape(icosphere(4, vec3(1.0, 0.35, 0.06)))
+            .reposition(vec3(15.0, 40.0, 10.0))
+            .rescale(vec3(7.0, 7.0, 7.0));
+        shapes.insert(String::from("ball2"), shape);
 
-        model = Model::default();
-        model.add_mesh(load_icosphere(4, vec3(1.0, 0.35, 0.06)));
-        object
-            .change_pos(vec3(15.0, 40.0, 10.0))
-            .change_size(vec3(7.0, 7.0, 7.0))
-            .update_model(model);
-        assets.add_object("ball2", object.clone());
+        let mut shape = Shape::new();
+        shape
+            .reshape(cube(false, vec3(1.0, 0.13, 0.48)))
+            .reposition(vec3(-15.0, 40.0, 20.0))
+            .rescale(vec3(6.0, 6.0, 6.0));
+        shapes.insert(String::from("cube"), shape);
 
-        model = Model::default();
-        model.add_mesh(load_cube(false, vec3(1.0, 0.13, 0.48)));
-        object
-            .change_pos(vec3(-15.0, 40.0, 20.0))
-            .change_size(vec3(6.0, 6.0, 6.0))
-            .update_model(model);
-        assets.add_object("cube", object.clone());
+        let mut shape = Shape::new();
+        shape
+            .reshape(cube(true, Vec3::ZERO))
+            .reposition(vec3(5.0, 5.0, 5.0))
+            .rescale(vec3(5.0, 5.0, 5.0));
+        shapes.insert(String::from("cube2"), shape);
 
-        model = Model::default();
-        model.add_mesh(load_cube(true, Vec3::ZERO));
-        object
-            .change_pos(vec3(5.0, 5.0, 5.0))
-            .change_size(vec3(5.0, 5.0, 5.0))
-            .update_model(model);
-        assets.add_object("cube2", object.clone());
+        let mut shape = Shape::new();
+        shape
+            .reshape(torus(50, vec3(0.64, 1.0, 0.13)))
+            .reposition(vec3(-15.0, 5.0, -5.0))
+            .rescale(vec3(10.0, 10.0, 10.0));
+        shapes.insert(String::from("torus"), shape);
 
-        model = Model::default();
-        model.add_mesh(torus(50, vec3(0.64, 1.0, 0.13)));
-        object
-            .change_pos(vec3(-15.0, 5.0, -5.0))
-            .change_size(vec3(10.0, 10.0, 10.0))
-            .update_model(model);
-        assets.add_object("torus", object.clone());
+        let mut shape = Shape::new();
+        shape
+            .reshape(cube(false, vec3(0.9, 0.9, 0.9)))
+            .reposition(vec3(0.0, -2.0, 0.0))
+            .rescale(vec3(1000.0, 2.0, 1000.0))
+            .change_pattern(Pattern::Striped(0.1, 0.005, 70));
+        shapes.insert(String::from("platform"), shape);
 
-        model = Model::default();
-        model.add_mesh(load_cube(false, vec3(0.9, 0.9, 0.9)));
-        model.sub_dvd = true;
-        model.lines = 70.0;
-        object
-            .change_pos(vec3(0.0, -2.0, 0.0))
-            .change_size(vec3(1000.0, 2.0, 1000.0))
-            .update_model(model.clone());
-        assets.add_object("platform", object);
-
-        assets.objects.values_mut().for_each(|object| {
-            object.model.prepere_render_resources();
+        shapes.values_mut().for_each(|shape| {
+            shape.create();
         });
-
-        let mut player = Object::new();
-        let file = dae::ColladaFile::new(Path::new("models/xbot/Running.dae"));
-
-        player.model.meshes = file.extract_meshes();
-        player.skeleton.rest_pose = file.extract_rest_pose();
-        player.skeleton.inverse_bind_pose = file.extract_inverse_bind_mats();
-        player.skeleton.joint_names = file.extract_joint_names();
-        player.animations.push(file.extract_animations());
-        player
-            .change_pos(vec3(0.0, 12.0, 3.0))
-            .change_size(vec3(0.1, 0.1, 0.1));
-
-        //player.model.recolor(vec3(0.37, 0.74, 1.0));
-        player.model.prepere_render_resources();
-        player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
-        player.play_animation = true;
 
         assets.add_pointlight(lights::PointLight {
             pos: vec3(30.0, 20.0, -20.0),
@@ -147,9 +119,27 @@ impl World {
             dir: vec3(0.3, -0.7, 0.4),
         };
 
+        let mut player = Object::new();
+        let file = gltf::GltfFile::new(Path::new("models/alien/Alien.gltf"));
+
+        player.model.meshes = file.extract_meshes();
+        player.skeleton.rest_pose = file.extract_rest_pose();
+        player.skeleton.inverse_bind_pose = file.extract_inverse_bind_mats();
+        player.skeleton.joint_names = file.extract_joint_names();
+        player.animations = file.extract_animations();
+        player
+            .change_pos(vec3(0.0, 12.0, 3.0))
+            .change_size(vec3(3.5, 3.5, 3.5));
+
+        player.model.prepere_render_resources();
+        player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
+        player.play_animation = true;
+        player.current_anim = 2;
+
         let projection = perspective(45.0, ratio, 0.1, 1000.0);
 
         Self {
+            shapes,
             sun,
             camera,
             player,
@@ -166,9 +156,9 @@ impl World {
     pub fn update_animations(&mut self, timer: &Timer) -> &mut Self {
         let center = vec3(0.0, 20.0, 20.0);
         let axis = vec3(0.0, 1.0, 0.0);
-        let transform = &mut self.assets.get_object("cube2").transform;
+        let transform = &mut self.shapes.get_mut("cube2").unwrap().transform;
 
-        basic::spin(timer.elapsed, 90.0, vec3(0.0, 1.0, -0.5), transform);
+        basic::spin(timer.elapsed, 90.0, vec3(1.0, 1.0, 0.0), transform);
 
         basic::rotate_around(
             center,
@@ -184,19 +174,19 @@ impl World {
         self
     }
     pub fn update_physics(&mut self) -> &mut Self {
-        let objects = &mut self.assets.objects;
+        let shapes = &mut self.shapes;
 
-        physics::collision_sphere_sphere(String::from("ball"), String::from("ball2"), objects);
-        physics::collision_sphere_aabb(String::from("ball"), String::from("platform"), objects);
-        physics::collision_sphere_aabb(String::from("ball2"), String::from("platform"), objects);
-        physics::collision_aabb_aabb(String::from("cube"), String::from("platform"), objects);
+        physics::collision_sphere_sphere(String::from("ball"), String::from("ball2"), shapes);
+        physics::collision_sphere_aabb(String::from("ball"), String::from("platform"), shapes);
+        physics::collision_sphere_aabb(String::from("ball2"), String::from("platform"), shapes);
+        physics::collision_aabb_aabb(String::from("cube"), String::from("platform"), shapes);
 
-        physics::gravity(&mut self.assets.get_object("cube").velocity);
-        physics::gravity(&mut self.assets.get_object("ball").velocity);
-        physics::gravity(&mut self.assets.get_object("ball2").velocity);
+        physics::gravity(&mut shapes.get_mut("cube").unwrap().velocity);
+        physics::gravity(&mut shapes.get_mut("ball").unwrap().velocity);
+        physics::gravity(&mut shapes.get_mut("ball2").unwrap().velocity);
 
-        self.assets.objects.values_mut().for_each(|object| {
-            object.update_pos_with_velocity();
+        self.shapes.values_mut().for_each(|shape| {
+            shape.add_velocity();
         });
 
         self
@@ -224,7 +214,7 @@ impl World {
     }
 
     pub fn render(&mut self) {
-        let objects = &mut self.assets.objects;
+        let shapes = &mut self.shapes;
         let lights = &self.assets.lights;
         let shader = &mut self.assets.shaders.get_mut("object").unwrap();
 
@@ -246,13 +236,9 @@ impl World {
             pl_to_shader(lights[i], shader, i);
         }
 
-        /*  model_to_shader(&mut self.player, shader);
-        self.player.model.render(); */
-
         // object specific
-        objects.values_mut().for_each(|object| {
-            model_to_shader(object, shader);
-            object.model.render();
+        shapes.values_mut().for_each(|shape| {
+            shape.render(shader);
         });
     }
 
@@ -293,10 +279,6 @@ impl World {
 fn model_to_shader(o: &mut Object, shader: &mut shaders::Program) {
     shader.update_mat4("transform", o.transform.get());
     shader.update_int("textured", o.model.textured as i32);
-    shader.update_int("checkered", o.model.checkered as i32);
-    shader.update_float("squares", o.model.squares);
-    shader.update_int("subDivided", o.model.sub_dvd as i32);
-    shader.update_float("lines", o.model.lines);
 }
 
 use shaders::{Program, Shader};
@@ -312,6 +294,8 @@ fn create_shader(vert: &Path, frag: &Path) -> Program {
 }
 /// send point light to shaders point light array
 fn pl_to_shader(light: lights::PointLight, shader: &mut shaders::Program, i: usize) {
-    shader.update_vec3(format!("pointLights[{i}].position").as_str(), light.pos);
-    shader.update_vec3(format!("pointLights[{i}].color").as_str(), light.col);
+    let pos = format!("pointLights[{i}].position");
+    let col = format!("pointLights[{i}].color");
+    shader.update_vec3(pos.as_str(), light.pos);
+    shader.update_vec3(col.as_str(), light.col);
 }

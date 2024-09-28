@@ -105,7 +105,7 @@ impl ColladaFile {
         names
     }
 
-    pub fn extract_animations(&self) -> Clip {
+    pub fn extract_clip(&self) -> Clip {
         let mut clip = Clip::new();
 
         let animations = &self.0.get_animations().unwrap();

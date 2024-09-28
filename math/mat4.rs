@@ -4,6 +4,7 @@
 // most of this is just the books code translated to rust with a few changes here and there.
 // and https://songho.ca/opengl/ was also pretty helpfull
 
+#![allow(dead_code)]
 use crate::math::{misc::*, quaternion::Quat, vec3::*};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -11,7 +12,6 @@ pub struct Mat4 {
     pub data: [[f32; 4]; 4],
 }
 
-#[allow(dead_code)]
 pub fn mat4(
     xx: f32,
     xy: f32,
@@ -210,7 +210,7 @@ impl Display for Mat4 {
         )
     }
 }
-#[allow(dead_code)]
+
 fn m4_3x3minor(
     x: &[[f32; 4]; 4],
     c0: usize,
@@ -226,7 +226,7 @@ fn m4_3x3minor(
 
     a - b + c
 }
-#[allow(dead_code)]
+
 fn determinant(m: &Mat4) -> f32 {
     let a = m.data[0][0] * m4_3x3minor(&m.data, 1, 2, 3, 1, 2, 3);
     let b = m.data[0][1] * m4_3x3minor(&m.data, 0, 2, 3, 1, 2, 3);
@@ -235,9 +235,9 @@ fn determinant(m: &Mat4) -> f32 {
 
     a - b + c - d
 }
-#[allow(dead_code)]
+
 fn adjugate(m: &Mat4) -> Mat4 {
-    //Cof (M[i, j]) = Minor(M[i, j]] * pow(-1, i + j)
+    //Cof (M[i, j]) = Minor(M[i, j]]) * pow(-1, i + j)
     let mut cofactor = Mat4::IDENTITY;
     cofactor.data[0][0] = m4_3x3minor(&m.data, 1, 2, 3, 1, 2, 3);
     cofactor.data[1][0] = -m4_3x3minor(&m.data, 1, 2, 3, 0, 2, 3);
@@ -258,7 +258,7 @@ fn adjugate(m: &Mat4) -> Mat4 {
 
     transpose(&cofactor)
 }
-#[allow(dead_code)]
+
 pub fn inverse(m: &Mat4) -> Mat4 {
     let det = determinant(m);
 
@@ -270,7 +270,6 @@ pub fn inverse(m: &Mat4) -> Mat4 {
     adj * (1.0 / det)
 }
 
-#[allow(dead_code)]
 pub fn transpose(m: &Mat4) -> Mat4 {
     Mat4 {
         data: [
@@ -282,7 +281,6 @@ pub fn transpose(m: &Mat4) -> Mat4 {
     }
 }
 
-#[allow(dead_code)]
 pub fn translate(p: &Vec3) -> Mat4 {
     Mat4 {
         data: [
@@ -303,7 +301,7 @@ pub fn scale(s: &Vec3) -> Mat4 {
         ],
     }
 }
-#[allow(dead_code)]
+
 //rotation matrices using euler angles
 ///rotation around the x-axis using specified angle
 pub fn rotation_x(angle: f32) -> Mat4 {
@@ -322,7 +320,7 @@ pub fn rotation_x(angle: f32) -> Mat4 {
         ],
     };
 }
-#[allow(dead_code)]
+
 ///rotation around the y-axis using specified angle
 pub fn rotation_y(angle: f32) -> Mat4 {
     let xx = radians(angle).cos();
@@ -340,7 +338,7 @@ pub fn rotation_y(angle: f32) -> Mat4 {
         ],
     };
 }
-#[allow(dead_code)]
+
 ///rotation around the Z-axis using specified angle
 pub fn rotation_z(angle: f32) -> Mat4 {
     let xx = radians(angle).cos();
