@@ -49,9 +49,9 @@ float ortho_shadow();
 void main() {
     vec3 result = vec3(0.0);
 
-    //result += directional_light();
+    result += directional_light();
 
-    for(int i = 0; i < pointLightCount; i++) result += calc_pointlight(pointLights[i]);
+    //for(int i = 0; i < pointLightCount; i++) result += calc_pointlight(pointLights[i]);
 
     if(checkered) {
         if(checkered_fn() == 1)

@@ -1,13 +1,15 @@
 extern crate gl;
 extern crate sdl2;
 
+mod math;
+mod screen_capture;
+mod src;
+
+use screen_capture::system::ScreenCapture;
 use src::{
     input::{self, WinInfo},
     timer, world,
 };
-
-mod math;
-mod src;
 
 fn main() {
     let sdl = sdl2::init().unwrap();
@@ -36,6 +38,8 @@ fn main() {
     use std::os::raw::c_void;
     let _gl = gl::load_with(|s| video_sub_sys.gl_get_proc_address(s) as *const c_void);
 
+    video_sub_sys.gl_set_swap_interval(1).unwrap();
+
     unsafe {
         gl::Viewport(0, 0, win_info.w, win_info.h);
         gl::Enable(gl::DEPTH_TEST);
@@ -48,6 +52,8 @@ fn main() {
     let mut world = world::World::new(win_info.get_ratio());
 
     let mut timer = timer::Timer::new();
+
+    let mut screen_shot = ScreenCapture::new(win_info.w as u32, win_info.h as u32);
 
     while win_info.running {
         timer.update();
@@ -72,10 +78,15 @@ fn main() {
         world.render();
         world.render_skeletal_animations();
 
+        screen_shot.capture();
+
         window.gl_swap_window();
 
         let fps = 1.0 / timer.delta;
         eprint!("\rfps : {fps}");
     }
+
+    screen_shot.save_video(&String::from("frame"));
+
     eprintln!("\nFinished");
 }

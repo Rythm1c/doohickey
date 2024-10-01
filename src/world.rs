@@ -1,9 +1,15 @@
+use super::animation::*;
+use super::assets::Assets;
+use super::camera::Camera;
+use super::foreign::*;
+use super::lights;
+use super::object::*;
+use super::physics;
+use super::shaders;
+use super::shadows;
+use super::shapes::{cube::cube, shape::Pattern, shape::Shape, sphere::*, torus::torus};
+use super::timer::Timer;
 use crate::math::{mat4::*, quaternion::Quat, vec3::*};
-use crate::src::shapes::{cube::cube, shape::Pattern, shape::Shape, sphere::*, torus::torus};
-use crate::src::{
-    animation::*, assets::Assets, camera::Camera, foreign::*, lights, object::*, physics, shaders,
-    shadows, timer::Timer,
-};
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -120,7 +126,7 @@ impl World {
         };
 
         let mut player = Object::new();
-        let file = gltf::GltfFile::new(Path::new("models/alien/Alien.gltf"));
+        let file = gltf::GltfFile::new(Path::new("models/mannequin/Running.glb"));
 
         player.model.meshes = file.extract_meshes();
         player.skeleton.rest_pose = file.extract_rest_pose();
@@ -134,7 +140,7 @@ impl World {
         player.model.prepere_render_resources();
         player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
         player.play_animation = true;
-        player.current_anim = 2;
+        player.current_anim = 0;
 
         let projection = perspective(45.0, ratio, 0.1, 1000.0);
 
