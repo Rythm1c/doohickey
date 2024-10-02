@@ -11,12 +11,9 @@ sdl2 = "0.37.0"
 gltf = "1.4.1"
 collada = "0.15.0"
 image = "0.25.2"
-#video-rs = "0.9.0"
-#ndarray = "0.16.1"
-ffmpeg-next = "7.1.0"
+#ffmpeg-next = "7.1.0"
 #rusttype = "0.9.3"
 #egui = "0.28.1"
-
 [[bin]]
 name = "rust-engine"
 path = "main.rs"

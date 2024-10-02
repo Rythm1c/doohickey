@@ -1,5 +1,7 @@
-extern crate gl;
-extern crate sdl2;
+use std::path::Path;
+
+use gl;
+use sdl2;
 
 mod math;
 mod screen_capture;
@@ -53,7 +55,7 @@ fn main() {
 
     let mut timer = timer::Timer::new();
 
-    let mut screen_shot = ScreenCapture::new(win_info.w as u32, win_info.h as u32);
+    let mut recorder = ScreenCapture::new(win_info.w as u32, win_info.h as u32);
 
     while win_info.running {
         timer.update();
@@ -78,7 +80,7 @@ fn main() {
         world.render();
         world.render_skeletal_animations();
 
-        screen_shot.capture();
+        recorder.capture();
 
         window.gl_swap_window();
 
@@ -86,7 +88,7 @@ fn main() {
         eprint!("\rfps : {fps}");
     }
 
-    screen_shot.save_video(&String::from("frame"));
+    recorder.save_video(&Path::new("vid.mp4"));
 
     eprintln!("\nFinished");
 }
