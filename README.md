@@ -1,4 +1,4 @@
-# rusty-engine
+# Doo-hickey
 game engine written in rust using opengl and sdl2.
 
 ![alt text](https://github.com/Rythm1c/rusty-engine/blob/main/images/mannequin_running.png)
