@@ -1,18 +1,23 @@
+use std::collections::HashMap;
+use std::path::Path;
+
 use super::animation::*;
 use super::assets::Assets;
 use super::camera::Camera;
 use super::foreign::*;
 use super::lights;
 use super::object::*;
-use super::physics;
+
 use super::shaders;
 use super::shadows;
-use super::shapes::{cube::cube, shape::Pattern, shape::Shape, sphere::*, torus::torus};
+
 use super::timer::Timer;
 use crate::math::{mat4::*, quaternion::Quat, vec3::*};
 
-use std::collections::HashMap;
-use std::path::Path;
+use crate::physics::collision;
+use crate::physics::force;
+
+use super::shapes::{cube::cube, shape::Pattern, shape::Shape, sphere::*, torus::torus};
 
 // abit messy but who cares
 // not sure why im bothering with comments as if anyone is going to read any of this
@@ -92,8 +97,8 @@ impl World {
         shape
             .reshape(cube(false, vec3(0.9, 0.9, 0.9)))
             .reposition(vec3(0.0, -2.0, 0.0))
-            .rescale(vec3(1000.0, 2.0, 1000.0))
-            .change_pattern(Pattern::Striped(0.1, 0.005, 70));
+            .rescale(vec3(1e3, 2.0, 1e3))
+            .change_pattern(Pattern::Striped(0.1, 5e-3, 70));
         shapes.insert(String::from("platform"), shape);
 
         shapes.values_mut().for_each(|shape| {
@@ -140,9 +145,9 @@ impl World {
         player.model.prepere_render_resources();
         player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
         player.play_animation = true;
-        player.current_anim = 0;
+        player.current_anim = 2;
 
-        let projection = perspective(45.0, ratio, 0.1, 1000.0);
+        let projection = perspective(45.0, ratio, 0.1, 1e3);
 
         Self {
             shapes,
@@ -154,7 +159,7 @@ impl World {
         }
     }
     pub fn update_cam(&mut self, ratio: f32) -> &mut Self {
-        self.projection = perspective(45.0, ratio, 0.1, 1000.0);
+        self.projection = perspective(45.0, ratio, 0.1, 1e3);
         self.camera.update_motion();
 
         self
@@ -182,14 +187,14 @@ impl World {
     pub fn update_physics(&mut self) -> &mut Self {
         let shapes = &mut self.shapes;
 
-        physics::collision_sphere_sphere(String::from("ball"), String::from("ball2"), shapes);
-        physics::collision_sphere_aabb(String::from("ball"), String::from("platform"), shapes);
-        physics::collision_sphere_aabb(String::from("ball2"), String::from("platform"), shapes);
-        physics::collision_aabb_aabb(String::from("cube"), String::from("platform"), shapes);
+        collision::sphere_sphere(String::from("ball"), String::from("ball2"), shapes);
+        collision::sphere_aabb(String::from("ball"), String::from("platform"), shapes);
+        collision::sphere_aabb(String::from("ball2"), String::from("platform"), shapes);
+        collision::aabb_aabb(String::from("cube"), String::from("platform"), shapes);
 
-        physics::gravity(&mut shapes.get_mut("cube").unwrap().velocity);
-        physics::gravity(&mut shapes.get_mut("ball").unwrap().velocity);
-        physics::gravity(&mut shapes.get_mut("ball2").unwrap().velocity);
+        force::gravity(&mut shapes.get_mut("cube").unwrap().velocity);
+        force::gravity(&mut shapes.get_mut("ball").unwrap().velocity);
+        force::gravity(&mut shapes.get_mut("ball2").unwrap().velocity);
 
         self.shapes.values_mut().for_each(|shape| {
             shape.add_velocity();

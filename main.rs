@@ -1,17 +1,16 @@
-use std::path::Path;
-
 use gl;
 use sdl2;
 
 mod math;
+mod physics;
 mod screen_capture;
 mod src;
 
 use screen_capture::system::ScreenCapture;
-use src::{
-    input::{self, WinInfo},
-    timer, world,
-};
+use src::input;
+use src::timer::Timer;
+use src::world::World;
+use std::path::Path;
 
 fn main() {
     let sdl = sdl2::init().unwrap();
@@ -22,7 +21,7 @@ fn main() {
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
     gl_attr.set_context_version(4, 6);
 
-    let mut win_info = WinInfo {
+    let mut win_info = input::WinInfo {
         running: true,
         w: 1200,
         h: 800,
@@ -51,9 +50,9 @@ fn main() {
 
     let mut event_pump = sdl.event_pump().unwrap();
 
-    let mut world = world::World::new(win_info.get_ratio());
+    let mut world = World::new(win_info.get_ratio());
 
-    let mut timer = timer::Timer::new();
+    let mut timer = Timer::new();
 
     let mut recorder = ScreenCapture::new(win_info.w as u32, win_info.h as u32);
 
@@ -80,15 +79,18 @@ fn main() {
         world.render();
         world.render_skeletal_animations();
 
-        recorder.capture();
-
-        window.gl_swap_window();
+        // recorder.capture();
 
         let fps = 1.0 / timer.delta;
+
         eprint!("\rfps : {fps}");
+
+        window.gl_swap_window();
     }
 
-    recorder.save_video(&Path::new("vid.mp4"));
+    eprintln!("");
 
-    eprintln!("\nFinished");
+    //recorder.save_video(&Path::new("test.mp4"));
+
+    eprintln!("Done");
 }

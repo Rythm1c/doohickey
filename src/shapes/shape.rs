@@ -63,23 +63,25 @@ impl Shape {
         /*    shader.update_int("textured", o.model.textured as i32); */
         if let Some(pattern) = self.pattern {
             match pattern {
+                // 1 : true
+                // 0 : false
                 Pattern::Checkered(a, b) => {
-                    shader.update_int("checkered", true as i32);
+                    shader.update_int("checkered", 1);
                     shader.update_float("sqr_shade", a);
                     shader.update_float("squares", b as f32);
-                    shader.update_int("subDivided", false as i32);
+                    shader.update_int("subDivided", 0);
                 }
                 Pattern::Striped(a, b, c) => {
-                    shader.update_int("subDivided", true as i32);
+                    shader.update_int("subDivided", 1);
                     shader.update_float("line_shade", a);
                     shader.update_float("line_thickness", b);
                     shader.update_float("lines", c as f32);
-                    shader.update_int("checkered", false as i32);
+                    shader.update_int("checkered", 0);
                 }
             }
         } else {
-            shader.update_int("checkered", false as i32);
-            shader.update_int("subDivided", false as i32);
+            shader.update_int("checkered", 0);
+            shader.update_int("subDivided", 0);
         }
 
         self.mesh.render();

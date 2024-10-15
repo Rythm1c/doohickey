@@ -159,11 +159,11 @@ impl GltfFile {
         meshes
     }
 
-    /* pub fn extract_materials(&self) {
+    pub fn extract_materials(&self) {
         let document = &self.0;
 
-        document.materials().for_each(|material|{material.;});
-    } */
+        document.materials().for_each(|material|{material.emissive_texture();});
+    }
 
     //_______________________________________________________________________________________________
     //_______________________________________________________________________________________________
