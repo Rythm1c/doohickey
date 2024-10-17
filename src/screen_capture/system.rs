@@ -3,12 +3,10 @@ use std::path::Path;
 use std::process::Command;
 
 use gl;
-
 use image;
 /// my attempt at a screen capture system  
 /// obs causes flactuations when capturing my window making my fps go bananas  
-/// couldn't really figure aout the problems to im just going to make a screen capture system  
-/// i'm sure its not that difficult...
+/// couldn't really figure out the problems so im just going to make a screen capture system  
 #[derive(Debug, Default)]
 pub struct ScreenCapture {
     stream: Vec<image::DynamicImage>,
@@ -32,10 +30,10 @@ impl ScreenCapture {
     }
 
     pub fn get_frame(&self) -> Result<image::DynamicImage, String> {
-        let mut frame = image::DynamicImage::new_rgba8(self.width, self.height);
+        let mut frame = image::DynamicImage::new_rgb8(self.width, self.height);
 
         unsafe {
-            let pixels = frame.as_mut_rgba8().unwrap();
+            let pixels = frame.as_mut_rgb8().unwrap();
             let pixels_buffer_ptr = pixels.as_mut_ptr() as *mut c_void;
             // always cupture the full frame
             // might change this later but for now always capture from the top left
@@ -48,7 +46,7 @@ impl ScreenCapture {
                 y,
                 self.width as i32,
                 self.height as i32,
-                gl::RGBA,
+                gl::RGB,
                 gl::UNSIGNED_BYTE,
                 pixels_buffer_ptr,
             );
@@ -66,35 +64,41 @@ impl ScreenCapture {
     }
     /// yeah... saving as a png first before stitching them into the final video is not the fastest solution  
     /// infact, its incredibly slow might look for a faster solution in the future but for now if it works it works
-    pub fn save_video(&self, destination: &Path) {
+    pub fn save_video(&self, dest: &Path) {
         let tmp_dir = std::env::temp_dir();
 
         let total_frames = self.stream.len();
         self.stream.iter().enumerate().for_each({
             |(i, capture)| {
-                let img_path = tmp_dir.join(format!("frame_{:04}.png", i));
+                let img_path = tmp_dir.join(format!("frame_{:04}.jpeg", i));
 
-                eprint!("\rprocessing frame {i} out of {total_frames}");
+                let current_frame = i + 1;
+                eprint!("\rprocessing frame {current_frame} out of {total_frames}");
 
+                // saving jpeg images is much faster than png files but still slow
                 capture
-                    .flipv()
-                    .save_with_format(img_path, image::ImageFormat::Png)
+                    .save_with_format(img_path, image::ImageFormat::Jpeg)
                     .unwrap();
             }
         });
         eprintln!("\ndone processing frames");
 
+        // then stitch the frames together
         let status = Command::new("ffmpeg")
             .args([
                 "-framerate",
                 "60",
                 "-i",
-                &tmp_dir.join("frame_%04d.png").to_str().unwrap(),
+                &tmp_dir.join("frame_%04d.jpeg").to_str().unwrap(),
                 "-c:v",
                 "libx264",
                 "-r",
-                "60",
-                destination.to_str().unwrap(),
+                "60", // frame rate of 60 ill just leave it like this for now
+                "-vf",
+                "vflip", // verticall flip because opengl saves the pixels upside down
+                "-pix_fmt",
+                "yuvj420p",
+                dest.to_str().unwrap(),
             ])
             .status()
             .unwrap();

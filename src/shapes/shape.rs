@@ -1,5 +1,5 @@
 use crate::math::vec3::Vec3;
-use crate::src::model::Mesh;
+use crate::src::mesh::Mesh;
 use crate::src::shaders::Program;
 use crate::src::transform::Transform;
 

@@ -6,8 +6,8 @@ use crate::math::vec3::Vec3;
 use crate::src::animation::clip::Clip;
 use crate::src::animation::pose::Pose;
 use crate::src::animation::track_transform::TransformTrack;
-use crate::src::model::Mesh;
-use crate::src::model::Vertex;
+use crate::src::mesh::Mesh;
+use crate::src::mesh::Vertex;
 use crate::src::transform::Transform;
 
 use std::path::Path;

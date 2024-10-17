@@ -1,5 +1,5 @@
 use crate::math::{misc::*, vec3::*};
-use crate::src::model::*;
+use crate::src::mesh::*;
 
 pub fn sphere(lats: u32, longs: u32, color: Vec3) -> Mesh {
     let mut mesh = Mesh::default();

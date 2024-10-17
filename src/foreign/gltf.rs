@@ -1,7 +1,7 @@
 use crate::math::mat4::{transpose, Mat4};
 use crate::math::{quaternion::*, vec2::*, vec3::*};
 use crate::src::animation::pose::Pose;
-use crate::src::model::*;
+use crate::src::mesh::*;
 use crate::src::transform::Transform;
 
 use crate::src::animation::clip::Clip;
@@ -162,7 +162,9 @@ impl GltfFile {
     pub fn extract_materials(&self) {
         let document = &self.0;
 
-        document.materials().for_each(|material|{material.emissive_texture();});
+        document.materials().for_each(|material| {
+            material.emissive_texture();
+        });
     }
 
     //_______________________________________________________________________________________________

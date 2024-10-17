@@ -1,0 +1,19 @@
+[package]
+name = "doohickey"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gl = "0.14.0"
+sdl2 = "0.37.0"
+gltf = "1.4.1"
+collada = "0.15.0"
+image = "0.25.2"
+
+#rusttype = "0.9.3"
+#egui = "0.28.1"
+[[bin]]
+name = "rust-engine"
+path = "main.rs"

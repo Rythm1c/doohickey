@@ -1,12 +1,11 @@
 pub mod animation;
-pub mod assets;
 pub mod camera;
 pub mod foreign;
 pub mod framebuffer;
 pub mod input;
 pub mod lights;
+pub mod mesh;
 pub mod model;
-pub mod object;
 pub mod shaders;
 pub mod shadows;
 pub mod shapes;

@@ -1,5 +1,5 @@
 use crate::math::{vec2::*, vec3::*};
-use crate::src::model::*;
+use crate::src::mesh::*;
 
 pub fn cube(color_cube: bool, color: Vec3) -> Mesh {
     let mut mesh = Mesh::default();

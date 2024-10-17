@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use super::animation::*;
-use super::assets::Assets;
 use super::camera::Camera;
 use super::foreign::*;
 use super::lights;
-use super::object::*;
+use super::lights::PointLight;
+use super::model::Model;
 
 use super::shaders;
 use super::shadows;
@@ -23,19 +23,18 @@ use super::shapes::{cube::cube, shape::Pattern, shape::Shape, sphere::*, torus::
 // not sure why im bothering with comments as if anyone is going to read any of this
 pub struct World {
     pub camera: Camera,
-    player: Object,
+    player: Model,
     projection: Mat4,
     sun: lights::DirectionalLight,
-    assets: Assets,
     shapes: HashMap<String, Shape>,
+    shaders: HashMap<String, Program>,
+    point_lights: Vec<PointLight>,
 }
 
 impl World {
     pub fn new(ratio: f32) -> Self {
         let mut camera = Camera::default();
         camera.pos = vec3(0.0, 20.0, -30.0);
-
-        let mut assets = Assets::new();
 
         let s_obj = create_shader(
             Path::new("shaders/shader.vert"),
@@ -51,10 +50,11 @@ impl World {
             Path::new("shaders/animation.vert"),
             Path::new("shaders/shader.frag"),
         );
+        let mut shaders = HashMap::new();
 
-        assets.add_shader("object", s_obj);
-        assets.add_shader("shadow", s_shadow);
-        assets.add_shader("animation", s_animation);
+        shaders.insert(String::from("object"), s_obj);
+        shaders.insert(String::from("shadow"), s_shadow);
+        shaders.insert(String::from("animation"), s_animation);
 
         let mut shapes = HashMap::new();
         let mut shape = Shape::new();
@@ -105,21 +105,23 @@ impl World {
             shape.create();
         });
 
-        assets.add_pointlight(lights::PointLight {
+        let mut point_lights = Vec::new();
+
+        point_lights.push(lights::PointLight {
             pos: vec3(30.0, 20.0, -20.0),
             col: vec3(1.0, 1.0, 1.0),
         });
 
-        assets.add_pointlight(lights::PointLight {
+        point_lights.push(lights::PointLight {
             pos: vec3(-30.0, 20.0, -20.0),
             col: vec3(1.0, 0.6, 0.01),
         });
 
-        assets.add_pointlight(lights::PointLight {
+        point_lights.push(lights::PointLight {
             pos: vec3(30.0, 20.0, 40.0),
             col: vec3(1.0, 0.0, 1.0),
         });
-        assets.add_pointlight(lights::PointLight {
+        point_lights.push(lights::PointLight {
             pos: vec3(-30.0, 20.0, 40.0),
             col: vec3(0.0, 1.0, 0.5),
         });
@@ -130,10 +132,10 @@ impl World {
             dir: vec3(0.3, -0.7, 0.4),
         };
 
-        let mut player = Object::new();
+        let mut player = Model::default();
         let file = gltf::GltfFile::new(Path::new("models/alien/Alien.gltf"));
 
-        player.model.meshes = file.extract_meshes();
+        player.meshes = file.extract_meshes();
         player.skeleton.rest_pose = file.extract_rest_pose();
         player.skeleton.inverse_bind_pose = file.extract_inverse_bind_mats();
         player.skeleton.joint_names = file.extract_joint_names();
@@ -142,7 +144,7 @@ impl World {
             .change_pos(vec3(0.0, 12.0, 3.0))
             .change_size(vec3(3.5, 3.5, 3.5));
 
-        player.model.prepere_render_resources();
+        player.prepere_render_resources();
         player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
         player.play_animation = true;
         player.current_anim = 2;
@@ -154,7 +156,8 @@ impl World {
             sun,
             camera,
             player,
-            assets,
+            point_lights,
+            shaders,
             projection,
         }
     }
@@ -204,19 +207,19 @@ impl World {
     }
 
     pub fn update_shadows(&mut self) -> &mut Self {
-        let objects = &mut self.assets.objects;
-        let shader = &mut self.assets.shaders.get_mut("shadow").unwrap();
+        let shapes = &mut self.shapes;
+        let shader = &mut self.shaders.get_mut("shadow").unwrap();
 
         self.sun.shadows.attach(1900, 1200);
 
         shader.set_use();
         shader.update_mat4("lightSpace", self.sun.transform());
         shader.update_mat4("model", self.player.transform.get());
-        self.player.model.render();
+        self.player.render();
 
-        objects.values_mut().for_each(|object| {
-            shader.update_mat4("model", object.transform.get());
-            object.model.render();
+        shapes.values_mut().for_each(|shape| {
+            // shader.update_mat4("model", shape.transform.get());
+            shape.render(shader);
         });
         // end of render
         shadows::Shadow::detach();
@@ -226,8 +229,8 @@ impl World {
 
     pub fn render(&mut self) {
         let shapes = &mut self.shapes;
-        let lights = &self.assets.lights;
-        let shader = &mut self.assets.shaders.get_mut("object").unwrap();
+        let lights = &self.point_lights;
+        let shader = &mut self.shaders.get_mut("object").unwrap();
 
         shader.set_use();
         self.sun.shadows.bind_texture();
@@ -255,8 +258,8 @@ impl World {
 
     pub fn render_skeletal_animations(&mut self) {
         // let objects = &mut self.assets.objects;
-        let lights = &self.assets.lights;
-        let shader = &mut self.assets.shaders.get_mut("animation").unwrap();
+        let lights = &self.point_lights;
+        let shader = &mut self.shaders.get_mut("animation").unwrap();
 
         shader.set_use();
         self.sun.shadows.bind_texture();
@@ -282,14 +285,14 @@ impl World {
         }
 
         model_to_shader(&mut self.player, shader);
-        self.player.model.render();
+        self.player.render();
     }
 }
 
 // send player info to shader for drawing
-fn model_to_shader(o: &mut Object, shader: &mut shaders::Program) {
+fn model_to_shader(o: &mut Model, shader: &mut shaders::Program) {
     shader.update_mat4("transform", o.transform.get());
-    shader.update_int("textured", o.model.textured as i32);
+    shader.update_int("textured", o.textured as i32);
 }
 
 use shaders::{Program, Shader};
