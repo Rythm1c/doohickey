@@ -133,7 +133,8 @@ impl World {
         };
 
         let mut player = Model::default();
-        let file = gltf::GltfFile::new(Path::new("models/alien/Alien.gltf"));
+        let file = gltf::GltfFile::new(Path::new("models/astronaut/scene.gltf"));
+        player.update_albedo(Path::new("models/astronaut/textures/m_main_baseColor.png"));
 
         player.meshes = file.extract_meshes();
         player.skeleton.rest_pose = file.extract_rest_pose();
@@ -142,14 +143,32 @@ impl World {
         player.animations = file.extract_animations();
         player
             .change_pos(vec3(0.0, 12.0, 3.0))
-            .change_size(vec3(3.5, 3.5, 3.5));
+            .change_size(vec3(0.5, 0.5, 0.5));
 
         player.prepere_render_resources();
         player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
         player.play_animation = true;
-        player.current_anim = 2;
+        player.current_anim = 0;
+        player.textured = true;
 
         let projection = perspective(45.0, ratio, 0.1, 1e3);
+
+        shaders.get_mut("object").unwrap().set_use();
+        shaders
+            .get_mut("object")
+            .unwrap()
+            .update_int("shadowMap", 0);
+        shaders.get_mut("object").unwrap().update_int("albedo", 1);
+
+        shaders.get_mut("animation").unwrap().set_use();
+        shaders
+            .get_mut("animation")
+            .unwrap()
+            .update_int("shadowMap", 0);
+        shaders
+            .get_mut("animation")
+            .unwrap()
+            .update_int("albedo", 1);
 
         Self {
             shapes,
@@ -284,15 +303,13 @@ impl World {
             shader.update_mat4(format!("boneMats[{i}]").as_str(), mats[i]);
         }
 
-        model_to_shader(&mut self.player, shader);
+        // send player info to shader for drawing
+        shader.update_mat4("transform", self.player.transform.get());
+        shader.update_int("textured", self.player.textured as i32);
+        self.player.attach_albedo();
+
         self.player.render();
     }
-}
-
-// send player info to shader for drawing
-fn model_to_shader(o: &mut Model, shader: &mut shaders::Program) {
-    shader.update_mat4("transform", o.transform.get());
-    shader.update_int("textured", o.textured as i32);
 }
 
 use shaders::{Program, Shader};

@@ -2,6 +2,7 @@ use gl;
 use image;
 use std::os::raw::c_void;
 
+#[derive(Clone, Debug)]
 pub struct Texture {
     pub id: u32,
 }

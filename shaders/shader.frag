@@ -9,7 +9,7 @@ in vs_Out {
     vec2 texCoords;
     vec4 lightSpace;
 } fs_in;
-vec3 col = fs_in.fragCol;
+vec3 col = vec3(0.0);
 uniform vec3 viewPos;
 
 // point light data and calculations
@@ -22,7 +22,7 @@ uniform int pointLightCount;
 vec3 calc_pointlight(pointLight light);
 // texturing object surface
 uniform bool textured;
-//uniform sampler2D image;
+uniform sampler2D albedo;
 // getting a checkered pattern on an objects surface
 uniform bool checkered;
 uniform float squares;
@@ -48,7 +48,12 @@ float ortho_shadow();
 
 void main() {
     vec3 result = vec3(0.0);
-
+    vec3 tex_coord = vec3(texture(albedo, fs_in.texCoords));
+    if(textured) {
+        col = tex_coord;
+    } else {
+        col = fs_in.fragCol;
+    }
     result += directional_light();
 
     //for(int i = 0; i < pointLightCount; i++) result += calc_pointlight(pointLights[i]);
@@ -65,6 +70,7 @@ void main() {
     vec3 background = vec3(0.1);
     float backgroundfract = blend(300.0);
     result = (result * (1.0 - backgroundfract)) + (background * backgroundfract);
+    //
 
     color = vec4(result, 1.0);
     //color = vec4(0.37, 0.74, 1.0, 1.0);
@@ -131,6 +137,7 @@ float ortho_shadow() {
     return shadow;
 }
 vec3 directional_light() {
+
     vec3 result = vec3(0.0);
 
     vec3 ambient = vec3(0.15) * L_color * col;
@@ -149,6 +156,8 @@ vec3 directional_light() {
         result = ambient + (1.0 - ortho_shadow()) * (diffuse + specular);
     else
         result += ambient + diffuse + specular;
+
+    //result = pow(result, vec3(1.0 / 2.2));
 
     return result;
 }

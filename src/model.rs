@@ -1,11 +1,14 @@
+use std::path::Path;
+
 use super::mesh::*;
 use crate::math::mat4::Mat4;
 use crate::math::vec3::Vec3;
 
-use crate::src::animation::clip::Clip;
-use crate::src::animation::pose::Pose;
-use crate::src::skeleton::Skeleton;
-use crate::src::transform::Transform;
+use super::animation::clip::Clip;
+use super::animation::pose::Pose;
+use super::skeleton::Skeleton;
+use super::texture::Texture;
+use super::transform::Transform;
 
 #[derive(Clone)]
 pub struct Model {
@@ -18,6 +21,7 @@ pub struct Model {
     pub current_anim: usize,
     pub play_animation: bool,
     pub final_pose: Pose,
+    albedo: Texture,
 }
 
 impl Model {
@@ -32,6 +36,7 @@ impl Model {
             play_animation: false,
             current_anim: 0,
             final_pose: Pose::new(),
+            albedo: Texture::new(),
         }
     }
 
@@ -56,6 +61,17 @@ impl Model {
             });
         });
     }
+
+    pub fn attach_albedo(&self) {
+        unsafe {
+            gl::ActiveTexture(gl::TEXTURE1);
+        }
+        self.albedo.bind();
+    }
+    pub fn update_albedo(&mut self, path: &Path) {
+        self.albedo.from(path);
+    }
+
     pub fn change_pos(&mut self, n_pos: Vec3) -> &mut Self {
         self.transform.translation = n_pos;
         self

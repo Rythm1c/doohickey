@@ -23,8 +23,8 @@ fn main() {
 
     let mut win_info = input::WinInfo {
         running: true,
-        w: 1200,
-        h: 800,
+        w: 800,
+        h: 600,
     };
 
     let window = video_sub_sys
@@ -39,7 +39,7 @@ fn main() {
     use std::os::raw::c_void;
     let _gl = gl::load_with(|s| video_sub_sys.gl_get_proc_address(s) as *const c_void);
 
-    video_sub_sys.gl_set_swap_interval(1).unwrap();
+    //  video_sub_sys.gl_set_swap_interval(-1).unwrap();
 
     unsafe {
         gl::Viewport(0, 0, win_info.w, win_info.h);
@@ -79,7 +79,7 @@ fn main() {
         world.render();
         world.render_skeletal_animations();
 
-        // recorder.capture();
+        recorder.capture();
 
         let fps = 1.0 / timer.delta;
 
@@ -90,7 +90,7 @@ fn main() {
 
     eprintln!("");
 
-    //recorder.save_video(&Path::new("test.mp4"));
+    recorder.save_video(&Path::new("test.mp4"));
 
     eprintln!("Done");
 }
