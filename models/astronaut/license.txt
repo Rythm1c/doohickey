@@ -1,0 +1,11 @@
+Model Information:
+* title:	Sketchfab Walk
+* source:	https://sketchfab.com/3d-models/sketchfab-walk-a4c8cd37a5b6462cab40e5adcece33c0
+* author:	NiklasG (https://sketchfab.com/NiklasG)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Sketchfab Walk" (https://sketchfab.com/3d-models/sketchfab-walk-a4c8cd37a5b6462cab40e5adcece33c0) by NiklasG (https://sketchfab.com/NiklasG) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
