@@ -8,7 +8,7 @@ use crate::src::animation::clip::Clip;
 use crate::src::animation::curves::Interpolation;
 use crate::src::animation::frame::{QuaternionFrame, VectorFrame};
 use crate::src::animation::track_transform::TransformTrack;
-
+use crate::src::texture::Texture;
 use std::path::Path;
 //_______________________________________________________________________________________________
 //_______________________________________________________________________________________________
@@ -161,10 +161,23 @@ impl GltfFile {
 
     pub fn extract_materials(&self) {
         let document = &self.0;
+        let buffers = &self.1;
+        let images = &self.2;
 
-        document.materials().for_each(|material| {
-            material.emissive_texture();
+        document.images().for_each(|image| {
+            match image.source() {
+                gltf::image::Source::Uri { uri, .. } => {
+                    println!("image source = {uri}");
+                }
+                gltf::image::Source::View { view: _, .. } => {
+                    println!("image stored in buffer view")
+                }
+            };
         });
+
+        /*  document.materials().for_each(|material| {
+            material.emissive_texture();
+        }); */
     }
 
     //_______________________________________________________________________________________________

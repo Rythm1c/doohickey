@@ -1,5 +1,5 @@
 /* extern crate gl;
-extern crate na;
+use crate::math::vec3::*;
 
 use crate::src::model;
 

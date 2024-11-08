@@ -22,6 +22,7 @@ uniform int pointLightCount;
 vec3 calc_pointlight(pointLight light);
 // texturing object surface
 uniform bool textured;
+uniform sampler2D diffuse;
 uniform sampler2D albedo;
 // getting a checkered pattern on an objects surface
 uniform bool checkered;
@@ -48,9 +49,9 @@ float ortho_shadow();
 
 void main() {
     vec3 result = vec3(0.0);
-    vec3 tex_coord = vec3(texture(albedo, fs_in.texCoords));
+    vec3 tex = vec3(texture(albedo, fs_in.texCoords));
     if(textured) {
-        col = tex_coord;
+        col = tex;
     } else {
         col = fs_in.fragCol;
     }

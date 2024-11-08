@@ -79,7 +79,7 @@ fn main() {
         world.render();
         world.render_skeletal_animations();
 
-        recorder.capture();
+        // recorder.capture();
 
         let fps = 1.0 / timer.delta;
 
@@ -90,7 +90,7 @@ fn main() {
 
     eprintln!("");
 
-    recorder.save_video(&Path::new("test.mp4"));
+    //recorder.save_video(&Path::new("test.mp4"));
 
     eprintln!("Done");
 }

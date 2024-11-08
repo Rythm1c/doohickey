@@ -134,6 +134,7 @@ impl World {
 
         let mut player = Model::default();
         let file = gltf::GltfFile::new(Path::new("models/astronaut/scene.gltf"));
+        /*   let textures = &file.extract_materials(&String::from("models/astronaut")); */
         player.update_albedo(Path::new("models/astronaut/textures/m_main_baseColor.png"));
 
         player.meshes = file.extract_meshes();
@@ -153,22 +154,24 @@ impl World {
 
         let projection = perspective(45.0, ratio, 0.1, 1e3);
 
-        shaders.get_mut("object").unwrap().set_use();
-        shaders
-            .get_mut("object")
-            .unwrap()
-            .update_int("shadowMap", 0);
-        shaders.get_mut("object").unwrap().update_int("albedo", 1);
+        // prepare the textures in the shaders for rendering
+        {
+            let obj_shader = shaders.get_mut("object").unwrap();
 
-        shaders.get_mut("animation").unwrap().set_use();
-        shaders
-            .get_mut("animation")
-            .unwrap()
-            .update_int("shadowMap", 0);
-        shaders
-            .get_mut("animation")
-            .unwrap()
-            .update_int("albedo", 1);
+            obj_shader.set_use();
+            obj_shader.update_int("shadowMap", 0);
+            obj_shader.update_int("albedo", 1);
+            obj_shader.update_int("specular", 2);
+        }
+
+        {
+            let anim_shader = shaders.get_mut("animation").unwrap();
+
+            anim_shader.set_use();
+            anim_shader.update_int("shadowMap", 0);
+            anim_shader.update_int("albedo", 1);
+            anim_shader.update_int("specular", 2);
+        }
 
         Self {
             shapes,
