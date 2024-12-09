@@ -61,7 +61,7 @@ impl Mesh {
             gl::BufferData(
                 gl::ARRAY_BUFFER,
                 (self.vertices.len() * vert_size) as isize,
-                self.vertices.as_ptr() as *const c_void,
+                self.vertices.as_ptr().cast(),
                 gl::STATIC_DRAW,
             );
 
@@ -70,7 +70,7 @@ impl Mesh {
                 gl::BufferData(
                     gl::ELEMENT_ARRAY_BUFFER,
                     (self.indices.len() * std::mem::size_of::<u32>()) as isize,
-                    self.indices.as_ptr() as *const c_void,
+                    self.indices.as_ptr().cast(),
                     gl::STATIC_DRAW,
                 );
             }

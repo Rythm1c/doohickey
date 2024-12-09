@@ -60,21 +60,14 @@ impl GltfFile {
                 //prepare for next batch of data
                 let mut mesh = Mesh::default();
 
-                println!("\nmaterial name {}", primitive.material().name().unwrap());
-                //  let color = primitive.material().emissive_factor();
-                println!(
-                    "color: {:?}\n",
-                    primitive
-                        .material()
-                        .pbr_metallic_roughness()
-                        .base_color_factor()
-                );
+                let color = primitive
+                    .material()
+                    .pbr_metallic_roughness()
+                    .base_color_factor();
 
-                // primitive.material().normal_texture().unwrap().texture().source();
-                //  primitive.material().emissive_texture().unwrap().texture().name().unwrap();
 
                 let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-                //primitive.material().index();
+
                 // extract positions
                 if let Some(positions) = reader.read_positions() {
                     positions.for_each(|pos| {
@@ -128,6 +121,13 @@ impl GltfFile {
                     });
                 }
 
+                // alittle cheating
+                // have to come up with a better way of handling materials
+                // might impliment a pbr system
+                for vert in &mut mesh.vertices {
+                    vert.col = vec3(color[0], color[1], color[2])
+                }
+
                 //extract indices
                 if let Some(indices) = reader.read_indices() {
                     mesh.indices = indices.into_u32().collect();
@@ -139,28 +139,6 @@ impl GltfFile {
 
         meshes
     }
-
-    pub fn extract_materials(&self) {
-        let document = &self.0;
-        let buffers = &self.1;
-        let images = &self.2;
-
-        document.images().for_each(|image| {
-            match image.source() {
-                gltf::image::Source::Uri { uri, .. } => {
-                    println!("image source = {uri}");
-                }
-                gltf::image::Source::View { view: _, .. } => {
-                    println!("image stored in buffer view")
-                }
-            };
-        });
-
-        /*  document.materials().for_each(|material| {
-            material.emissive_texture();
-        }); */
-    }
-
     //_______________________________________________________________________________________________
     //_______________________________________________________________________________________________
     // pose loading function along with its helpers

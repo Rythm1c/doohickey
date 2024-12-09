@@ -16,6 +16,7 @@ pub struct Camera {
     pub pos: Vec3,
     pub velocity: f32,
     pub dir: Direction,
+    pub sensitivity: f32,
 }
 
 impl Camera {
@@ -27,6 +28,7 @@ impl Camera {
             velocity: 0.5,
             pitch: 0.0,
             yaw: radians(90.0),
+            sensitivity: 0.15,
             dir: Direction::None,
         }
     }
@@ -37,9 +39,7 @@ impl Camera {
             up: u,
             pos: p,
             velocity: v,
-            pitch: 0.0,
-            yaw: radians(90.0),
-            dir: Direction::None,
+            ..Camera::default()
         }
     }
 
@@ -48,8 +48,8 @@ impl Camera {
     }
 
     pub fn rotate(&mut self, mouse_pos_x: i32, mouse_pos_y: i32) {
-        let xoffset = 0.15 * (mouse_pos_x) as f32;
-        let yoffset = 0.15 * (mouse_pos_y) as f32;
+        let xoffset = self.sensitivity * (mouse_pos_x) as f32;
+        let yoffset = self.sensitivity * (mouse_pos_y) as f32;
 
         self.yaw += radians(xoffset);
         self.pitch += radians(yoffset);
