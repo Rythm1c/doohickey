@@ -133,7 +133,7 @@ impl World {
         };
 
         let mut player = Model::default();
-        let file = gltf::GltfFile::new(Path::new("models/astronaut/scene.gltf"));
+        let file = gltf::GltfFile::new(Path::new("models/alien/Alien.gltf"));
         /*   let textures = &file.extract_materials(&String::from("models/astronaut")); */
         player.update_albedo(Path::new("models/astronaut/textures/m_main_baseColor.png"));
 
@@ -149,8 +149,8 @@ impl World {
         player.prepere_render_resources();
         player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
         player.play_animation = true;
-        player.current_anim = 0;
-        player.textured = true;
+        player.current_anim = 2;
+        player.textured = false;
 
         let projection = perspective(45.0, ratio, 0.1, 1e3);
 

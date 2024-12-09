@@ -163,3 +163,35 @@ fn project_to_sphere(v: Vec3) -> Vec3 {
 
     v * scale
 }
+
+pub fn add_tri(mesh: &mut Mesh, p1: Vertex, p2: Vertex, p3: Vertex) {
+    let normal = (p1.norm + p2.norm + p3.norm) / 3.0;
+
+    mesh.vertices.push(Vertex {
+        pos: p1.pos,
+        norm: normal,
+        tex: p1.tex,
+        col: p1.col,
+
+        weights: p1.weights,
+        bone_ids: p1.bone_ids,
+    });
+    mesh.vertices.push(Vertex {
+        pos: p2.pos,
+        norm: normal,
+        tex: p2.tex,
+        col: p2.col,
+
+        weights: p2.weights,
+        bone_ids: p2.bone_ids,
+    });
+    mesh.vertices.push(Vertex {
+        pos: p3.pos,
+        norm: normal,
+        tex: p3.tex,
+        col: p3.col,
+
+        weights: p3.weights,
+        bone_ids: p3.bone_ids,
+    });
+}

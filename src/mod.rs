@@ -4,6 +4,7 @@ pub mod foreign;
 pub mod framebuffer;
 pub mod input;
 pub mod lights;
+pub mod material;
 pub mod mesh;
 pub mod model;
 pub mod shaders;

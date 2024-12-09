@@ -37,38 +37,6 @@ pub struct Mesh {
     ebo: u32,
 }
 
-pub fn add_tri(mesh: &mut Mesh, p1: Vertex, p2: Vertex, p3: Vertex) {
-    let normal = (p1.norm + p2.norm + p3.norm) / 3.0;
-
-    mesh.vertices.push(Vertex {
-        pos: p1.pos,
-        norm: normal,
-        tex: p1.tex,
-        col: p1.col,
-
-        weights: p1.weights,
-        bone_ids: p1.bone_ids,
-    });
-    mesh.vertices.push(Vertex {
-        pos: p2.pos,
-        norm: normal,
-        tex: p2.tex,
-        col: p2.col,
-
-        weights: p2.weights,
-        bone_ids: p2.bone_ids,
-    });
-    mesh.vertices.push(Vertex {
-        pos: p3.pos,
-        norm: normal,
-        tex: p3.tex,
-        col: p3.col,
-
-        weights: p3.weights,
-        bone_ids: p3.bone_ids,
-    });
-}
-
 impl Mesh {
     pub fn default() -> Self {
         Self {
@@ -89,7 +57,6 @@ impl Mesh {
             gl::BindVertexArray(self.vao);
 
             let vert_size = std::mem::size_of::<Vertex>();
-
             gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
             gl::BufferData(
                 gl::ARRAY_BUFFER,
@@ -98,13 +65,15 @@ impl Mesh {
                 gl::STATIC_DRAW,
             );
 
-            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
-            gl::BufferData(
-                gl::ELEMENT_ARRAY_BUFFER,
-                (self.indices.len() * std::mem::size_of::<u32>()) as isize,
-                self.indices.as_ptr() as *const c_void,
-                gl::STATIC_DRAW,
-            );
+            if self.indices.len() != 0 {
+                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
+                gl::BufferData(
+                    gl::ELEMENT_ARRAY_BUFFER,
+                    (self.indices.len() * std::mem::size_of::<u32>()) as isize,
+                    self.indices.as_ptr() as *const c_void,
+                    gl::STATIC_DRAW,
+                );
+            }
 
             gl::EnableVertexAttribArray(0);
             gl::VertexAttribPointer(

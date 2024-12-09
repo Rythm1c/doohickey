@@ -31,38 +31,6 @@ impl GltfFile {
         let path = path.to_str().unwrap();
         let (document, buffers, images) = gltf::import(path).unwrap();
 
-        println!("information about {}", path.split("/").last().unwrap());
-
-        println!("number of meshes {}", document.meshes().count());
-
-        let joint_count = document.nodes().count();
-        if joint_count == 0 {
-            println!("no joints were found ");
-        } else {
-            println!("number of joints {joint_count}");
-        }
-
-        let animation_count = document.animations().count();
-        if animation_count == 0 {
-            println!("no animations were found");
-        } else {
-            println!("number of animations {animation_count}");
-        }
-
-        let skin_count = document.skins().count();
-        if skin_count == 0 {
-            println!("no skins were found");
-        } else {
-            println!("number of skins {skin_count}")
-        }
-
-        let material_count = document.materials().count();
-        if material_count == 0 {
-            println!("no materials found")
-        } else {
-            println!("number of material {material_count}");
-        }
-
         GltfFile(document, buffers, images)
     }
 
@@ -91,6 +59,19 @@ impl GltfFile {
             primitives.for_each(|primitive| {
                 //prepare for next batch of data
                 let mut mesh = Mesh::default();
+
+                println!("\nmaterial name {}", primitive.material().name().unwrap());
+                //  let color = primitive.material().emissive_factor();
+                println!(
+                    "color: {:?}\n",
+                    primitive
+                        .material()
+                        .pbr_metallic_roughness()
+                        .base_color_factor()
+                );
+
+                // primitive.material().normal_texture().unwrap().texture().source();
+                //  primitive.material().emissive_texture().unwrap().texture().name().unwrap();
 
                 let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
                 //primitive.material().index();

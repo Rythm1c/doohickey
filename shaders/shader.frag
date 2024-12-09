@@ -57,21 +57,26 @@ void main() {
     }
     result += directional_light();
 
-    //for(int i = 0; i < pointLightCount; i++) result += calc_pointlight(pointLights[i]);
+    /* for(int i = 0; i < pointLightCount; i++) {
+        result += calc_pointlight(pointLights[i]);
+    } */
 
     if(checkered) {
-        if(checkered_fn() == 1)
+        if(checkered_fn() == 1) {
             result *= sqr_shade;
-    }
-    if(subDivided) {
-        if(line_fn() == 0)
-            result *= line_shade;
+        }
     }
 
+    if(subDivided) {
+        if(line_fn() == 0) {
+            result *= line_shade;
+        }
+    }
+
+    //foggy effect 
     vec3 background = vec3(0.1);
-    float backgroundfract = blend(300.0);
-    result = (result * (1.0 - backgroundfract)) + (background * backgroundfract);
-    //
+    float factor = blend(300.0);
+    result = mix(result, background, factor);
 
     color = vec4(result, 1.0);
     //color = vec4(0.37, 0.74, 1.0, 1.0);
