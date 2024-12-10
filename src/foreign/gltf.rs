@@ -155,8 +155,8 @@ impl GltfFile {
     }
     //_______________________________________________________________________________________________
     //_______________________________________________________________________________________________
-
     /// helper for getting transform form a node
+    ///
     pub fn get_local_transform(node: &gltf::Node) -> Transform {
         let mut result = Transform::DEFAULT;
 

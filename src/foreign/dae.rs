@@ -111,7 +111,7 @@ impl ColladaFile {
         let animations = &self.0.get_animations().unwrap();
 
         animations.iter().for_each(|animation| {
-            // target includes (name-of-joint)/(some other nonsense) hence the use of "split("/")"
+            // target consists of (name-of-joint)/(some other nonsense) hence the use of "split("/")"
             // only interested in the joints name
             let target = animation.target.split("/").next().unwrap();
             clip.tracks.push(extract_animation(

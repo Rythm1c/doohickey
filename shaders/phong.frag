@@ -55,6 +55,7 @@ void main() {
     } else {
         col = fs_in.fragCol;
     }
+
     result += directional_light();
 
     /* for(int i = 0; i < pointLightCount; i++) {
@@ -73,7 +74,6 @@ void main() {
         }
     }
 
-    result = pow(result, vec3(1.0 / 2.2));
     //foggy effect 
     vec3 background = vec3(0.1);
     float factor = blend(300.0);
@@ -147,6 +147,8 @@ vec3 directional_light() {
 
     vec3 result = vec3(0.0);
 
+    col = pow(col, vec3(1.0 / 2.2));
+
     vec3 ambient = vec3(0.15) * L_color * col;
 
     vec3 norm = normalize(fs_in.normal);
@@ -163,8 +165,6 @@ vec3 directional_light() {
         result = ambient + (1.0 - ortho_shadow()) * (diffuse + specular);
     else
         result += ambient + diffuse + specular;
-
-    //result = pow(result, vec3(1.0 / 2.2));
 
     return result;
 }
