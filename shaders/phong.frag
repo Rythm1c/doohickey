@@ -73,6 +73,7 @@ void main() {
         }
     }
 
+    result = pow(result, vec3(1.0 / 2.2));
     //foggy effect 
     vec3 background = vec3(0.1);
     float factor = blend(300.0);

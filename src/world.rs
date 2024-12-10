@@ -7,6 +7,7 @@ use super::foreign::*;
 use super::lights;
 use super::lights::PointLight;
 use super::model::Model;
+use shaders::Program;
 
 use super::shaders;
 use super::shadows;
@@ -36,19 +37,19 @@ impl World {
         let mut camera = Camera::default();
         camera.pos = vec3(0.0, 20.0, -30.0);
 
-        let s_obj = create_shader(
-            Path::new("shaders/shader.vert"),
-            Path::new("shaders/shader.frag"),
+        let s_obj = shaders::create_shader(
+            Path::new("shaders/common.vert"),
+            Path::new("shaders/phong.frag"),
         );
 
-        let s_shadow = create_shader(
+        let s_shadow = shaders::create_shader(
             Path::new("shaders/shadowmap.vert"),
             Path::new("shaders/shadowmap.frag"),
         );
 
-        let s_animation = create_shader(
+        let s_animation = shaders::create_shader(
             Path::new("shaders/animation.vert"),
-            Path::new("shaders/shader.frag"),
+            Path::new("shaders/phong.frag"),
         );
         let mut shaders = HashMap::new();
 
@@ -133,7 +134,7 @@ impl World {
         };
 
         let mut player = Model::default();
-        let file = gltf::GltfFile::new(Path::new("models/astronaut/scene.gltf"));
+        let file = gltf::GltfFile::new(Path::new("models/alien/Alien.gltf"));
         //let textures = &file.extract_materials(&String::from("models/astronaut"));
         player.update_albedo(Path::new("models/astronaut/textures/m_main_baseColor.png"));
 
@@ -144,13 +145,13 @@ impl World {
         player.animations = file.extract_animations();
         player
             .change_pos(vec3(0.0, 12.0, 3.0))
-            .change_size(vec3(0.5, 0.5, 0.5));
+            .change_size(vec3(2.5, 2.5, 2.5));
 
         player.prepere_render_resources();
         player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
         player.play_animation = true;
-        player.current_anim = 0;
-        player.textured = true;
+        player.current_anim = 2;
+        player.textured = false;
 
         let projection = perspective(45.0, ratio, 0.1, 1e3);
 
@@ -315,17 +316,6 @@ impl World {
     }
 }
 
-use shaders::{Program, Shader};
-
-/// function assumes there will only be a vertex and fragment shader  
-/// no geometry shader capabilities for this engine yet and not planning on adding anytime soon
-fn create_shader(vert: &Path, frag: &Path) -> Program {
-    Program::from_shaders(&[
-        Shader::from_vert_src(&vert).unwrap(),
-        Shader::from_frag_src(&frag).unwrap(),
-    ])
-    .unwrap()
-}
 /// send point light to shaders point light array
 fn pl_to_shader(light: lights::PointLight, shader: &mut shaders::Program, i: usize) {
     let pos = format!("pointLights[{i}].position");

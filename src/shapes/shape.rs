@@ -87,3 +87,11 @@ impl Shape {
         self.mesh.render();
     }
 }
+
+//my ideas arent very good tbh
+use crate::src::renderer::Renderable;
+impl Renderable for Shape {
+    fn render(&self, program: &mut Program) {
+        
+    }
+}

@@ -8,7 +8,7 @@ use crate::src::animation::clip::Clip;
 use crate::src::animation::curves::Interpolation;
 use crate::src::animation::frame::{QuaternionFrame, VectorFrame};
 use crate::src::animation::track_transform::TransformTrack;
-use crate::src::texture::Texture;
+//use crate::src::texture::Texture;
 use std::path::Path;
 //_______________________________________________________________________________________________
 //_______________________________________________________________________________________________
@@ -64,7 +64,6 @@ impl GltfFile {
                     .material()
                     .pbr_metallic_roughness()
                     .base_color_factor();
-
 
                 let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
 
@@ -222,16 +221,12 @@ impl GltfFile {
     // skill issue or not i dont care just please fuckking WORK!
     // it finally works btw :)
 
-    fn extract_animation(&self, channel: &gltf::animation::Channel) -> TransformTrack {
+    fn extract_animation(
+        &self,
+        channel: &gltf::animation::Channel,
+        track_transform: &mut TransformTrack,
+    ) {
         let buffers = &self.1;
-        let sampler = &channel.sampler();
-
-        let mut interpolation = Interpolation::Constant;
-        if sampler.interpolation() == gltf::animation::Interpolation::Linear {
-            interpolation = Interpolation::Linear;
-        } else if sampler.interpolation() == gltf::animation::Interpolation::CubicSpline {
-            interpolation = Interpolation::Cubic;
-        }
 
         let mut key_frames_times: Vec<f32> = Vec::new();
         let reader = channel.reader(|buffer| Some(&buffers[buffer.index()]));
@@ -246,14 +241,6 @@ impl GltfFile {
                 }
             }
         };
-
-        let mut track_transform = TransformTrack::new();
-
-        track_transform.id = channel.target().node().index() as u32;
-
-        track_transform.position.interpolation = interpolation;
-        track_transform.rotation.interpolation = interpolation;
-        track_transform.scaling.interpolation = interpolation;
 
         if let Some(outputs) = reader.read_outputs() {
             match outputs {
@@ -292,8 +279,6 @@ impl GltfFile {
                 gltf::animation::util::ReadOutputs::MorphTargetWeights(_) => {}
             }
         }
-
-        track_transform
     }
 
     pub fn extract_animations(&self) -> Vec<Clip> {
@@ -303,10 +288,54 @@ impl GltfFile {
         document.animations().for_each(|animation| {
             let mut clip = Clip::new();
             clip.name = animation.name().unwrap().to_string();
+
             animation.channels().for_each(|channel| {
-                clip.tracks.push(self.extract_animation(&channel));
+                //check if track exists
+
+                // bool variable to escape the horrors of the borrow checker
+                let mut exists = false;
+                let mut track_index = 0;
+
+                for (i, track) in clip.tracks.iter().enumerate() {
+                    if (track.id as usize) == channel.target().node().index() {
+                        exists = true;
+
+                        track_index = i;
+
+                        break;
+                    }
+                }
+
+                if exists {
+                    //if it does then modify the existing one
+                    self.extract_animation(&channel, &mut clip.tracks[track_index]);
+                } else {
+                    //if it doesn't create a new track
+                    let sampler = &channel.sampler();
+
+                    let mut interpolation = Interpolation::Constant;
+                    if sampler.interpolation() == gltf::animation::Interpolation::Linear {
+                        interpolation = Interpolation::Linear;
+                    } else if sampler.interpolation() == gltf::animation::Interpolation::CubicSpline
+                    {
+                        interpolation = Interpolation::Cubic;
+                    }
+
+                    let mut new_track: TransformTrack = TransformTrack::new();
+
+                    new_track.id = channel.target().node().index() as u32;
+
+                    new_track.position.interpolation = interpolation;
+                    new_track.rotation.interpolation = interpolation;
+                    new_track.scaling.interpolation = interpolation;
+
+                    self.extract_animation(&channel, &mut new_track);
+                    clip.tracks.push(new_track);
+                }
             });
+
             clip.re_calculate_duration();
+
             clips.push(clip);
         });
 

@@ -10,6 +10,16 @@ pub struct Program {
     id: gl::types::GLuint,
 }
 
+/// function assumes there will only be a vertex and fragment shader  
+/// no geometry shader capabilities for this engine yet and not planning on adding anytime soon
+pub fn create_shader(vert: &Path, frag: &Path) -> Program {
+    Program::from_shaders(&[
+        Shader::from_vert_src(&vert).unwrap(),
+        Shader::from_frag_src(&frag).unwrap(),
+    ])
+    .unwrap()
+}
+
 impl Program {
     pub fn from_shaders(shaders: &[Shader]) -> Result<Program, String> {
         let program_id = unsafe { gl::CreateProgram() };
