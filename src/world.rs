@@ -174,6 +174,8 @@ impl World {
             anim_shader.update_int("specular", 2);
         }
 
+        shapes_from_json(&mut shapes);
+
         Self {
             shapes,
             sun,
@@ -322,4 +324,104 @@ fn pl_to_shader(light: lights::PointLight, shader: &mut shaders::Program, i: usi
     let col = format!("pointLights[{i}].color");
     shader.update_vec3(pos.as_str(), light.pos);
     shader.update_vec3(col.as_str(), light.col);
+}
+
+extern crate json;
+
+pub fn shapes_from_json(shapes: &mut HashMap<String, Shape>) {
+    let data = json::object! {
+        "count": 6,
+        "shapes": [
+            {
+                "type": "sphere",
+                "lats": 200,
+                "longs": 200,
+                "name": "ball",
+                "scale": [ 4.0,4.0,4.0 ],
+                "position": [ 4.0, 30.0,10.0],
+                "color": [ 1.0,1.0,1.0 ],
+                "pattern": {
+                    "checkered": [ 0.3, 20]
+                }
+            },
+
+            {
+                "type": "icosphere",
+                "divs": 4,
+                "name": "ball2",
+                "scale": [ 7.0,7.0,7.0],
+                "position": [15.0, 40.0, 10.0],
+                "color": [ 1.0, 0.35, 0.06
+                ],
+                "pattern": "none"
+            },
+
+            {
+                "type": "cube",
+                "colorCube": true,
+                "name": "cube",
+                "scale": [ 6.0,6.0,6.0 ],
+                "position": [-15.0,40.0,20.0],
+                "color": [ 1.0, 0.13, 0.48
+                ],
+                "pattern": "none"
+            },
+            {
+                "type": "cube",
+                "colorCube": false,
+                "name": "cube2",
+                "scale": [  5.0, 5.0, 5.0 ],
+                "position": [ 5.0, 5.0, 5.0 ],
+                "color": [ 0.0,0.0, 0.0 ],
+                "pattern": "none"
+            },
+
+            {
+                "type": "torus",
+                "divs": 60,
+                "name": "torus",
+                "scale": [10.0,10.0,10.0],
+                "position": [ -15.0, 5.0,-5.0 ],
+                "color": [ 0.64, 1.0,0.13 ],
+                "pattern": "none"
+            },
+
+            {
+                "type": "cube",
+                "colorCube": false,
+                "name": "platform",
+                "scale": [ 1000.0, 2.0, 1000.0 ],
+                "position": [0.0,-2.0, 0.0 ],
+                "color": [ 0.9, 0.9, 0.9],
+                "pattern": {
+                    "striped": [0.1, 0.005,70]
+                }
+            }
+        ]
+    };
+
+    let count = data["count"].as_usize().unwrap();
+
+    for i in 0..count {
+        let shape = &data["shapes"][i];
+        let _type = shape["type"].as_str().unwrap();
+
+        let mut result = Shape::new();
+
+        match _type {
+            "sphere" => {}
+
+            "icosphere" => {}
+
+            "cube" => {}
+
+            "torus" => {}
+
+            _ => {
+                println!("unknown type!")
+            }
+        }
+
+        shapes.insert(shape["name"].to_string(), result);
+    }
 }

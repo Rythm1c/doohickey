@@ -11,6 +11,7 @@ sdl2 = "0.37.0"
 gltf = "1.4.1"
 collada = "0.15.0"
 image = "0.25.5"
+json = "0.12.4"
 #rusttype = "0.9.3"
 #egui = "0.28.1"
 
