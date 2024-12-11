@@ -54,11 +54,14 @@ void main() {
         col = tex;
     } else {
         col = fs_in.fragCol;
+
     }
+
+    col = pow(col, vec3(1.0 / 2.2));
 
     result += directional_light();
 
-    /* for(int i = 0; i < pointLightCount; i++) {
+   /*  for(int i = 0; i < pointLightCount; i++) {
         result += calc_pointlight(pointLights[i]);
     } */
 
@@ -146,8 +149,6 @@ float ortho_shadow() {
 vec3 directional_light() {
 
     vec3 result = vec3(0.0);
-
-    col = pow(col, vec3(1.0 / 2.2));
 
     vec3 ambient = vec3(0.15) * L_color * col;
 
