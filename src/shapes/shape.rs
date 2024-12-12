@@ -13,7 +13,7 @@ pub struct Shape {
 
 #[derive(Debug, Clone, Copy)]
 pub enum Pattern {
-    /// drakness, number of squares
+    /// darkness, number of squares
     Checkered(f32, i32),
 
     /// darkness, thickness, number of lines
@@ -89,7 +89,8 @@ impl Shape {
 }
 
 //my ideas arent very good tbh
-use crate::src::renderer::Renderable;
+/* use crate::src::renderer::Renderable;
 impl Renderable for Shape {
     fn render(&self, program: &mut Program) {}
 }
+ */

@@ -61,6 +61,15 @@ impl World {
         let mut point_lights = Vec::new();
 
         world_from_json(&mut shapes, &mut point_lights);
+        shapes
+            .get_mut("ball")
+            .unwrap()
+            .change_pattern(Pattern::Checkered(0.1, 30));
+
+        shapes
+            .get_mut("platform")
+            .unwrap()
+            .change_pattern(Pattern::Striped(0.3, 0.005, 70));
 
         shapes.values_mut().for_each(|shape| {
             shape.create();
@@ -73,8 +82,8 @@ impl World {
         };
 
         let mut player = Model::default();
-        let file = gltf::GltfFile::new(Path::new("models/astronaut/scene.gltf"));
-        //let textures = &file.extract_materials(&String::from("models/astronaut"));
+        let file = gltf::GltfFile::new(Path::new("models/penguin/scene.gltf"));
+        file.extract_textures();
         player.update_albedo(Path::new("models/astronaut/textures/m_main_baseColor.png"));
 
         player.meshes = file.extract_meshes();
@@ -84,13 +93,13 @@ impl World {
         player.animations = file.extract_animations();
         player
             .change_pos(vec3(0.0, 12.0, 3.0))
-            .change_size(vec3(0.5, 0.5, 0.5));
+            .change_size(vec3(7.5, 7.5, 7.5));
 
         player.prepere_render_resources();
         player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
         player.play_animation = true;
         player.current_anim = 0;
-        player.textured = true;
+        player.textured = false;
 
         let projection = perspective(45.0, ratio, 0.1, 1e3);
 
@@ -277,7 +286,8 @@ pub fn world_from_json(shapes: &mut HashMap<String, Shape>, lights: &mut Vec<Poi
                 "scale": [ 4.0,4.0,4.0 ],
                 "position": [ 4.0, 30.0,10.0],
                 "color": [ 1.0,1.0,1.0 ],
-                "pattern": {
+                "pattern":
+                {
                     "checkered": [ 0.3, 20]
                 }
             },
@@ -288,8 +298,7 @@ pub fn world_from_json(shapes: &mut HashMap<String, Shape>, lights: &mut Vec<Poi
                 "name": "ball2",
                 "scale": [ 7.0,7.0,7.0],
                 "position": [15.0, 40.0, 10.0],
-                "color": [ 1.0, 0.35, 0.06
-                ],
+                "color": [ 1.0, 0.35, 0.06],
                 "pattern": "none"
             },
 
@@ -329,7 +338,8 @@ pub fn world_from_json(shapes: &mut HashMap<String, Shape>, lights: &mut Vec<Poi
                 "scale": [ 1000.0, 2.0, 1000.0 ],
                 "position": [0.0,-2.0, 0.0 ],
                 "color": [ 0.9, 0.9, 0.9],
-                "pattern": {
+                "pattern":
+                {
                     "striped": [0.1, 0.005,70]
                 }
             }
@@ -353,6 +363,24 @@ pub fn world_from_json(shapes: &mut HashMap<String, Shape>, lights: &mut Vec<Poi
                 "col": [0.0, 1.0, 0.5]
             }
 
+        ],
+
+        "shaders": [
+            {
+                "name" : "object",
+                "frag" : "shaders/phong.frag",
+                "vert" : "shaders/common.vert"
+            },
+            {
+                "name" : "shadowMap",
+                "frag" : "shaders/shadowmap.frag",
+                "vert" : "shaders/shadowmap.vert"
+            },
+            {
+                "name" : "animation",
+                "frag" : "shaders/phong.frag",
+                "vert" : "shaders/animation.vert"
+            },
         ]
 
     };
@@ -426,7 +454,7 @@ pub fn world_from_json(shapes: &mut HashMap<String, Shape>, lights: &mut Vec<Poi
             }
 
             _ => {
-                println!("unknown type!")
+                println!("unknown shape type ({})!", _type);
             }
         }
 

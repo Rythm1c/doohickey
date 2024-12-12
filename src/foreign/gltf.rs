@@ -60,10 +60,25 @@ impl GltfFile {
                 //prepare for next batch of data
                 let mut mesh = Mesh::default();
 
-                let color = primitive
-                    .material()
-                    .pbr_metallic_roughness()
-                    .base_color_factor();
+                let pbr_info = &primitive.material().pbr_metallic_roughness();
+                let color = pbr_info.base_color_factor();
+
+                println!("base color {:?}", color);
+
+                match pbr_info.base_color_texture() {
+                    Some(texture) => match texture.texture().source().source() {
+                        gltf::image::Source::Uri { uri, .. } => {
+                            println!("texture source {}", uri);
+                        }
+
+                        _ => {
+                            println!("texture source not surported!")
+                        }
+                    },
+                    None => {
+                        println!("primitive contains no texture!")
+                    }
+                }
 
                 let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
 
@@ -137,6 +152,19 @@ impl GltfFile {
         });
 
         meshes
+    }
+
+    pub fn extract_textures(&self) {
+        let document = &self.0;
+
+        document
+            .textures()
+            .for_each(|texture| match texture.source().source() {
+                gltf::image::Source::Uri { uri, .. } => {
+                    println!("{}", uri);
+                }
+                _ => {}
+            });
     }
     //_______________________________________________________________________________________________
     //_______________________________________________________________________________________________

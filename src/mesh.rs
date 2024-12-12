@@ -74,7 +74,8 @@ impl Mesh {
                     gl::STATIC_DRAW,
                 );
             }
-
+            // _________________________________________________
+            // _________________________________________________
             gl::EnableVertexAttribArray(0);
             gl::VertexAttribPointer(
                 0,
@@ -84,7 +85,8 @@ impl Mesh {
                 vert_size as i32,
                 std::ptr::null(),
             );
-
+            // _________________________________________________
+            // _________________________________________________
             gl::EnableVertexAttribArray(1);
             gl::VertexAttribPointer(
                 1,
@@ -94,7 +96,8 @@ impl Mesh {
                 vert_size as i32,
                 offset_of!(Vertex, norm) as *const c_void,
             );
-
+            // _________________________________________________
+            // _________________________________________________
             gl::EnableVertexAttribArray(2);
             gl::VertexAttribPointer(
                 2,
@@ -104,7 +107,8 @@ impl Mesh {
                 vert_size as i32,
                 offset_of!(Vertex, tex) as *const c_void,
             );
-
+            // _________________________________________________
+            // _________________________________________________
             gl::EnableVertexAttribArray(3);
             gl::VertexAttribPointer(
                 3,
