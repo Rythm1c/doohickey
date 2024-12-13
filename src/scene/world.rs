@@ -1,24 +1,24 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use super::animation::*;
 use super::camera::Camera;
-use super::foreign::*;
 use super::lights;
 use super::lights::PointLight;
-use super::renderer::model::Model;
+use crate::src::animation::*;
+use crate::src::foreign::*;
+use crate::src::renderer::model::Model;
 use shaders::Program;
 
-use super::renderer::shaders;
-use super::renderer::shadows;
+use crate::src::renderer::shaders;
+use crate::src::renderer::shadows;
 
-use super::timer::Timer;
+use crate::src::engine::timer::Timer;
 use crate::src::math::{mat4::*, quaternion::Quat, vec3::*};
 
 use crate::src::physics::collision;
 use crate::src::physics::force;
 
-use super::shapes::{cube::cube, shape::Pattern, shape::Shape, sphere::*, torus::torus};
+use crate::src::shapes::{cube::cube, shape::Pattern, shape::Shape, sphere::*, torus::torus};
 
 // abit messy but who cares
 // not sure why im bothering with comments as if anyone is going to read any of this

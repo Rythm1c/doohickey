@@ -1,13 +1,9 @@
 pub mod animation;
-pub mod camera;
+pub mod engine;
 pub mod foreign;
-pub mod framebuffer;
-pub mod input;
-pub mod lights;
 pub mod math;
 pub mod physics;
 pub mod renderer;
+pub mod scene;
 pub mod screen_capture;
 pub mod shapes;
-pub mod timer;
-pub mod world;

@@ -3,10 +3,10 @@ use sdl2;
 
 mod src;
 
-use src::input;
+use src::engine::input;
+use src::engine::timer::Timer;
+use src::scene::world::World;
 use src::screen_capture::system::ScreenCapture;
-use src::timer::Timer;
-use src::world::World;
 use std::path::Path;
 
 fn main() {

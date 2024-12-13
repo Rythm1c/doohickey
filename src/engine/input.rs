@@ -1,6 +1,6 @@
 extern crate gl;
 use crate::src;
-use crate::src::camera::Direction;
+use crate::src::scene::camera::Direction;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
@@ -31,7 +31,7 @@ pub fn window_input(event: &Event, win_info: &mut WinInfo) {
         _ => {}
     }
 }
-pub fn mouse_input(event: &Event, cam: &mut src::camera::Camera) {
+pub fn mouse_input(event: &Event, cam: &mut src::scene::camera::Camera) {
     match event {
         Event::MouseMotion {
             xrel,
