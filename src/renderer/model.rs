@@ -1,7 +1,5 @@
 use std::path::Path;
 
-use gltf::json::extensions::texture;
-
 use crate::src::math::mat4::Mat4;
 use crate::src::math::transform::Transform;
 use crate::src::math::vec3::Vec3;
@@ -18,7 +16,6 @@ use super::texture::Texture;
 #[derive(Clone)]
 pub struct Model {
     pub meshes: Vec<Mesh>,
-
     pub transform: Transform,
     pub velocity: Vec3,
     pub animations: Vec<Clip>,
@@ -59,7 +56,23 @@ impl Model {
             mesh.create();
         }
     }
+
+    // can only choose one lighting model per model
+    // for now
     pub fn render(&mut self) {
+        // use correct material
+
+        // to be continued...
+        match &self.material {
+            Material::Pbr(pbr) => {
+                //something
+            }
+
+            Material::BlinnPhong(phong) => {
+                //something
+            }
+        }
+
         for mesh in self.meshes.iter_mut() {
             mesh.render();
         }
@@ -92,7 +105,7 @@ impl Model {
         self
     }
 
-    pub fn update_pos_with_velocity(&mut self) {
+    pub fn add_velocity(&mut self) {
         self.transform.translation = self.transform.translation + self.velocity;
     }
 

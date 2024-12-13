@@ -1,5 +1,4 @@
 {
-    "count": 6,
     "shapes": [
         {
             "type": "sphere",
@@ -22,7 +21,8 @@
                 1.0
             ],
             "pattern": {
-                "checkered": [
+                "type": "checkered",
+                "values": [
                     0.3,
                     20
                 ]
@@ -47,7 +47,9 @@
                 0.35,
                 0.06
             ],
-            "pattern": "none"
+            "pattern": {
+                "type": "none"
+            }
         },
         {
             "type": "cube",
@@ -68,7 +70,9 @@
                 0.13,
                 0.48
             ],
-            "pattern": "none"
+            "pattern": {
+                "type": "none"
+            }
         },
         {
             "type": "cube",
@@ -89,7 +93,9 @@
                 0.0,
                 0.0
             ],
-            "pattern": "none"
+            "pattern": {
+                "type": "none"
+            }
         },
         {
             "type": "torus",
@@ -110,7 +116,9 @@
                 1.0,
                 0.13
             ],
-            "pattern": "none"
+            "pattern": {
+                "type": "none"
+            }
         },
         {
             "type": "cube",
@@ -132,7 +140,8 @@
                 0.9
             ],
             "pattern": {
-                "striped": [
+                "type": "striped",
+                "values": [
                     0.1,
                     0.005,
                     70

@@ -62,15 +62,6 @@ impl World {
         let mut point_lights = Vec::new();
 
         world_from_json(&mut shapes, &mut point_lights);
-        shapes
-            .get_mut("ball")
-            .unwrap()
-            .change_pattern(Pattern::Checkered(0.1, 30));
-
-        shapes
-            .get_mut("platform")
-            .unwrap()
-            .change_pattern(Pattern::Striped(0.3, 0.005, 70));
 
         shapes.values_mut().for_each(|shape| {
             shape.create();
@@ -276,76 +267,74 @@ pub fn world_from_json(shapes: &mut HashMap<String, Shape>, lights: &mut Vec<Poi
 
     let data = json::parse(&contents[..]).unwrap();
 
-    let count = data["count"].as_usize().unwrap();
+    let data_shapes = data["shapes"].members();
 
-    for i in 0..count {
-        let shape = &data["shapes"][i];
-        let _type = shape["type"].as_str().unwrap();
+    for shape in data_shapes {
+        let shape_type = shape["type"].as_str().unwrap();
 
         let mut result = Shape::new();
 
-        let mut pos = shape["position"].members();
-        result.reposition(vec3(
-            pos.next().unwrap().as_f32().unwrap(),
-            pos.next().unwrap().as_f32().unwrap(),
-            pos.next().unwrap().as_f32().unwrap(),
-        ));
+        let pos = vec3_from_members(&mut shape["position"].members());
+        result.reposition(pos);
 
-        let mut scaling = shape["scale"].members();
-        result.rescale(vec3(
-            scaling.next().unwrap().as_f32().unwrap(),
-            scaling.next().unwrap().as_f32().unwrap(),
-            scaling.next().unwrap().as_f32().unwrap(),
-        ));
+        let scaling = vec3_from_members(&mut shape["scale"].members());
+        result.rescale(scaling);
 
         let mut color = shape["color"].members();
 
+        let pattern_type = shape["pattern"]["type"].as_str().unwrap();
+
+        match pattern_type {
+            "checkered" => {
+                let mut vals = shape["pattern"]["values"].members();
+
+                result.change_pattern(Pattern::Checkered(
+                    vals.next().unwrap().as_f32().unwrap(),
+                    vals.next().unwrap().as_i32().unwrap(),
+                ));
+            }
+
+            "striped" => {
+                let mut vals = shape["pattern"]["values"].members();
+                let values = vec3_from_members(&mut vals);
+                result.change_pattern(Pattern::Striped(values.x, values.y, values.z as i32));
+            }
+
+            _ => {
+                println!("unknown pattern type {}", pattern_type);
+            }
+        }
+
         // yikes...
         // hey if it works it works
-        match _type {
+        match shape_type {
             "sphere" => {
                 let lats = shape["lats"].as_u32().unwrap();
                 let longs = shape["longs"].as_u32().unwrap();
-                let col = vec3(
-                    color.next().unwrap().as_f32().unwrap(),
-                    color.next().unwrap().as_f32().unwrap(),
-                    color.next().unwrap().as_f32().unwrap(),
-                );
+                let col = vec3_from_members(&mut color);
                 result.reshape(sphere(lats, longs, col));
             }
 
             "icosphere" => {
                 let divs = shape["divs"].as_i32().unwrap();
-                let col = vec3(
-                    color.next().unwrap().as_f32().unwrap(),
-                    color.next().unwrap().as_f32().unwrap(),
-                    color.next().unwrap().as_f32().unwrap(),
-                );
+                let col = vec3_from_members(&mut color);
                 result.reshape(icosphere(divs, col));
             }
 
             "cube" => {
                 let color_cube = shape["colorCube"].as_bool().unwrap();
-                let col = vec3(
-                    color.next().unwrap().as_f32().unwrap(),
-                    color.next().unwrap().as_f32().unwrap(),
-                    color.next().unwrap().as_f32().unwrap(),
-                );
+                let col = vec3_from_members(&mut color);
                 result.reshape(cube(color_cube, col));
             }
 
             "torus" => {
                 let divs = shape["divs"].as_u32().unwrap();
-                let col = vec3(
-                    color.next().unwrap().as_f32().unwrap(),
-                    color.next().unwrap().as_f32().unwrap(),
-                    color.next().unwrap().as_f32().unwrap(),
-                );
+                let col = vec3_from_members(&mut color);
                 result.reshape(torus(divs, col));
             }
 
             _ => {
-                println!("unknown shape type ({})!", _type);
+                println!("unknown shape type ({})!", shape_type);
             }
         }
 
@@ -353,20 +342,17 @@ pub fn world_from_json(shapes: &mut HashMap<String, Shape>, lights: &mut Vec<Poi
     }
 
     for light in data["lights"].members() {
-        let mut position = light["pos"].members();
-        let mut color = light["col"].members();
+        let pos = vec3_from_members(&mut light["pos"].members());
+        let col = vec3_from_members(&mut light["col"].members());
 
-        lights.push(PointLight {
-            col: vec3(
-                color.next().unwrap().as_f32().unwrap(),
-                color.next().unwrap().as_f32().unwrap(),
-                color.next().unwrap().as_f32().unwrap(),
-            ),
-            pos: vec3(
-                position.next().unwrap().as_f32().unwrap(),
-                position.next().unwrap().as_f32().unwrap(),
-                position.next().unwrap().as_f32().unwrap(),
-            ),
-        });
+        lights.push(PointLight { col, pos });
     }
+}
+
+fn vec3_from_members(members: &mut json::iterators::Members) -> Vec3 {
+    vec3(
+        members.next().unwrap().as_f32().unwrap(),
+        members.next().unwrap().as_f32().unwrap(),
+        members.next().unwrap().as_f32().unwrap(),
+    )
 }

@@ -1,4 +1,5 @@
 // blinn phong fragment shader
+
 #version 460
 
 out vec4 color;
@@ -91,7 +92,7 @@ void main() {
 
     //foggy effect 
     vec3 background = vec3(0.1);
-    float factor = blend(300.0);
+    float factor = blend(400.0);
     result = mix(result, background, factor);
 
     color = vec4(result, 1.0);
@@ -172,6 +173,7 @@ float ortho_shadow() {
 }
 
 //_________________________________________________________________________
+//_________________________________________________________________________//_________________________________________________________________________
 //_________________________________________________________________________
 vec3 directional_light(vec3 col) {
 
