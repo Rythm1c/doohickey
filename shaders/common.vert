@@ -22,12 +22,13 @@ out vs_Out {
 
 void main() {
 
-    vs_out.fragPos = vec3(transform * vec4(pos, 1.0));
-    vs_out.normal = mat3(transpose(inverse(transform))) * norm;
+    vec4 worldPos = transform * vec4(pos, 1.0);
+
     vs_out.texCoords = tc;
     vs_out.fragCol = col;
-
+    vs_out.fragPos = vec3(worldPos);
+    vs_out.normal = mat3(transpose(inverse(transform))) * norm;
     vs_out.lightSpace = lightSpace * vec4(vs_out.fragPos, 1.0);
 
-    gl_Position = projection * view * transform * vec4(pos, 1.0);
+    gl_Position = projection * view * worldPos;
 }

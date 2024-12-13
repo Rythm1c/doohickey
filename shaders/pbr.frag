@@ -24,6 +24,8 @@ uniform float ao;
 uniform vec3 camPos;
 uniform sampler2D baseTexture;
 uniform sampler2D metallicTexture;
+uniform bool hasBaseTexture; // diffuse map
+uniform bool hasMetallicTexture;// specular map
 
 out vec4 color;
 
@@ -83,7 +85,7 @@ void main() {
     // gamma correction
     result = pow(result, vec3(1.0 / 2.2));
 
-    color = vec4(1.0);
+    color = vec4(result, 1.0);
 }
 
 //*** function deinations **//

@@ -1,5 +1,13 @@
-use super::shaders::Program;
+
 use super::texture::Texture;
+
+#[derive(Clone)]
+pub enum Material {
+    BlinnPhong(Phong),
+    Pbr(Pbr),
+}
+
+#[derive(Clone)]
 pub struct Phong {
     pub base_color: [f32; 3],
     pub specular_factor: i32,
@@ -7,6 +15,7 @@ pub struct Phong {
     pub specular_texture: Option<Texture>,
 }
 
+#[derive(Clone)]
 pub struct Pbr {
     pub ao: f32,
     pub base_color: [f32; 3],
@@ -40,6 +49,9 @@ impl Pbr {
     }
 }
 
+/* 
+use super::shaders::Program;
 pub trait Materail {
     fn to_shader(&self, program: &mut Program);
 }
+ */

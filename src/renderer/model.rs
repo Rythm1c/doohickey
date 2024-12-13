@@ -1,10 +1,13 @@
 use std::path::Path;
 
+use gltf::json::extensions::texture;
+
 use crate::src::math::mat4::Mat4;
 use crate::src::math::transform::Transform;
 use crate::src::math::vec3::Vec3;
 
-use crate::src::renderer::mesh::*;
+use super::material::*;
+use super::mesh::*;
 
 use crate::src::animation::clip::Clip;
 use crate::src::animation::pose::Pose;
@@ -15,7 +18,7 @@ use super::texture::Texture;
 #[derive(Clone)]
 pub struct Model {
     pub meshes: Vec<Mesh>,
-    pub textured: bool,
+
     pub transform: Transform,
     pub velocity: Vec3,
     pub animations: Vec<Clip>,
@@ -23,6 +26,9 @@ pub struct Model {
     pub current_anim: usize,
     pub play_animation: bool,
     pub final_pose: Pose,
+    pub material: Material,
+    pub textures: Vec<Texture>,
+    pub textured: bool,
     albedo: Texture,
 }
 
@@ -39,6 +45,8 @@ impl Model {
             current_anim: 0,
             final_pose: Pose::new(),
             albedo: Texture::new(),
+            textures: Vec::new(),
+            material: Material::BlinnPhong(Phong::default()),
         }
     }
 

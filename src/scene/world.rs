@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::Read;
 use std::path::Path;
 
 use super::camera::Camera;
@@ -7,10 +8,10 @@ use super::lights::PointLight;
 use crate::src::animation::*;
 use crate::src::foreign::*;
 use crate::src::renderer::model::Model;
-use shaders::Program;
 
 use crate::src::renderer::shaders;
 use crate::src::renderer::shadows;
+use shaders::Program;
 
 use crate::src::engine::timer::Timer;
 use crate::src::math::{mat4::*, quaternion::Quat, vec3::*};
@@ -86,7 +87,7 @@ impl World {
         file.extract_textures();
         player.update_albedo(Path::new("models/astronaut/textures/m_main_baseColor.png"));
 
-        player.meshes = file.extract_meshes();
+        file.extract_meshes(&mut player.meshes);
         player.skeleton.rest_pose = file.extract_rest_pose();
         player.skeleton.inverse_bind_pose = file.extract_inverse_bind_mats();
         player.skeleton.joint_names = file.extract_joint_names();
@@ -218,7 +219,7 @@ impl World {
         shader.update_int("pointLightCount", len as i32);
         // update point lights
         for i in 0..len {
-            pl_to_shader(lights[i], shader, i);
+            lights::pl_to_shader(lights[i], shader, i);
         }
 
         // object specific
@@ -247,7 +248,7 @@ impl World {
         shader.update_int("pointLightCount", len as i32);
         // update point lights
         for i in 0..len {
-            pl_to_shader(lights[i], shader, i);
+            lights::pl_to_shader(lights[i], shader, i);
         }
 
         let mats = &self.player.get_pose();
@@ -264,126 +265,16 @@ impl World {
     }
 }
 
-/// send point light to shaders point light array
-fn pl_to_shader(light: lights::PointLight, shader: &mut shaders::Program, i: usize) {
-    let pos = format!("pointLights[{i}].position");
-    let col = format!("pointLights[{i}].color");
-    shader.update_vec3(pos.as_str(), light.pos);
-    shader.update_vec3(col.as_str(), light.col);
-}
-
 extern crate json;
+use std::fs::File;
 
 pub fn world_from_json(shapes: &mut HashMap<String, Shape>, lights: &mut Vec<PointLight>) {
-    let data = json::object! {
-        "count": 6,
-        "shapes": [
-            {
-                "type": "sphere",
-                "lats": 200,
-                "longs": 200,
-                "name": "ball",
-                "scale": [ 4.0,4.0,4.0 ],
-                "position": [ 4.0, 30.0,10.0],
-                "color": [ 1.0,1.0,1.0 ],
-                "pattern":
-                {
-                    "checkered": [ 0.3, 20]
-                }
-            },
+    //
+    let mut file = File::open(Path::new("world.json")).unwrap();
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).unwrap();
 
-            {
-                "type": "icosphere",
-                "divs": 4,
-                "name": "ball2",
-                "scale": [ 7.0,7.0,7.0],
-                "position": [15.0, 40.0, 10.0],
-                "color": [ 1.0, 0.35, 0.06],
-                "pattern": "none"
-            },
-
-            {
-                "type": "cube",
-                "colorCube": false,
-                "name": "cube",
-                "scale": [ 6.0,6.0,6.0 ],
-                "position": [-15.0,40.0,20.0],
-                "color": [1.0, 0.13, 0.48],
-                "pattern": "none"
-            },
-            {
-                "type": "cube",
-                "colorCube": true,
-                "name": "cube2",
-                "scale": [  5.0, 5.0, 5.0 ],
-                "position": [ 5.0, 5.0, 5.0 ],
-                "color": [0.0, 0.0, 0.0],
-                "pattern": "none"
-            },
-
-            {
-                "type": "torus",
-                "divs": 60,
-                "name": "torus",
-                "scale": [10.0,10.0,10.0],
-                "position": [ -15.0, 5.0,-5.0 ],
-                "color": [ 0.64, 1.0,0.13 ],
-                "pattern": "none"
-            },
-
-            {
-                "type": "cube",
-                "colorCube": false,
-                "name": "platform",
-                "scale": [ 1000.0, 2.0, 1000.0 ],
-                "position": [0.0,-2.0, 0.0 ],
-                "color": [ 0.9, 0.9, 0.9],
-                "pattern":
-                {
-                    "striped": [0.1, 0.005,70]
-                }
-            }
-        ],
-
-        "lights": [
-            {
-                "pos": [30.0, 20.0, -20.0],
-                "col": [1.0, 1.0, 1.0]
-            },
-            {
-                "pos": [-30.0, 20.0, -20.0],
-                "col": [1.0, 0.6, 0.01]
-            },
-            {
-                "pos": [30.0, 20.0, 40.0],
-                "col": [1.0, 0.0, 1.0]
-            },
-            {
-                "pos": [-30.0, 20.0, 40.0],
-                "col": [0.0, 1.0, 0.5]
-            }
-
-        ],
-
-        "shaders": [
-            {
-                "name" : "object",
-                "frag" : "shaders/phong.frag",
-                "vert" : "shaders/common.vert"
-            },
-            {
-                "name" : "shadowMap",
-                "frag" : "shaders/shadowmap.frag",
-                "vert" : "shaders/shadowmap.vert"
-            },
-            {
-                "name" : "animation",
-                "frag" : "shaders/phong.frag",
-                "vert" : "shaders/animation.vert"
-            },
-        ]
-
-    };
+    let data = json::parse(&contents[..]).unwrap();
 
     let count = data["count"].as_usize().unwrap();
 

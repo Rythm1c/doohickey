@@ -1,8 +1,8 @@
-use crate::src::math::mat4::{transpose, Mat4};
-use crate::src::math::{quaternion::*, vec2::*, vec3::*};
 use crate::src::animation::pose::Pose;
-use crate::src::renderer::mesh::*;
+use crate::src::math::mat4::{transpose, Mat4};
 use crate::src::math::transform::Transform;
+use crate::src::math::{quaternion::*, vec2::*, vec3::*};
+use crate::src::renderer::mesh::*;
 
 use crate::src::animation::clip::Clip;
 use crate::src::animation::curves::Interpolation;
@@ -34,8 +34,8 @@ impl GltfFile {
         GltfFile(document, buffers, images)
     }
 
-    pub fn extract_meshes(&self) -> Vec<Mesh> {
-        let mut meshes = Vec::new();
+    pub fn extract_meshes(&self, meshes: &mut Vec<Mesh>) {
+        //let mut meshes = Vec::new();
 
         let document = &self.0;
         let buffers = &self.1;
@@ -150,8 +150,6 @@ impl GltfFile {
                 meshes.push(mesh);
             });
         });
-
-        meshes
     }
 
     pub fn extract_textures(&self) {

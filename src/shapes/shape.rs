@@ -1,7 +1,8 @@
+use crate::src::math::quaternion::Quat;
 use crate::src::math::transform::Transform;
 use crate::src::math::vec3::Vec3;
 use crate::src::renderer::mesh::Mesh;
-use crate::src::renderer::shaders::Program;
+use crate::src::renderer::shaders::{self, Program};
 
 pub struct Shape {
     mesh: Mesh,
@@ -19,6 +20,14 @@ pub enum Pattern {
     /// darkness, thickness, number of lines
     Striped(f32, f32, i32),
 }
+/*
+pub trait Shape {
+    fn change_orientation(&mut self, new_orienation: &Quat) -> &mut Self;
+    fn change_pos(&mut self, new_pos: Vec3) -> &mut Self;
+    fn reshape(&mut self, mesh: Mesh) -> &mut Self;
+    fn add_velocity(&mut self);
+    fn render(&self, program: &shaders::Program);
+} */
 
 impl Shape {
     pub fn new() -> Self {
@@ -87,10 +96,3 @@ impl Shape {
         self.mesh.render();
     }
 }
-
-//my ideas arent very good tbh
-/* use crate::src::renderer::Renderable;
-impl Renderable for Shape {
-    fn render(&self, program: &mut Program) {}
-}
- */

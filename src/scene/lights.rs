@@ -1,5 +1,6 @@
 extern crate gl;
 use crate::src::math::{mat4::*, vec3::*};
+use crate::src::renderer::shaders;
 use crate::src::renderer::shadows;
 
 #[derive(Clone, Copy)]
@@ -27,4 +28,12 @@ impl DirectionalLight {
     pub fn transform(&self) -> Mat4 {
         self.get_projection() * self.get_view()
     }
+}
+
+/// send point light to shaders point light array
+pub fn pl_to_shader(light: PointLight, shader: &mut shaders::Program, i: usize) {
+    let pos = format!("pointLights[{i}].position");
+    let col = format!("pointLights[{i}].color");
+    shader.update_vec3(pos.as_str(), light.pos);
+    shader.update_vec3(col.as_str(), light.col);
 }
