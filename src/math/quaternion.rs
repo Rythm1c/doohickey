@@ -4,7 +4,7 @@
 // "john vince - quaternions for for computer graphics" was a massive help along with
 // "gabor szauer - hands on c++ game animation programming packt", both great books.
 
-use crate::math::{mat4::*, vec3::*};
+use crate::src::math::{mat4::*, vec3::*};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Quat {

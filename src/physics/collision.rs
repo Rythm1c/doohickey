@@ -1,4 +1,4 @@
-use crate::math::vec3::*;
+use crate::src::math::vec3::*;
 
 use crate::src::shapes::shape::Shape;
 use std::collections::HashMap;

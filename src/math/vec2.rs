@@ -1,4 +1,4 @@
-use crate::math::misc;
+use crate::src::math::misc;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vec2 {

@@ -1,5 +1,5 @@
 use crate::gl;
-use crate::math::{mat4::*, vec3::*};
+use crate::src::math::{mat4::*, vec3::*};
 
 use std::ffi::CString;
 use std::fs::File;

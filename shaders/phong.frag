@@ -1,3 +1,4 @@
+// blinn phong fragment shader
 #version 460
 
 out vec4 color;
@@ -47,12 +48,16 @@ uniform sampler2D shadowMap;
 uniform bool shadowsEnabled;
 float ortho_shadow();
 
+//*********** main function entry ************/
 void main() {
     vec3 result = vec3(0.0);
     vec3 tex = vec3(texture(albedo, fs_in.texCoords));
     if(textured) {
+
         col = tex;
+
     } else {
+
         col = fs_in.fragCol;
 
     }
@@ -87,25 +92,31 @@ void main() {
 }
 
 // function definations
-float blend(
-    float far
-) {
+//_________________________________________________________________________
+//_________________________________________________________________________
+float blend(float far) {
+
     float distance = clamp(length(fs_in.fragPos - viewPos), 0.0, far);
     return (pow(distance / far, 2.0));
 }
-
+//_________________________________________________________________________
+//_________________________________________________________________________
 float checkered_fn() {
     float square = 2.0 / squares;
 
     vec2 value = step(vec2(0.5), fract(fs_in.texCoords / square));
     return int(value.x + value.y) % 2;
 }
+//_________________________________________________________________________
+//_________________________________________________________________________
 float line_fn() {
     float line = 1.0 / lines;
     vec2 a = step(vec2(line_thickness), fract(fs_in.texCoords / line));
     vec2 b = step(vec2(line_thickness), 1.0 - fract(fs_in.texCoords / line));
     return a.x * a.y * b.x * b.y;
 }
+//_________________________________________________________________________
+//_________________________________________________________________________
 
 vec3 calc_pointlight(pointLight light) {
     vec3 result = vec3(0.0);
@@ -130,6 +141,8 @@ vec3 calc_pointlight(pointLight light) {
 
     return result;
 }
+//_________________________________________________________________________
+//_________________________________________________________________________
 float ortho_shadow() {
 
     vec3 proojCoords = fs_in.lightSpace.xyz / fs_in.lightSpace.w;
@@ -146,6 +159,8 @@ float ortho_shadow() {
 
     return shadow;
 }
+//_________________________________________________________________________
+//_________________________________________________________________________
 vec3 directional_light() {
 
     vec3 result = vec3(0.0);

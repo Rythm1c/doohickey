@@ -1,14 +1,16 @@
 use std::path::Path;
 
-use super::mesh::*;
-use crate::math::mat4::Mat4;
-use crate::math::vec3::Vec3;
+use crate::src::math::mat4::Mat4;
+use crate::src::math::transform::Transform;
+use crate::src::math::vec3::Vec3;
 
-use super::animation::clip::Clip;
-use super::animation::pose::Pose;
-use super::skeleton::Skeleton;
+use crate::src::renderer::mesh::*;
+
+use crate::src::animation::clip::Clip;
+use crate::src::animation::pose::Pose;
+use crate::src::animation::skeleton::Skeleton;
+
 use super::texture::Texture;
-use super::transform::Transform;
 
 #[derive(Clone)]
 pub struct Model {

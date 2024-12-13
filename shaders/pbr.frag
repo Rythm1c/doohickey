@@ -1,3 +1,4 @@
+//physical besed rendering fragment shader
 #version 460
 
 in vs_Out {
@@ -21,6 +22,8 @@ uniform float metallicFactor;
 uniform float roughness;
 uniform float ao;
 uniform vec3 camPos;
+uniform sampler2D baseTexture;
+uniform sampler2D metallicTexture;
 
 out vec4 color;
 
@@ -84,7 +87,8 @@ void main() {
 }
 
 //*** function deinations **//
-
+//_________________________________________________________________________
+//_________________________________________________________________________
 float distributionGGX(vec3 N, vec3 H, float roughness) {
 
     float a = pow(roughness, 2.0);
@@ -97,7 +101,8 @@ float distributionGGX(vec3 N, vec3 H, float roughness) {
 
     return nom / denom;
 }
-
+//_________________________________________________________________________
+//_________________________________________________________________________
 float GeometrySchlickGGX(float NdotV, float roughness) {
 
     float r = roughness + 1.0;
@@ -108,6 +113,8 @@ float GeometrySchlickGGX(float NdotV, float roughness) {
 
     return nom / denom;
 }
+//_________________________________________________________________________
+//_________________________________________________________________________
 float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 
     float NdotV = max(dot(N, V), 0.0);
@@ -119,6 +126,8 @@ float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
     return ggx1 * ggx2;
 
 }
+//_________________________________________________________________________
+//_________________________________________________________________________
 vec3 frenselSchlick(float cosTheta, vec3 f0) {
 
     return f0 + (1.0 - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);

@@ -1,6 +1,6 @@
 use crate::{
-    math::{misc::*, vec3::*},
-    src::mesh::*,
+    src::math::{misc::*, vec3::*},
+    src::renderer::mesh::*,
 };
 
 pub fn torus(divs: u32, col: Vec3) -> Mesh {

@@ -1,7 +1,7 @@
-use crate::math::quaternion::Quat;
-use crate::math::vec3::Vec3;
+use crate::src::math::quaternion::Quat;
+use crate::src::math::vec3::Vec3;
 use crate::src::animation::track;
-use crate::src::transform::Transform;
+use crate::src::math::transform::Transform;
 
 use super::frame::{QuaternionFrame, VectorFrame};
 

@@ -1,4 +1,4 @@
-use crate::math::vec3::*;
+use crate::src::math::vec3::*;
 
 /// very simple gravity function for applying a gravitational force/pull  
 /// not much going on

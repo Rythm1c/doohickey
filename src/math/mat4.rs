@@ -5,7 +5,7 @@
 // and https://songho.ca/opengl/ was also pretty helpfull
 
 #![allow(dead_code)]
-use crate::math::{misc::*, quaternion::Quat, vec3::*};
+use crate::src::math::{misc::*, quaternion::Quat, vec3::*};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Mat4 {

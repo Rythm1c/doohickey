@@ -1,6 +1,6 @@
 extern crate gl;
-use crate::math::{mat4::*, vec3::*};
-use crate::src::shadows;
+use crate::src::math::{mat4::*, vec3::*};
+use crate::src::renderer::shadows;
 
 #[derive(Clone, Copy)]
 pub struct PointLight {

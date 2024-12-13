@@ -1,6 +1,6 @@
 use crate::src::animation::pose::Pose;
 
-use crate::math::mat4::Mat4;
+use crate::src::math::mat4::Mat4;
 
 /// rest pose joints are parallel to inverse bind pose which are also parallel to joint names
 #[derive(Clone)]

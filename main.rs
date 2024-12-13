@@ -1,13 +1,10 @@
 use gl;
 use sdl2;
 
-mod math;
-mod physics;
-mod screen_capture;
 mod src;
 
-use screen_capture::system::ScreenCapture;
 use src::input;
+use src::screen_capture::system::ScreenCapture;
 use src::timer::Timer;
 use src::world::World;
 use std::path::Path;

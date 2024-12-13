@@ -1,8 +1,8 @@
-use crate::math::mat4::{transpose, Mat4};
-use crate::math::{quaternion::*, vec2::*, vec3::*};
+use crate::src::math::mat4::{transpose, Mat4};
+use crate::src::math::{quaternion::*, vec2::*, vec3::*};
 use crate::src::animation::pose::Pose;
-use crate::src::mesh::*;
-use crate::src::transform::Transform;
+use crate::src::renderer::mesh::*;
+use crate::src::math::transform::Transform;
 
 use crate::src::animation::clip::Clip;
 use crate::src::animation::curves::Interpolation;

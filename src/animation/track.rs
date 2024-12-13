@@ -7,10 +7,11 @@
 
 use std::ops::*;
 
-use crate::math::quaternion::Quat;
-use crate::math::vec3::Vec3;
 use crate::src::animation::curves;
 use crate::src::animation::frame;
+
+use crate::src::math::quaternion::Quat;
+use crate::src::math::vec3::Vec3;
 
 #[derive(Clone)]
 /// animation for a single node(joint, bone, which ever you'd prefer to call it)

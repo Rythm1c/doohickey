@@ -1,14 +1,14 @@
 extern crate collada;
 
-use crate::math::mat4::Mat4;
-use crate::math::vec2::Vec2;
-use crate::math::vec3::Vec3;
 use crate::src::animation::clip::Clip;
 use crate::src::animation::pose::Pose;
 use crate::src::animation::track_transform::TransformTrack;
-use crate::src::mesh::Mesh;
-use crate::src::mesh::Vertex;
-use crate::src::transform::Transform;
+use crate::src::math::mat4::Mat4;
+use crate::src::math::transform::Transform;
+use crate::src::math::vec2::Vec2;
+use crate::src::math::vec3::Vec3;
+use crate::src::renderer::mesh::Mesh;
+use crate::src::renderer::mesh::Vertex;
 
 use std::path::Path;
 

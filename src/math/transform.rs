@@ -1,4 +1,4 @@
-use crate::math::{mat4::*, quaternion::*, vec3::*};
+use crate::src::math::{mat4::*, quaternion::*, vec3::*};
 
 #[derive(Clone, Debug, Copy)]
 pub struct Transform {
@@ -20,13 +20,6 @@ impl Transform {
             scaling,
             orientation,
         }
-    }
-    pub fn get(&mut self) -> Mat4 {
-        let translation = translate(&self.translation);
-        let rotation = self.orientation.to_mat();
-        let resize = scale(&self.scaling);
-
-        translation * rotation * resize
     }
 
     pub fn lerp(&self, other: &Self, factor: f32) -> Transform {

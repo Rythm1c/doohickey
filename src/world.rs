@@ -6,17 +6,17 @@ use super::camera::Camera;
 use super::foreign::*;
 use super::lights;
 use super::lights::PointLight;
-use super::model::Model;
+use super::renderer::model::Model;
 use shaders::Program;
 
-use super::shaders;
-use super::shadows;
+use super::renderer::shaders;
+use super::renderer::shadows;
 
 use super::timer::Timer;
-use crate::math::{mat4::*, quaternion::Quat, vec3::*};
+use crate::src::math::{mat4::*, quaternion::Quat, vec3::*};
 
-use crate::physics::collision;
-use crate::physics::force;
+use crate::src::physics::collision;
+use crate::src::physics::force;
 
 use super::shapes::{cube::cube, shape::Pattern, shape::Shape, sphere::*, torus::torus};
 
@@ -82,7 +82,7 @@ impl World {
         };
 
         let mut player = Model::default();
-        let file = gltf::GltfFile::new(Path::new("models/penguin/scene.gltf"));
+        let file = gltf::GltfFile::new(Path::new("models/astronaut/scene.gltf"));
         file.extract_textures();
         player.update_albedo(Path::new("models/astronaut/textures/m_main_baseColor.png"));
 
@@ -93,13 +93,13 @@ impl World {
         player.animations = file.extract_animations();
         player
             .change_pos(vec3(0.0, 12.0, 3.0))
-            .change_size(vec3(7.5, 7.5, 7.5));
+            .change_size(vec3(0.5, 0.5, 0.5));
 
         player.prepere_render_resources();
         player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
         player.play_animation = true;
         player.current_anim = 0;
-        player.textured = false;
+        player.textured = true;
 
         let projection = perspective(45.0, ratio, 0.1, 1e3);
 
@@ -185,7 +185,7 @@ impl World {
 
         shader.set_use();
         shader.update_mat4("lightSpace", self.sun.transform());
-        shader.update_mat4("model", self.player.transform.get());
+        shader.update_mat4("model", self.player.transform.to_mat());
         self.player.render();
 
         shapes.values_mut().for_each(|shape| {
@@ -256,7 +256,7 @@ impl World {
         }
 
         // send player info to shader for drawing
-        shader.update_mat4("transform", self.player.transform.get());
+        shader.update_mat4("transform", self.player.transform.to_mat());
         shader.update_int("textured", self.player.textured as i32);
         self.player.attach_albedo();
 

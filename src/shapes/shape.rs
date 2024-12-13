@@ -1,7 +1,7 @@
-use crate::math::vec3::Vec3;
-use crate::src::mesh::Mesh;
-use crate::src::shaders::Program;
-use crate::src::transform::Transform;
+use crate::src::math::transform::Transform;
+use crate::src::math::vec3::Vec3;
+use crate::src::renderer::mesh::Mesh;
+use crate::src::renderer::shaders::Program;
 
 pub struct Shape {
     mesh: Mesh,

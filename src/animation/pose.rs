@@ -1,4 +1,4 @@
-use crate::{math::mat4::Mat4, src::transform::Transform};
+use crate::src::{math::mat4::Mat4, math::transform::Transform};
 
 #[derive(Clone)]
 pub struct Pose {
