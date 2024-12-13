@@ -206,7 +206,7 @@
             "vert": "shaders/common.vert"
         },
         {
-            "name": "shadowMap",
+            "name": "shadow",
             "frag": "shaders/shadowmap.frag",
             "vert": "shaders/shadowmap.vert"
         },

@@ -38,30 +38,11 @@ impl World {
         let mut camera = Camera::default();
         camera.pos = vec3(0.0, 20.0, -30.0);
 
-        let s_obj = shaders::create_shader(
-            Path::new("shaders/common.vert"),
-            Path::new("shaders/phong.frag"),
-        );
-
-        let s_shadow = shaders::create_shader(
-            Path::new("shaders/shadowmap.vert"),
-            Path::new("shaders/shadowmap.frag"),
-        );
-
-        let s_animation = shaders::create_shader(
-            Path::new("shaders/animation.vert"),
-            Path::new("shaders/phong.frag"),
-        );
-
         let mut shaders = HashMap::new();
-        shaders.insert(String::from("object"), s_obj);
-        shaders.insert(String::from("shadow"), s_shadow);
-        shaders.insert(String::from("animation"), s_animation);
-
         let mut shapes = HashMap::new();
         let mut point_lights = Vec::new();
 
-        world_from_json(&mut shapes, &mut point_lights);
+        world_from_json(&mut shapes, &mut point_lights, &mut shaders);
 
         shapes.values_mut().for_each(|shape| {
             shape.create();
@@ -258,8 +239,11 @@ impl World {
 
 extern crate json;
 use std::fs::File;
-
-pub fn world_from_json(shapes: &mut HashMap<String, Shape>, lights: &mut Vec<PointLight>) {
+fn world_from_json(
+    shapes: &mut HashMap<String, Shape>,
+    lights: &mut Vec<PointLight>,
+    shaders: &mut HashMap<String, Program>,
+) {
     //
     let mut file = File::open(Path::new("world.json")).unwrap();
     let mut contents = String::new();
@@ -267,27 +251,29 @@ pub fn world_from_json(shapes: &mut HashMap<String, Shape>, lights: &mut Vec<Poi
 
     let data = json::parse(&contents[..]).unwrap();
 
-    let data_shapes = data["shapes"].members();
+    let vec3_from_members = |members: &mut json::iterators::Members| -> Vec3 {
+        vec3(
+            members.next().unwrap().as_f32().unwrap(),
+            members.next().unwrap().as_f32().unwrap(),
+            members.next().unwrap().as_f32().unwrap(),
+        )
+    };
 
-    for shape in data_shapes {
+    for shape in data["shapes"].members() {
         let shape_type = shape["type"].as_str().unwrap();
-
-        let mut result = Shape::new();
+        let pattern_type = shape["pattern"]["type"].as_str().unwrap();
 
         let pos = vec3_from_members(&mut shape["position"].members());
-        result.reposition(pos);
-
         let scaling = vec3_from_members(&mut shape["scale"].members());
+        let color = vec3_from_members(&mut shape["color"].members());
+
+        let mut result = Shape::new();
+        result.reposition(pos);
         result.rescale(scaling);
-
-        let mut color = shape["color"].members();
-
-        let pattern_type = shape["pattern"]["type"].as_str().unwrap();
 
         match pattern_type {
             "checkered" => {
                 let mut vals = shape["pattern"]["values"].members();
-
                 result.change_pattern(Pattern::Checkered(
                     vals.next().unwrap().as_f32().unwrap(),
                     vals.next().unwrap().as_i32().unwrap(),
@@ -295,8 +281,7 @@ pub fn world_from_json(shapes: &mut HashMap<String, Shape>, lights: &mut Vec<Poi
             }
 
             "striped" => {
-                let mut vals = shape["pattern"]["values"].members();
-                let values = vec3_from_members(&mut vals);
+                let values = vec3_from_members(&mut shape["pattern"]["values"].members());
                 result.change_pattern(Pattern::Striped(values.x, values.y, values.z as i32));
             }
 
@@ -311,26 +296,22 @@ pub fn world_from_json(shapes: &mut HashMap<String, Shape>, lights: &mut Vec<Poi
             "sphere" => {
                 let lats = shape["lats"].as_u32().unwrap();
                 let longs = shape["longs"].as_u32().unwrap();
-                let col = vec3_from_members(&mut color);
-                result.reshape(sphere(lats, longs, col));
+                result.reshape(sphere(lats, longs, color));
             }
 
             "icosphere" => {
                 let divs = shape["divs"].as_i32().unwrap();
-                let col = vec3_from_members(&mut color);
-                result.reshape(icosphere(divs, col));
+                result.reshape(icosphere(divs, color));
             }
 
             "cube" => {
                 let color_cube = shape["colorCube"].as_bool().unwrap();
-                let col = vec3_from_members(&mut color);
-                result.reshape(cube(color_cube, col));
+                result.reshape(cube(color_cube, color));
             }
 
             "torus" => {
                 let divs = shape["divs"].as_u32().unwrap();
-                let col = vec3_from_members(&mut color);
-                result.reshape(torus(divs, col));
+                result.reshape(torus(divs, color));
             }
 
             _ => {
@@ -347,12 +328,12 @@ pub fn world_from_json(shapes: &mut HashMap<String, Shape>, lights: &mut Vec<Poi
 
         lights.push(PointLight { col, pos });
     }
-}
 
-fn vec3_from_members(members: &mut json::iterators::Members) -> Vec3 {
-    vec3(
-        members.next().unwrap().as_f32().unwrap(),
-        members.next().unwrap().as_f32().unwrap(),
-        members.next().unwrap().as_f32().unwrap(),
-    )
+    for shader in data["shaders"].members() {
+        let name = String::from(shader["name"].as_str().unwrap());
+        let frag = Path::new(shader["frag"].as_str().unwrap());
+        let vert = Path::new(shader["vert"].as_str().unwrap());
+
+        shaders.insert(name, shaders::create_shader(&vert, &frag));
+    }
 }
