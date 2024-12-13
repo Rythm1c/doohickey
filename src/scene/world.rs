@@ -251,12 +251,13 @@ fn world_from_json(
 
     let data = json::parse(&contents[..]).unwrap();
 
-    let vec3_from_members = |members: &mut json::iterators::Members| -> Vec3 {
-        vec3(
-            members.next().unwrap().as_f32().unwrap(),
-            members.next().unwrap().as_f32().unwrap(),
-            members.next().unwrap().as_f32().unwrap(),
-        )
+    use json::iterators::Members;
+
+    let get_f32 = |members: &mut Members| -> f32 { members.next().unwrap().as_f32().unwrap() };
+    let get_i32 = |members: &mut Members| -> i32 { members.next().unwrap().as_i32().unwrap() };
+
+    let vec3_from_members = |members: &mut Members| -> Vec3 {
+        vec3(get_f32(members), get_f32(members), get_f32(members))
     };
 
     for shape in data["shapes"].members() {
@@ -274,15 +275,16 @@ fn world_from_json(
         match pattern_type {
             "checkered" => {
                 let mut vals = shape["pattern"]["values"].members();
-                result.change_pattern(Pattern::Checkered(
-                    vals.next().unwrap().as_f32().unwrap(),
-                    vals.next().unwrap().as_i32().unwrap(),
-                ));
+                result.change_pattern(Pattern::Checkered(get_f32(&mut vals), get_i32(&mut vals)));
             }
 
             "striped" => {
-                let values = vec3_from_members(&mut shape["pattern"]["values"].members());
-                result.change_pattern(Pattern::Striped(values.x, values.y, values.z as i32));
+                let mut values = shape["pattern"]["values"].members();
+                result.change_pattern(Pattern::Striped(
+                    get_f32(&mut values),
+                    get_f32(&mut values),
+                    get_i32(&mut values),
+                ));
             }
 
             _ => {
