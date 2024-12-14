@@ -18,15 +18,15 @@ pub struct Model {
     pub meshes: Vec<Mesh>,
     pub transform: Transform,
     pub velocity: Vec3,
-    pub animations: Vec<Clip>,
-    pub skeleton: Skeleton,
-    pub current_anim: usize,
-    pub play_animation: bool,
-    pub final_pose: Pose,
+    pub animations: Vec<Clip>,//optional
+    pub skeleton: Skeleton,//optional
+    pub current_anim: usize,//refactor
+    pub play_animation: bool,//refactor
+    pub final_pose: Pose,//refactor
     pub material: Material,
     pub textures: Vec<Texture>,
     pub textured: bool,
-    albedo: Texture,
+    albedo: Texture,//refactor
 }
 
 impl Model {

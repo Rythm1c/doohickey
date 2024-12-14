@@ -23,4 +23,8 @@ impl Timer {
         self.delta = self.elapsed - self.last_frame;
         self.last_frame = self.elapsed;
     }
+
+    pub fn fps(&self) -> f32 {
+        1.0 / self.delta
+    }
 }
