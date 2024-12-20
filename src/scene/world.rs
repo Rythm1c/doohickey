@@ -26,11 +26,11 @@ use crate::src::shapes::{cube::cube, shape::Pattern, shape::Shape, sphere::*, to
 pub struct World {
     pub camera: Camera,
     player: Model,
-    projection: Mat4,
-    sun: lights::DirectionalLight,
-    shapes: HashMap<String, Shape>,    //done
-    shaders: HashMap<String, Program>, //done
-    point_lights: Vec<PointLight>,     //done
+    pub projection: Mat4,
+    pub sun: lights::DirectionalLight,
+    pub shapes: HashMap<String, Shape>,    //done
+    pub shaders: HashMap<String, Program>, //done
+    pub point_lights: Vec<PointLight>,     //done
 }
 
 impl World {
@@ -189,59 +189,25 @@ impl World {
     }
 
     pub fn render(&mut self) {
+        self.render_static_objects();
+        self.render_skeletal_animations();
+    }
+
+    fn render_static_objects(&mut self) {
         let shapes = &mut self.shapes;
-        let lights = &self.point_lights;
         let shader = &mut self.shaders.get_mut("object").unwrap();
-
         shader.set_use();
-        self.sun.shadows.bind_texture();
-        shader.update_vec3("L_direction", self.sun.dir);
-        shader.update_vec3("L_color", self.sun.color);
-        shader.update_vec3("viewPos", self.camera.pos);
-        shader.update_mat4("view", self.camera.get_view());
-        shader.update_mat4("projection", self.projection);
-        shader.update_mat4("lightSpace", self.sun.transform());
-        shader.update_int("shadowsEnabled", false as i32);
-
-        let len = lights.len();
-
-        shader.update_int("pointLightCount", len as i32);
-        // update point lights
-        for i in 0..len {
-            lights::pl_to_shader(lights[i], shader, i);
-        }
-
         // object specific
         shapes.values_mut().for_each(|shape| {
             shape.render(shader);
         });
-
-        self.render_skeletal_animations();
     }
 
     fn render_skeletal_animations(&mut self) {
         // let objects = &mut self.assets.objects;
-        let lights = &self.point_lights;
+
         let shader = &mut self.shaders.get_mut("animation").unwrap();
-
         shader.set_use();
-        self.sun.shadows.bind_texture();
-        shader.update_vec3("L_direction", self.sun.dir);
-        shader.update_vec3("L_color", self.sun.color);
-        shader.update_vec3("viewPos", self.camera.pos);
-        shader.update_mat4("view", self.camera.get_view());
-        shader.update_mat4("projection", self.projection);
-        shader.update_mat4("lightSpace", self.sun.transform());
-        shader.update_int("shadowsEnabled", false as i32);
-
-        let len = lights.len();
-
-        shader.update_int("pointLightCount", len as i32);
-        // update point lights
-        for i in 0..len {
-            lights::pl_to_shader(lights[i], shader, i);
-        }
-
         let mats = &self.player.get_pose();
         for i in 0..mats.len() {
             shader.update_mat4(format!("boneMats[{i}]").as_str(), mats[i]);
