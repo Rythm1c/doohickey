@@ -8,7 +8,7 @@ use crate::src::math::transform::Transform;
 use crate::src::math::vec2::Vec2;
 use crate::src::math::vec3::Vec3;
 use crate::src::renderer::mesh::Mesh;
-use crate::src::renderer::mesh::Vertex;
+use crate::src::renderer::vertex::Vertex;
 
 use std::path::Path;
 
@@ -172,11 +172,11 @@ fn get_polygons(primitive: &collada::PrimitiveElement, object: &collada::Object)
                 // only interested in triangles for now
                 collada::Shape::Triangle(a, b, c) => {
                     // first triangle vertex
-                    mesh.vertices.push(get_attributes(object, &a));
+                    mesh.vao.vertices.push(get_attributes(object, &a));
                     // second triangle vertex
-                    mesh.vertices.push(get_attributes(object, &b));
+                    mesh.vao.vertices.push(get_attributes(object, &b));
                     // third triangle vertex
-                    mesh.vertices.push(get_attributes(object, &c));
+                    mesh.vao.vertices.push(get_attributes(object, &c));
                 }
                 // not implimented yet
                 collada::Shape::Line(_, _) => {}

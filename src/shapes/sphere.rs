@@ -1,5 +1,7 @@
 use crate::src::math::{misc::*, vec3::*};
-use crate::src::renderer::mesh::*;
+use crate::src::renderer::ebo::Ebo;
+use crate::src::renderer::mesh::Mesh;
+use crate::src::renderer::vertex::Vertex;
 
 pub fn sphere(lats: u32, longs: u32, color: Vec3) -> Mesh {
     let mut mesh = Mesh::default();
@@ -28,19 +30,22 @@ pub fn sphere(lats: u32, longs: u32, color: Vec3) -> Mesh {
 
             vert.norm = vert.pos;
 
-            mesh.vertices.push(vert.clone());
+            mesh.vao.vertices.push(vert.clone());
         }
     }
+
     //get indices
+    mesh.ebo = Some(Ebo::new());
+    let indices = &mut mesh.ebo.as_mut().unwrap().indices;
     for i in 0..(lats - 1) {
         for j in 0..longs {
-            mesh.indices.push(i * longs + j);
-            mesh.indices.push(i * longs + (j + 1) % longs);
-            mesh.indices.push((i + 1) * longs + (j + 1) % longs);
+            indices.push(i * longs + j);
+            indices.push(i * longs + (j + 1) % longs);
+            indices.push((i + 1) * longs + (j + 1) % longs);
 
-            mesh.indices.push((i + 1) * longs + j);
-            mesh.indices.push(i * longs + j);
-            mesh.indices.push((i + 1) * longs + (j + 1) % longs);
+            indices.push((i + 1) * longs + j);
+            indices.push(i * longs + j);
+            indices.push((i + 1) * longs + (j + 1) % longs);
         }
     }
     mesh
@@ -58,7 +63,7 @@ pub fn icosphere(divs: i32, color: Vec3) -> Mesh {
     //first vertex
     vertex.pos = vec3(0.0, 1.0, 0.0);
     vertex.norm = vertex.pos;
-    tmp.vertices.push(vertex);
+    tmp.vao.vertices.push(vertex);
 
     let mut y = lat_angle.sin();
     let mut hyp = lat_angle.cos();
@@ -68,7 +73,7 @@ pub fn icosphere(divs: i32, color: Vec3) -> Mesh {
 
         vertex.pos = vec3(x, y, z);
         vertex.norm = vertex.pos;
-        tmp.vertices.push(vertex);
+        tmp.vao.vertices.push(vertex);
     }
 
     y = (-lat_angle).sin();
@@ -79,12 +84,12 @@ pub fn icosphere(divs: i32, color: Vec3) -> Mesh {
 
         vertex.pos = vec3(x, y, z);
         vertex.norm = vertex.pos;
-        tmp.vertices.push(vertex);
+        tmp.vao.vertices.push(vertex);
     }
 
     vertex.pos = vec3(0.0, -1.0, 0.0);
     vertex.norm = vertex.pos;
-    tmp.vertices.push(vertex);
+    tmp.vao.vertices.push(vertex);
     // arranges verts into triangles
     let mut mesh = Mesh::default();
     let triangles: Vec<[usize; 3]> = vec![
@@ -112,20 +117,20 @@ pub fn icosphere(divs: i32, color: Vec3) -> Mesh {
     for triangle in triangles {
         add_tri(
             &mut mesh,
-            tmp.vertices[triangle[0]],
-            tmp.vertices[triangle[1]],
-            tmp.vertices[triangle[2]],
+            tmp.vao.vertices[triangle[0]],
+            tmp.vao.vertices[triangle[1]],
+            tmp.vao.vertices[triangle[2]],
         );
     }
 
     for _ in 0..divs {
         let mut final_mesh = Mesh::default();
-        let range = 0..(mesh.vertices.len() / 3);
+        let range = 0..(mesh.vao.vertices.len() / 3);
 
         for face in range {
-            let v1 = mesh.vertices[face * 3 + 0];
-            let v2 = mesh.vertices[face * 3 + 1];
-            let v3 = mesh.vertices[face * 3 + 2];
+            let v1 = mesh.vao.vertices[face * 3 + 0];
+            let v2 = mesh.vao.vertices[face * 3 + 1];
+            let v3 = mesh.vao.vertices[face * 3 + 2];
 
             let p1 = divide(v1, v2);
             let p2 = divide(v1, v3);
@@ -167,7 +172,7 @@ fn project_to_sphere(v: Vec3) -> Vec3 {
 pub fn add_tri(mesh: &mut Mesh, p1: Vertex, p2: Vertex, p3: Vertex) {
     let normal = (p1.norm + p2.norm + p3.norm) / 3.0;
 
-    mesh.vertices.push(Vertex {
+    mesh.vao.vertices.push(Vertex {
         pos: p1.pos,
         norm: normal,
         tex: p1.tex,
@@ -176,7 +181,7 @@ pub fn add_tri(mesh: &mut Mesh, p1: Vertex, p2: Vertex, p3: Vertex) {
         weights: p1.weights,
         bone_ids: p1.bone_ids,
     });
-    mesh.vertices.push(Vertex {
+    mesh.vao.vertices.push(Vertex {
         pos: p2.pos,
         norm: normal,
         tex: p2.tex,
@@ -185,7 +190,7 @@ pub fn add_tri(mesh: &mut Mesh, p1: Vertex, p2: Vertex, p3: Vertex) {
         weights: p2.weights,
         bone_ids: p2.bone_ids,
     });
-    mesh.vertices.push(Vertex {
+    mesh.vao.vertices.push(Vertex {
         pos: p3.pos,
         norm: normal,
         tex: p3.tex,

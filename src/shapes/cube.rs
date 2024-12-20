@@ -1,12 +1,14 @@
 use crate::src::math::{vec2::*, vec3::*};
-use crate::src::renderer::mesh::*;
+use crate::src::renderer::ebo::Ebo;
+use crate::src::renderer::mesh::Mesh;
+use crate::src::renderer::vertex::Vertex;
 
 pub fn cube(color_cube: bool, color: Vec3) -> Mesh {
     let mut mesh = Mesh::default();
 
     //front face
     for v in &DATA {
-        mesh.vertices.push(Vertex {
+        mesh.vao.vertices.push(Vertex {
             col: color,
             pos: vec3(v[0], v[1], v[2]),
             norm: vec3(v[3], v[4], v[5]),
@@ -20,12 +22,13 @@ pub fn cube(color_cube: bool, color: Vec3) -> Mesh {
     if color_cube {
         for i in 0..6 {
             for j in 0..4 {
-                mesh.vertices[i * 4 + j].col = FACE_COLORS[i];
+                mesh.vao.vertices[i * 4 + j].col = FACE_COLORS[i];
             }
         }
     }
 
-    mesh.indices = Vec::from(&INDICES);
+    mesh.ebo = Some(Ebo::new());
+    mesh.ebo.as_mut().unwrap().indices = Vec::from(&INDICES);
 
     mesh
 }

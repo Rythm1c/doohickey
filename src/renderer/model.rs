@@ -106,7 +106,7 @@ impl Model {
     }
     pub fn recolor(&mut self, color: Vec3) {
         self.meshes.iter_mut().for_each(|mesh| {
-            mesh.vertices.iter_mut().for_each(|vertex| {
+            mesh.vao.vertices.iter_mut().for_each(|vertex| {
                 vertex.col = color;
             });
         });

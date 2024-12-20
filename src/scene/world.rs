@@ -34,6 +34,24 @@ pub struct World {
 }
 
 impl World {
+    pub fn default() -> Self {
+        let directional_light = lights::DirectionalLight {
+            shadows: shadows::Shadow::new(1900, 1200),
+            color: vec3(1.0, 1.0, 1.0),
+            dir: vec3(0.3, -0.7, 0.4),
+        };
+
+        Self {
+            camera: Camera::default(),
+            player: Model::default(),
+            projection: Mat4::IDENTITY,
+            sun: directional_light,
+            shapes: HashMap::new(),
+            shaders: HashMap::new(),
+            point_lights: Vec::new(),
+        }
+    }
+
     pub fn new(ratio: f32) -> Self {
         let mut camera = Camera::default();
         camera.pos = vec3(0.0, 20.0, -30.0);

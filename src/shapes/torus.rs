@@ -1,6 +1,6 @@
-use crate::{
-    src::math::{misc::*, vec3::*},
-    src::renderer::mesh::*,
+use crate::src::{
+    math::{misc::*, vec3::*},
+    renderer::{ebo::Ebo, mesh::Mesh, vertex::Vertex},
 };
 
 pub fn torus(divs: u32, col: Vec3) -> Mesh {
@@ -31,19 +31,21 @@ pub fn torus(divs: u32, col: Vec3) -> Mesh {
             vertex.pos = vec3(x, y, z);
             vertex.norm = vec3(nx, ny, nz);
 
-            mesh.vertices.push(vertex);
+            mesh.vao.vertices.push(vertex);
         }
     }
 
+    mesh.ebo = Some(Ebo::new());
+    let indices = &mut mesh.ebo.as_mut().unwrap().indices;
     for i in 0..(divs - 1) {
         for j in 0..divs {
-            mesh.indices.push(i * divs + j);
-            mesh.indices.push(i * divs + (j + 1) % divs);
-            mesh.indices.push((i + 1) * divs + (j + 1) % divs);
+            indices.push(i * divs + j);
+            indices.push(i * divs + (j + 1) % divs);
+            indices.push((i + 1) * divs + (j + 1) % divs);
 
-            mesh.indices.push((i + 1) * divs + j);
-            mesh.indices.push(i * divs + j);
-            mesh.indices.push((i + 1) * divs + (j + 1) % divs);
+            indices.push((i + 1) * divs + j);
+            indices.push(i * divs + j);
+            indices.push((i + 1) * divs + (j + 1) % divs);
         }
     }
 

@@ -1,12 +1,15 @@
-use crate::src::animation::pose::Pose;
 use crate::src::math::mat4::{transpose, Mat4};
 use crate::src::math::transform::Transform;
 use crate::src::math::{quaternion::*, vec2::*, vec3::*};
-use crate::src::renderer::mesh::*;
+
+use crate::src::renderer::ebo::Ebo;
+use crate::src::renderer::mesh::Mesh;
+use crate::src::renderer::vertex::Vertex;
 
 use crate::src::animation::clip::Clip;
 use crate::src::animation::curves::Interpolation;
 use crate::src::animation::frame::{QuaternionFrame, VectorFrame};
+use crate::src::animation::pose::Pose;
 use crate::src::animation::track_transform::TransformTrack;
 //use crate::src::texture::Texture;
 use std::path::Path;
@@ -85,7 +88,7 @@ impl GltfFile {
                 // extract positions
                 if let Some(positions) = reader.read_positions() {
                     positions.for_each(|pos| {
-                        mesh.vertices.push(Vertex {
+                        mesh.vao.vertices.push(Vertex {
                             pos: Vec3::from(&pos),
                             ..Vertex::DEFAULT
                         });
@@ -95,27 +98,27 @@ impl GltfFile {
                 //extract normals
                 if let Some(normals) = reader.read_normals() {
                     normals.enumerate().for_each(|(i, norm)| {
-                        mesh.vertices[i].norm = Vec3::from(&norm);
+                        mesh.vao.vertices[i].norm = Vec3::from(&norm);
                     });
                 }
 
                 //extract colors
                 if let Some(colors) = reader.read_colors(0) {
                     colors.into_rgb_f32().enumerate().for_each(|(i, color)| {
-                        mesh.vertices[i].col = Vec3::from(&color);
+                        mesh.vao.vertices[i].col = Vec3::from(&color);
                     });
                 }
                 //extract texture coordinates
                 if let Some(texels) = reader.read_tex_coords(0) {
                     texels.into_f32().enumerate().for_each(|(i, texel)| {
-                        mesh.vertices[i].tex = Vec2::from(&texel);
+                        mesh.vao.vertices[i].tex = Vec2::from(&texel);
                     });
                 }
 
                 //extract weights
                 if let Some(weights) = reader.read_weights(0) {
                     weights.into_f32().enumerate().for_each(|(i, weight)| {
-                        mesh.vertices[i].weights = weight;
+                        mesh.vao.vertices[i].weights = weight;
                     });
                 }
 
@@ -123,14 +126,14 @@ impl GltfFile {
                 if let Some(boneids) = reader.read_joints(0) {
                     boneids.into_u16().enumerate().for_each(|(i, batch)| {
                         if ids.len() > 0 {
-                            mesh.vertices[i].bone_ids = [
+                            mesh.vao.vertices[i].bone_ids = [
                                 ids[batch[0] as usize],
                                 ids[batch[1] as usize],
                                 ids[batch[2] as usize],
                                 ids[batch[3] as usize],
                             ];
                         } else {
-                            mesh.vertices[i].bone_ids = batch.map(|id| id as i32);
+                            mesh.vao.vertices[i].bone_ids = batch.map(|id| id as i32);
                         }
                     });
                 }
@@ -138,13 +141,14 @@ impl GltfFile {
                 // alittle cheating
                 // have to come up with a better way of handling materials
                 // might impliment a pbr system
-                for vert in &mut mesh.vertices {
+                for vert in &mut mesh.vao.vertices {
                     vert.col = vec3(color[0], color[1], color[2])
                 }
 
                 //extract indices
                 if let Some(indices) = reader.read_indices() {
-                    mesh.indices = indices.into_u32().collect();
+                    mesh.ebo = Some(Ebo::new());
+                    mesh.ebo.as_mut().unwrap().indices = indices.into_u32().collect();
                 }
 
                 meshes.push(mesh);
