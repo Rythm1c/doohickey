@@ -8,7 +8,7 @@ pub struct Timer {
 }
 
 impl Timer {
-    ///call before while loop to initialize clock
+    /// call before while loop to initialize clock
     pub fn new() -> Self {
         Self {
             delta: 0.0,

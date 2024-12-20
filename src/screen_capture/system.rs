@@ -1,3 +1,4 @@
+use std::fs;
 use std::os::raw::c_void;
 use std::path::Path;
 use std::process::Command;
@@ -65,12 +66,17 @@ impl ScreenCapture {
     /// yeah... saving as a png first before stitching them into the final video is not the fastest solution  
     /// infact, its incredibly slow might look for a faster solution in the future but for now if it works it works
     pub fn save_video(&self, dest: &Path) {
-        let tmp_dir = std::env::temp_dir();
+        //let tmp_dir = std::env::temp_dir();
+
+        let path = Path::new("MEDIA");
+        if !path.exists() {
+            fs::create_dir("./MEDIA").unwrap();
+        }
 
         let total_frames = self.stream.len();
         self.stream.iter().enumerate().for_each({
             |(i, capture)| {
-                let img_path = tmp_dir.join(format!("frame_{:04}.jpeg", i));
+                let img_path = path.join(format!("frame_{:04}.jpeg", i));
 
                 let current_frame = i + 1;
                 eprint!("\rprocessing frame {current_frame} out of {total_frames}");
@@ -89,7 +95,7 @@ impl ScreenCapture {
                 "-framerate",
                 "60",
                 "-i",
-                &tmp_dir.join("frame_%04d.jpeg").to_str().unwrap(),
+                &path.join("frame_%04d.jpeg").to_str().unwrap(),
                 "-c:v",
                 "libx264",
                 "-r",
@@ -98,7 +104,7 @@ impl ScreenCapture {
                 "vflip", // verticall flip because opengl saves the pixels upside down
                 "-pix_fmt",
                 "yuvj420p",
-                dest.to_str().unwrap(),
+                path.join(dest).to_str().unwrap(),
             ])
             .status()
             .unwrap();
@@ -106,12 +112,22 @@ impl ScreenCapture {
         if !status.success() {
             println!("failed to capture screen! ");
         }
+
+        Command::new("rm")
+            .args(["-f", path.join("frame_*").to_str().unwrap()])
+            .status()
+            .unwrap();
     }
 
     /// capture a particular frame and save it with the specified destination name
     /// format determined by name
-    pub fn screen_shot(&self, destination: &Path) {
+    pub fn screen_shot(&self, destination: &str) {
+        let path = Path::new("MEDIA");
+        if !path.exists() {
+            fs::create_dir("./MEDIA").unwrap();
+        };
+
         let frame = self.get_frame().unwrap();
-        frame.save(destination).unwrap();
+        frame.save(path.join(destination)).unwrap();
     }
 }

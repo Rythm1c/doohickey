@@ -28,9 +28,9 @@ pub struct World {
     player: Model,
     projection: Mat4,
     sun: lights::DirectionalLight,
-    shapes: HashMap<String, Shape>,
-    shaders: HashMap<String, Program>,
-    point_lights: Vec<PointLight>,
+    shapes: HashMap<String, Shape>,    //done
+    shaders: HashMap<String, Program>, //done
+    point_lights: Vec<PointLight>,     //done
 }
 
 impl World {
@@ -105,6 +105,23 @@ impl World {
             projection,
         }
     }
+
+    pub fn add_shape(&mut self, name: String, shape: Shape) {
+        if self.shapes.contains_key(&name) {
+            println!("shape name already exists!");
+        } else {
+            self.shapes.insert(name, shape);
+        }
+    }
+
+    pub fn add_shader(&mut self, name: String, shader: Program) {
+        if self.shaders.contains_key(&name) {
+            println!("shader name already exists!");
+        } else {
+            self.shaders.insert(name, shader);
+        }
+    }
+
     pub fn update_cam(&mut self, ratio: f32) -> &mut Self {
         self.projection = perspective(45.0, ratio, 0.1, 1e3);
         self.camera.update_motion();
@@ -159,7 +176,7 @@ impl World {
         shader.set_use();
         shader.update_mat4("lightSpace", self.sun.transform());
         shader.update_mat4("model", self.player.transform.to_mat());
-        self.player.render();
+        self.player.render(shader);
 
         shapes.values_mut().for_each(|shape| {
             // shader.update_mat4("model", shape.transform.get());
@@ -198,9 +215,11 @@ impl World {
         shapes.values_mut().for_each(|shape| {
             shape.render(shader);
         });
+
+        self.render_skeletal_animations();
     }
 
-    pub fn render_skeletal_animations(&mut self) {
+    fn render_skeletal_animations(&mut self) {
         // let objects = &mut self.assets.objects;
         let lights = &self.point_lights;
         let shader = &mut self.shaders.get_mut("animation").unwrap();
@@ -229,11 +248,7 @@ impl World {
         }
 
         // send player info to shader for drawing
-        shader.update_mat4("transform", self.player.transform.to_mat());
-        shader.update_int("textured", self.player.textured as i32);
-        self.player.attach_albedo();
-
-        self.player.render();
+        self.player.render(shader);
     }
 }
 
@@ -252,13 +267,20 @@ fn world_from_json(
     let data = json::parse(&contents[..]).unwrap();
 
     use json::iterators::Members;
-
-    let get_f32 = |members: &mut Members| -> f32 { members.next().unwrap().as_f32().unwrap() };
-    let get_i32 = |members: &mut Members| -> i32 { members.next().unwrap().as_i32().unwrap() };
+    //helper funtions to get the next values in the members in a json value
+    fn get_f32(members: &mut Members) -> f32 {
+        members.next().unwrap().as_f32().unwrap()
+    }
+    fn get_i32(members: &mut Members) -> i32 {
+        members.next().unwrap().as_i32().unwrap()
+    }
 
     let vec3_from_members = |members: &mut Members| -> Vec3 {
         vec3(get_f32(members), get_f32(members), get_f32(members))
     };
+
+    //______________________________________________________________________
+    //load shapes
 
     for shape in data["shapes"].members() {
         let shape_type = shape["type"].as_str().unwrap();
@@ -275,7 +297,9 @@ fn world_from_json(
         match pattern_type {
             "checkered" => {
                 let mut vals = shape["pattern"]["values"].members();
-                result.change_pattern(Pattern::Checkered(get_f32(&mut vals), get_i32(&mut vals)));
+                let a = get_f32(&mut vals);
+                let b = get_i32(&mut vals);
+                result.change_pattern(Pattern::Checkered(a, b));
             }
 
             "striped" => {
@@ -324,6 +348,8 @@ fn world_from_json(
         shapes.insert(shape["name"].to_string(), result);
     }
 
+    //______________________________________________________________________
+    //load point lights
     for light in data["lights"].members() {
         let pos = vec3_from_members(&mut light["pos"].members());
         let col = vec3_from_members(&mut light["col"].members());
@@ -331,6 +357,8 @@ fn world_from_json(
         lights.push(PointLight { col, pos });
     }
 
+    //______________________________________________________________________
+    //load shaders
     for shader in data["shaders"].members() {
         let name = String::from(shader["name"].as_str().unwrap());
         let frag = Path::new(shader["frag"].as_str().unwrap());

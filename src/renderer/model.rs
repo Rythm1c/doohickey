@@ -6,6 +6,7 @@ use crate::src::math::vec3::Vec3;
 
 use super::material::*;
 use super::mesh::*;
+use super::shaders;
 
 use crate::src::animation::clip::Clip;
 use crate::src::animation::pose::Pose;
@@ -13,20 +14,21 @@ use crate::src::animation::skeleton::Skeleton;
 
 use super::texture::Texture;
 
+// i seriously need to refactor this mess
 #[derive(Clone)]
 pub struct Model {
     pub meshes: Vec<Mesh>,
     pub transform: Transform,
     pub velocity: Vec3,
-    pub animations: Vec<Clip>,//optional
-    pub skeleton: Skeleton,//optional
-    pub current_anim: usize,//refactor
-    pub play_animation: bool,//refactor
-    pub final_pose: Pose,//refactor
+    pub animations: Vec<Clip>, //optional
+    pub skeleton: Skeleton,    //optional
+    pub current_anim: usize,   //refactor
+    pub play_animation: bool,  //refactor
+    pub final_pose: Pose,      //refactor
     pub material: Material,
     pub textures: Vec<Texture>,
     pub textured: bool,
-    albedo: Texture,//refactor
+    albedo: Texture, //refactor
 }
 
 impl Model {
@@ -57,40 +59,6 @@ impl Model {
         }
     }
 
-    // can only choose one lighting model per model
-    // for now
-    pub fn render(&mut self) {
-        // use correct material
-
-        // to be continued...
-        match &self.material {
-            Material::Pbr(pbr) => {
-                //something
-            }
-
-            Material::BlinnPhong(phong) => {
-                //something
-            }
-        }
-
-        for mesh in self.meshes.iter_mut() {
-            mesh.render();
-        }
-    }
-    pub fn recolor(&mut self, color: Vec3) {
-        self.meshes.iter_mut().for_each(|mesh| {
-            mesh.vertices.iter_mut().for_each(|vertex| {
-                vertex.col = color;
-            });
-        });
-    }
-
-    pub fn attach_albedo(&self) {
-        unsafe {
-            gl::ActiveTexture(gl::TEXTURE1);
-        }
-        self.albedo.bind();
-    }
     pub fn update_albedo(&mut self, path: &Path) {
         self.albedo.from(path);
     }
@@ -107,6 +75,41 @@ impl Model {
 
     pub fn add_velocity(&mut self) {
         self.transform.translation = self.transform.translation + self.velocity;
+    }
+
+    // can only choose one lighting model per model
+    // for now
+    pub fn render(&mut self, shader: &mut shaders::Program) {
+        // use correct material
+
+        // to be continued...
+        match &self.material {
+            Material::Pbr(..) => {
+                //something
+            }
+
+            Material::BlinnPhong(..) => {
+                //something
+            }
+        }
+        shader.update_mat4("transform", self.transform.to_mat());
+        shader.update_int("textured", self.textured as i32);
+
+        unsafe {
+            gl::ActiveTexture(gl::TEXTURE1);
+        }
+        self.albedo.bind();
+
+        for mesh in self.meshes.iter_mut() {
+            mesh.render();
+        }
+    }
+    pub fn recolor(&mut self, color: Vec3) {
+        self.meshes.iter_mut().for_each(|mesh| {
+            mesh.vertices.iter_mut().for_each(|vertex| {
+                vertex.col = color;
+            });
+        });
     }
 
     pub fn update_animation(&mut self, time: f32) {

@@ -17,36 +17,36 @@ pub fn mouse_input(event: &Event, cam: &mut src::scene::camera::Camera) {
             }
         }
 
-        Event::KeyDown {
-            keycode: Some(key), ..
-        } => match *key {
-            Keycode::A => {
-                cam.dir = Direction::Left;
-            }
+        Event::KeyDown { keycode, .. } => {
+            match keycode.unwrap() {
+                Keycode::A => {
+                    cam.dir = Direction::Left;
+                }
 
-            Keycode::D => {
-                cam.dir = Direction::Right;
-            }
+                Keycode::D => {
+                    cam.dir = Direction::Right;
+                }
 
-            Keycode::W => {
-                cam.dir = Direction::Forwards;
-            }
+                Keycode::W => {
+                    cam.dir = Direction::Forwards;
+                }
 
-            Keycode::S => {
-                cam.dir = Direction::Backwards;
-            }
+                Keycode::S => {
+                    cam.dir = Direction::Backwards;
+                }
 
-            _ => {}
-        },
-        Event::KeyUp {
-            keycode: Some(key), ..
-        } => match *key {
-            Keycode::W | Keycode::S | Keycode::A | Keycode::D => {
-                cam.dir = Direction::None;
-            }
+                _ => {}
+            };
+        }
+        Event::KeyUp { keycode, .. } => {
+            match keycode.unwrap() {
+                Keycode::W | Keycode::S | Keycode::A | Keycode::D => {
+                    cam.dir = Direction::None;
+                }
 
-            _ => {}
-        },
+                _ => {}
+            };
+        }
 
         _ => {}
     }

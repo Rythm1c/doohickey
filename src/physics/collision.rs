@@ -14,6 +14,9 @@ fn radius(size: &Vec3) -> f32 {
 
 struct Collider(String, String);
 
+impl Collider {}
+
+
 //get a bounding box
 fn get_aabb(pos: Vec3, size: Vec3) -> AABB {
     let mut minimum = vec3(0.0, 0.0, 0.0);
