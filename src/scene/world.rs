@@ -14,7 +14,7 @@ use crate::src::renderer::shadows;
 use shaders::Program;
 
 use crate::src::engine::timer::Timer;
-use crate::src::math::{mat4::*, quaternion::Quat, vec3::*};
+use crate::src::math::{quaternion::Quat, vec3::*};
 
 use crate::src::physics::collision;
 use crate::src::physics::force;
@@ -26,7 +26,6 @@ use crate::src::shapes::{cube::cube, shape::Pattern, shape::Shape, sphere::*, to
 pub struct World {
     pub camera: Camera,
     player: Model,
-    pub projection: Mat4,
     pub sun: lights::DirectionalLight,
     pub shapes: HashMap<String, Shape>,    //done
     pub shaders: HashMap<String, Program>, //done
@@ -36,7 +35,7 @@ pub struct World {
 impl World {
     pub fn default() -> Self {
         let directional_light = lights::DirectionalLight {
-            shadows: shadows::Shadow::new(1900, 1200),
+            shadows: shadows::Shadow::new(800, 600),
             color: vec3(1.0, 1.0, 1.0),
             dir: vec3(0.3, -0.7, 0.4),
         };
@@ -44,7 +43,6 @@ impl World {
         Self {
             camera: Camera::default(),
             player: Model::default(),
-            projection: Mat4::IDENTITY,
             sun: directional_light,
             shapes: HashMap::new(),
             shaders: HashMap::new(),
@@ -52,7 +50,7 @@ impl World {
         }
     }
 
-    pub fn new(ratio: f32) -> Self {
+    pub fn new() -> Self {
         let mut camera = Camera::default();
         camera.pos = vec3(0.0, 20.0, -30.0);
 
@@ -73,15 +71,12 @@ impl World {
         };
 
         let mut player = Model::default();
-        let file = gltf::GltfFile::new(Path::new("models/astronaut/scene.gltf"));
-        file.extract_textures();
-        player.update_albedo(Path::new("models/astronaut/textures/m_main_baseColor.png"));
+        let file = gltf::Gltf::new(Path::new("models/astronaut"));
 
-        file.extract_meshes(&mut player.meshes);
-        player.skeleton.rest_pose = file.extract_rest_pose();
-        player.skeleton.inverse_bind_pose = file.extract_inverse_bind_mats();
-        player.skeleton.joint_names = file.extract_joint_names();
-        player.animations = file.extract_animations();
+        player.meshes = file.meshes;
+        player.skeleton = file.skeleton;
+        player.animations = file.animations;
+        player.textures = file.textures;
         player
             .change_pos(vec3(0.0, 12.0, 3.0))
             .change_size(vec3(0.5, 0.5, 0.5));
@@ -90,28 +85,6 @@ impl World {
         player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
         player.play_animation = true;
         player.current_anim = 0;
-        player.textured = true;
-
-        let projection = perspective(45.0, ratio, 0.1, 1e3);
-
-        // prepare the textures in the shaders for rendering
-        {
-            let obj_shader = shaders.get_mut("object").unwrap();
-
-            obj_shader.set_use();
-            obj_shader.update_int("shadowMap", 0);
-            obj_shader.update_int("albedo", 1);
-            obj_shader.update_int("specular", 2);
-        }
-
-        {
-            let anim_shader = shaders.get_mut("animation").unwrap();
-
-            anim_shader.set_use();
-            anim_shader.update_int("shadowMap", 0);
-            anim_shader.update_int("albedo", 1);
-            anim_shader.update_int("specular", 2);
-        }
 
         Self {
             shapes,
@@ -120,7 +93,6 @@ impl World {
             player,
             point_lights,
             shaders,
-            projection,
         }
     }
 
@@ -140,8 +112,7 @@ impl World {
         }
     }
 
-    pub fn update_cam(&mut self, ratio: f32) -> &mut Self {
-        self.projection = perspective(45.0, ratio, 0.1, 1e3);
+    pub fn update_cam(&mut self) -> &mut Self {
         self.camera.update_motion();
 
         self
@@ -192,8 +163,8 @@ impl World {
         self.sun.shadows.attach(1900, 1200);
 
         shader.set_use();
-        shader.update_mat4("lightSpace", self.sun.transform());
-        shader.update_mat4("model", self.player.transform.to_mat());
+        shader.update_mat4("lightSpace", &self.sun.transform());
+        shader.update_mat4("model", &self.player.transform.to_mat());
         self.player.render(shader);
 
         shapes.values_mut().for_each(|shape| {
@@ -222,13 +193,11 @@ impl World {
     }
 
     fn render_skeletal_animations(&mut self) {
-        // let objects = &mut self.assets.objects;
-
         let shader = &mut self.shaders.get_mut("animation").unwrap();
         shader.set_use();
         let mats = &self.player.get_pose();
         for i in 0..mats.len() {
-            shader.update_mat4(format!("boneMats[{i}]").as_str(), mats[i]);
+            shader.update_mat4(format!("boneMats[{i}]").as_str(), &mats[i]);
         }
 
         // send player info to shader for drawing
@@ -288,11 +257,13 @@ fn world_from_json(
 
             "striped" => {
                 let mut values = shape["pattern"]["values"].members();
-                result.change_pattern(Pattern::Striped(
-                    get_f32(&mut values),
-                    get_f32(&mut values),
-                    get_i32(&mut values),
-                ));
+                let a = get_f32(&mut values);
+                let b = get_f32(&mut values);
+                let c = get_i32(&mut values);
+                result.change_pattern(Pattern::Striped(a, b, c));
+            }
+            "none" => {
+                //leave the pattern type to default value of none
             }
 
             _ => {

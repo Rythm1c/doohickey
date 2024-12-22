@@ -68,7 +68,7 @@ impl Shape {
     }
 
     pub fn render(&mut self, shader: &mut Program) {
-        shader.update_mat4("transform", self.transform.to_mat());
+        shader.update_mat4("transform", &self.transform.to_mat());
         /*    shader.update_int("textured", o.model.textured as i32); */
         if let Some(pattern) = self.pattern {
             match pattern {

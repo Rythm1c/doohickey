@@ -1,10 +1,12 @@
 use super::ebo::Ebo;
+use super::texture::Texture;
 use super::vao::Vao;
 
 #[derive(Clone)]
 pub struct Mesh {
     pub vao: Vao,
     pub ebo: Option<Ebo>,
+    pub texture: Option<Texture>,
 }
 
 impl Mesh {
@@ -12,6 +14,7 @@ impl Mesh {
         Self {
             vao: Vao::new(),
             ebo: None,
+            texture: None,
         }
     }
 
@@ -23,8 +26,24 @@ impl Mesh {
         Vao::unbind();
     }
 
+    pub fn textured(&self) -> bool {
+        match self.texture {
+            Some(..) => true,
+
+            None => false,
+        }
+    }
+
     pub fn render(&mut self) {
         if let Some(ebo) = &mut self.ebo {
+            //bind texture only if mesh contains one
+            if let Some(texture) = &self.texture {
+                unsafe {
+                    gl::ActiveTexture(gl::TEXTURE1);
+                }
+                texture.bind();
+            }
+
             unsafe {
                 self.vao.bind();
                 gl::DrawElements(

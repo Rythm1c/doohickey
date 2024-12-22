@@ -10,7 +10,7 @@ pub enum Direction {
 pub struct Camera {
     yaw: f32,
     pitch: f32,
-
+    fov: f32,
     pub front: Vec3,
     pub up: Vec3,
     pub pos: Vec3,
@@ -26,6 +26,7 @@ impl Camera {
             up: vec3(0.0, 1.0, 0.0),
             pos: vec3(0.0, 4.0, 0.0),
             velocity: 0.5,
+            fov: 45.0,
             pitch: 0.0,
             yaw: radians(90.0),
             sensitivity: 0.15,
@@ -45,6 +46,10 @@ impl Camera {
 
     pub fn get_view(&self) -> Mat4 {
         look_at(&self.pos, &(self.pos + self.front), &self.up)
+    }
+
+    pub fn get_pojection(&self, ratio: f32) -> Mat4 {
+        perspective(self.fov, ratio, 1e-2, 1e3)
     }
 
     pub fn rotate(&mut self, mouse_pos_x: i32, mouse_pos_y: i32) {

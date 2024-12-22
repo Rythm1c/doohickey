@@ -16,7 +16,7 @@ pub struct Demo {
 impl Demo {
     pub fn new() -> Self {
         let window = Window::create(String::from("rust engine"), 800, 600);
-        let world = World::new(window.get_ratio());
+        let world = World::new();
         let timer = Timer::new();
 
         let (w, h) = window.get_size();
@@ -38,6 +38,25 @@ impl Demo {
     }
 
     fn init(&mut self) -> &mut Self {
+        // prepare the textures in the shaders for rendering
+        {
+            let obj_shader = self.world.shaders.get_mut("object").unwrap();
+
+            obj_shader.set_use();
+            obj_shader.update_int("shadowMap", 0);
+            obj_shader.update_int("albedo", 1);
+            obj_shader.update_int("specular", 2);
+        }
+
+        {
+            let anim_shader = self.world.shaders.get_mut("animation").unwrap();
+
+            anim_shader.set_use();
+            anim_shader.update_int("shadowMap", 0);
+            anim_shader.update_int("albedo", 1);
+            anim_shader.update_int("specular", 2);
+        }
+
         self
     }
 
@@ -53,7 +72,7 @@ impl Demo {
 
     fn update(&mut self) {
         self.world
-            .update_cam(self.window.get_ratio())
+            .update_cam()
             .update_animations(&self.timer)
             .update_physics()
             .update_shadows();
@@ -71,9 +90,10 @@ impl Demo {
             shader.update_vec3("L_direction", self.world.sun.dir);
             shader.update_vec3("L_color", self.world.sun.color);
             shader.update_vec3("viewPos", self.world.camera.pos);
-            shader.update_mat4("view", self.world.camera.get_view());
-            shader.update_mat4("projection", self.world.projection);
-            shader.update_mat4("lightSpace", self.world.sun.transform());
+            shader.update_mat4("view", &self.world.camera.get_view());
+            let projection = self.world.camera.get_pojection(self.window.get_ratio());
+            shader.update_mat4("projection", &projection);
+            shader.update_mat4("lightSpace", &self.world.sun.transform());
             shader.update_int("shadowsEnabled", false as i32);
             let len = lights.len();
             shader.update_int("pointLightCount", len as i32);
@@ -92,9 +112,10 @@ impl Demo {
             shader.update_vec3("L_direction", self.world.sun.dir);
             shader.update_vec3("L_color", self.world.sun.color);
             shader.update_vec3("viewPos", self.world.camera.pos);
-            shader.update_mat4("view", self.world.camera.get_view());
-            shader.update_mat4("projection", self.world.projection);
-            shader.update_mat4("lightSpace", self.world.sun.transform());
+            shader.update_mat4("view", &self.world.camera.get_view());
+            let projection = self.world.camera.get_pojection(self.window.get_ratio());
+            shader.update_mat4("projection", &projection);
+            shader.update_mat4("lightSpace", &self.world.sun.transform());
             shader.update_int("shadowsEnabled", false as i32);
 
             let len = lights.len();

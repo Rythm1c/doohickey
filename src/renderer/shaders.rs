@@ -69,7 +69,7 @@ impl Program {
             gl::Uniform3f(location, vec.x, vec.y, vec.z);
         }
     }
-    pub fn update_mat4(&self, name: &str, mat: Mat4) {
+    pub fn update_mat4(&self, name: &str, mat: &Mat4) {
         unsafe {
             let n = CString::new(name).unwrap();
             let location = gl::GetUniformLocation(self.id, n.as_ptr());

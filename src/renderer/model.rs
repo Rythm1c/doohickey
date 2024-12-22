@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use crate::src::math::mat4::Mat4;
 use crate::src::math::transform::Transform;
 use crate::src::math::vec3::Vec3;
@@ -7,19 +5,17 @@ use crate::src::math::vec3::Vec3;
 use super::material::*;
 use super::mesh::*;
 use super::shaders;
+use super::texture::Texture;
 
 use crate::src::animation::clip::Clip;
 use crate::src::animation::pose::Pose;
 use crate::src::animation::skeleton::Skeleton;
-
-use super::texture::Texture;
 
 // i seriously need to refactor this mess
 #[derive(Clone)]
 pub struct Model {
     pub meshes: Vec<Mesh>,
     pub transform: Transform,
-    pub velocity: Vec3,
     pub animations: Vec<Clip>, //optional
     pub skeleton: Skeleton,    //optional
     pub current_anim: usize,   //refactor
@@ -27,8 +23,6 @@ pub struct Model {
     pub final_pose: Pose,      //refactor
     pub material: Material,
     pub textures: Vec<Texture>,
-    pub textured: bool,
-    albedo: Texture, //refactor
 }
 
 impl Model {
@@ -36,15 +30,12 @@ impl Model {
         Self {
             transform: Transform::DEFAULT,
             meshes: Vec::new(),
-            textured: false,
-            velocity: Vec3::ZERO,
             skeleton: Skeleton::new(),
+            textures: Vec::new(),
             animations: Vec::new(),
             play_animation: false,
             current_anim: 0,
             final_pose: Pose::new(),
-            albedo: Texture::new(),
-            textures: Vec::new(),
             material: Material::BlinnPhong(Phong::default()),
         }
     }
@@ -59,10 +50,6 @@ impl Model {
         }
     }
 
-    pub fn update_albedo(&mut self, path: &Path) {
-        self.albedo.from(path);
-    }
-
     pub fn change_pos(&mut self, n_pos: Vec3) -> &mut Self {
         self.transform.translation = n_pos;
         self
@@ -73,8 +60,12 @@ impl Model {
         self
     }
 
-    pub fn add_velocity(&mut self) {
-        self.transform.translation = self.transform.translation + self.velocity;
+    pub fn recolor(&mut self, color: Vec3) {
+        self.meshes.iter_mut().for_each(|mesh| {
+            mesh.vao.vertices.iter_mut().for_each(|vertex| {
+                vertex.col = color;
+            });
+        });
     }
 
     // can only choose one lighting model per model
@@ -92,24 +83,12 @@ impl Model {
                 //something
             }
         }
-        shader.update_mat4("transform", self.transform.to_mat());
-        shader.update_int("textured", self.textured as i32);
-
-        unsafe {
-            gl::ActiveTexture(gl::TEXTURE1);
-        }
-        self.albedo.bind();
+        shader.update_mat4("transform", &self.transform.to_mat());
 
         for mesh in self.meshes.iter_mut() {
+            shader.update_int("textured", mesh.textured() as i32);
             mesh.render();
         }
-    }
-    pub fn recolor(&mut self, color: Vec3) {
-        self.meshes.iter_mut().for_each(|mesh| {
-            mesh.vao.vertices.iter_mut().for_each(|vertex| {
-                vertex.col = color;
-            });
-        });
     }
 
     pub fn update_animation(&mut self, time: f32) {
