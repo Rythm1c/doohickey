@@ -12,10 +12,27 @@ impl Texture {
         Self { id: 0 }
     }
 
-    pub fn from(&mut self, path: &std::path::Path) {
+    pub fn from(&mut self, path: &std::path::Path) -> Result<(), String> {
         let img = image::open(path).unwrap().flipv();
-        let pixels = img.as_rgb8().unwrap();
-        let pixels_buffer_ptr = pixels.as_ptr() as *mut c_void;
+
+        let format = match img.color() {
+            image::ColorType::Rgb8 => gl::RGB,
+            image::ColorType::Rgba8 => gl::RGBA,
+
+            _ => {
+                return Err(String::from("image format not recognised!"));
+            }
+        };
+
+        let pixels_buffer_ptr = {
+            if format == gl::RGB {
+                let pixels = img.as_rgb8().unwrap();
+                pixels.as_ptr() as *mut c_void
+            } else {
+                let pixels = img.as_rgba8().unwrap();
+                pixels.as_ptr() as *mut c_void
+            }
+        };
 
         unsafe {
             gl::CreateTextures(gl::TEXTURE_2D, 1, &mut self.id);
@@ -30,17 +47,19 @@ impl Texture {
             gl::TexImage2D(
                 gl::TEXTURE_2D,
                 0,
-                gl::RGB as i32,
+                format as i32,
                 img.width() as i32,
                 img.height() as i32,
                 0,
-                gl::RGB,
+                format,
                 gl::UNSIGNED_BYTE,
                 pixels_buffer_ptr,
             );
 
             gl::GenerateMipmap(gl::TEXTURE_2D);
-        }
+        };
+
+        Ok(())
     }
 
     pub fn bind(&self) {

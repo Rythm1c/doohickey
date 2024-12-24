@@ -1,4 +1,3 @@
-
 use super::texture::Texture;
 
 #[derive(Clone)]
@@ -39,18 +38,28 @@ impl Phong {
 impl Pbr {
     pub fn default() -> Self {
         Self {
-            ao: 0.0,
-            roughness: 0.0,
+            ao: 0.1,
+            roughness: 0.5,
             base_color: [1.0; 3],
-            metallic_factor: 0.0,
+            metallic_factor: 0.5,
             base_texture: None,
             metallic_texture: None,
         }
     }
 }
 
-/* 
 use super::shaders::Program;
+impl Material {
+    pub fn config_shader(&self, program: &mut Program) {
+        match self {
+            Material::BlinnPhong(phong) => {}
+            Material::Pbr(pbr) => {}
+        }
+    }
+}
+
+/*
+
 pub trait Materail {
     fn to_shader(&self, program: &mut Program);
 }

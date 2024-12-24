@@ -1,11 +1,10 @@
-use crate::src::math::mat4::Mat4;
-use crate::src::math::transform::Transform;
-use crate::src::math::vec3::Vec3;
-
-use super::material::*;
 use super::mesh::*;
 use super::shaders;
 use super::texture::Texture;
+
+use crate::src::math::mat4::Mat4;
+use crate::src::math::transform::Transform;
+use crate::src::math::vec3::Vec3;
 
 use crate::src::animation::clip::Clip;
 use crate::src::animation::pose::Pose;
@@ -21,7 +20,7 @@ pub struct Model {
     pub current_anim: usize,   //refactor
     pub play_animation: bool,  //refactor
     pub final_pose: Pose,      //refactor
-    pub material: Material,
+
     pub textures: Vec<Texture>,
 }
 
@@ -36,7 +35,6 @@ impl Model {
             play_animation: false,
             current_anim: 0,
             final_pose: Pose::new(),
-            material: Material::BlinnPhong(Phong::default()),
         }
     }
 
@@ -60,28 +58,8 @@ impl Model {
         self
     }
 
-    /* pub fn recolor(&mut self, color: Vec3) {
-        self.meshes.iter_mut().for_each(|mesh| {
-            mesh.vao.vertices.iter_mut().for_each(|vertex| {
-                vertex.col = color;
-            });
-        });
-    } */
-
     // can only choose one lighting model per object
     pub fn render(&mut self, shader: &mut shaders::Program) {
-        // use correct material
-
-        // to be continued...
-        match &self.material {
-            Material::Pbr(..) => {
-                //something
-            }
-
-            Material::BlinnPhong(..) => {
-                //something
-            }
-        }
         shader.update_mat4("transform", &self.transform.to_mat());
 
         for mesh in self.meshes.iter_mut() {

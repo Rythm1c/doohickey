@@ -1,6 +1,6 @@
 use crate::src::{
     math::{misc::*, vec3::*},
-    renderer::{ebo::Ebo, mesh::Mesh, vertex::Vertex},
+    renderer::{buffer::EBO, mesh::Mesh, vertex::Vertex},
 };
 
 pub fn torus(divs: u32, col: Vec3) -> Mesh {
@@ -31,12 +31,12 @@ pub fn torus(divs: u32, col: Vec3) -> Mesh {
             vertex.pos = vec3(x, y, z);
             vertex.norm = vec3(nx, ny, nz);
 
-            mesh.vao.vertices.push(vertex);
+            mesh.vbo.data.push(vertex);
         }
     }
 
-    mesh.ebo = Some(Ebo::new());
-    let indices = &mut mesh.ebo.as_mut().unwrap().indices;
+    mesh.ebo = Some(EBO::default());
+    let indices = &mut mesh.ebo.as_mut().unwrap().data;
     for i in 0..(divs - 1) {
         for j in 0..divs {
             indices.push(i * divs + j);

@@ -5,36 +5,24 @@ use std::os::raw::c_void;
 
 #[derive(Clone)]
 pub struct Vao {
-    pub vertices: Vec<Vertex>,
-    vao: u32,
-    vbo: u32,
+    id: u32,
 }
 
 impl Vao {
     pub fn new() -> Self {
-        Self {
-            vertices: Vec::new(),
-            vao: 0,
-            vbo: 0,
-        }
+        Self { id: 0 }
     }
 
     pub fn create(&mut self) {
         unsafe {
-            gl::CreateVertexArrays(1, &mut self.vao);
-            gl::CreateBuffers(1, &mut self.vbo);
+            gl::CreateVertexArrays(1, &mut self.id);
+            gl::BindVertexArray(self.id);
+        }
+    }
 
-            gl::BindVertexArray(self.vao);
-
-            let vert_size = std::mem::size_of::<Vertex>();
-            gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
-            gl::BufferData(
-                gl::ARRAY_BUFFER,
-                (self.vertices.len() * vert_size) as isize,
-                self.vertices.as_ptr().cast(),
-                gl::STATIC_DRAW,
-            );
-
+    pub fn set_attributes() {
+        let vert_size = std::mem::size_of::<Vertex>();
+        unsafe {
             // _________________________________________________
             // _________________________________________________
             gl::EnableVertexAttribArray(0);
@@ -101,15 +89,12 @@ impl Vao {
                 vert_size as i32,
                 offset_of!(Vertex, bone_ids) as *const c_void,
             );
-            // _________________________________________________
-            // _________________________________________________
-            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
         }
     }
 
     pub fn bind(&self) {
         unsafe {
-            gl::BindVertexArray(self.vao);
+            gl::BindVertexArray(self.id);
         }
     }
 
@@ -123,8 +108,7 @@ impl Vao {
 impl Drop for Vao {
     fn drop(&mut self) {
         unsafe {
-            gl::DeleteVertexArrays(1, &mut self.vao);
-            gl::DeleteBuffers(1, &mut self.vbo);
+            gl::DeleteVertexArrays(1, &mut self.id);
         }
     }
 }

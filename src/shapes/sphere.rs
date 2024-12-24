@@ -1,5 +1,5 @@
 use crate::src::math::{misc::*, vec3::*};
-use crate::src::renderer::ebo::Ebo;
+use crate::src::renderer::buffer::EBO;
 use crate::src::renderer::mesh::Mesh;
 use crate::src::renderer::vertex::Vertex;
 
@@ -30,13 +30,13 @@ pub fn sphere(lats: u32, longs: u32, color: Vec3) -> Mesh {
 
             vert.norm = vert.pos;
 
-            mesh.vao.vertices.push(vert.clone());
+            mesh.vbo.data.push(vert.clone());
         }
     }
 
     //get indices
-    mesh.ebo = Some(Ebo::new());
-    let indices = &mut mesh.ebo.as_mut().unwrap().indices;
+    mesh.ebo = Some(EBO::default());
+    let indices = &mut mesh.ebo.as_mut().unwrap().data;
     for i in 0..(lats - 1) {
         for j in 0..longs {
             indices.push(i * longs + j);
@@ -63,7 +63,7 @@ pub fn icosphere(divs: i32, color: Vec3) -> Mesh {
     //first vertex
     vertex.pos = vec3(0.0, 1.0, 0.0);
     vertex.norm = vertex.pos;
-    tmp.vao.vertices.push(vertex);
+    tmp.vbo.data.push(vertex);
 
     let mut y = lat_angle.sin();
     let mut hyp = lat_angle.cos();
@@ -73,7 +73,7 @@ pub fn icosphere(divs: i32, color: Vec3) -> Mesh {
 
         vertex.pos = vec3(x, y, z);
         vertex.norm = vertex.pos;
-        tmp.vao.vertices.push(vertex);
+        tmp.vbo.data.push(vertex);
     }
 
     y = (-lat_angle).sin();
@@ -84,12 +84,12 @@ pub fn icosphere(divs: i32, color: Vec3) -> Mesh {
 
         vertex.pos = vec3(x, y, z);
         vertex.norm = vertex.pos;
-        tmp.vao.vertices.push(vertex);
+        tmp.vbo.data.push(vertex);
     }
 
     vertex.pos = vec3(0.0, -1.0, 0.0);
     vertex.norm = vertex.pos;
-    tmp.vao.vertices.push(vertex);
+    tmp.vbo.data.push(vertex);
     // arranges verts into triangles
     let mut mesh = Mesh::default();
     let triangles: Vec<[usize; 3]> = vec![
@@ -117,20 +117,20 @@ pub fn icosphere(divs: i32, color: Vec3) -> Mesh {
     for triangle in triangles {
         add_tri(
             &mut mesh,
-            tmp.vao.vertices[triangle[0]],
-            tmp.vao.vertices[triangle[1]],
-            tmp.vao.vertices[triangle[2]],
+            tmp.vbo.data[triangle[0]],
+            tmp.vbo.data[triangle[1]],
+            tmp.vbo.data[triangle[2]],
         );
     }
 
     for _ in 0..divs {
         let mut final_mesh = Mesh::default();
-        let range = 0..(mesh.vao.vertices.len() / 3);
+        let range = 0..(mesh.vbo.data.len() / 3);
 
         for face in range {
-            let v1 = mesh.vao.vertices[face * 3 + 0];
-            let v2 = mesh.vao.vertices[face * 3 + 1];
-            let v3 = mesh.vao.vertices[face * 3 + 2];
+            let v1 = mesh.vbo.data[face * 3 + 0];
+            let v2 = mesh.vbo.data[face * 3 + 1];
+            let v3 = mesh.vbo.data[face * 3 + 2];
 
             let p1 = divide(v1, v2);
             let p2 = divide(v1, v3);
@@ -172,7 +172,7 @@ fn project_to_sphere(v: Vec3) -> Vec3 {
 pub fn add_tri(mesh: &mut Mesh, p1: Vertex, p2: Vertex, p3: Vertex) {
     let normal = (p1.norm + p2.norm + p3.norm) / 3.0;
 
-    mesh.vao.vertices.push(Vertex {
+    mesh.vbo.data.push(Vertex {
         pos: p1.pos,
         norm: normal,
         tex: p1.tex,
@@ -181,7 +181,7 @@ pub fn add_tri(mesh: &mut Mesh, p1: Vertex, p2: Vertex, p3: Vertex) {
         weights: p1.weights,
         bone_ids: p1.bone_ids,
     });
-    mesh.vao.vertices.push(Vertex {
+    mesh.vbo.data.push(Vertex {
         pos: p2.pos,
         norm: normal,
         tex: p2.tex,
@@ -190,7 +190,7 @@ pub fn add_tri(mesh: &mut Mesh, p1: Vertex, p2: Vertex, p3: Vertex) {
         weights: p2.weights,
         bone_ids: p2.bone_ids,
     });
-    mesh.vao.vertices.push(Vertex {
+    mesh.vbo.data.push(Vertex {
         pos: p3.pos,
         norm: normal,
         tex: p3.tex,

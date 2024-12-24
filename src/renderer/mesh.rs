@@ -1,28 +1,35 @@
-use super::ebo::Ebo;
+use super::buffer::*;
+use super::material::*;
 use super::texture::Texture;
 use super::vao::Vao;
 
 #[derive(Clone)]
 pub struct Mesh {
     pub vao: Vao,
-    pub ebo: Option<Ebo>,
+    pub vbo: VBO,
+    pub ebo: Option<EBO>,
     pub texture: Option<Texture>,
+    pub material: Material,
 }
 
 impl Mesh {
     pub fn default() -> Self {
         Self {
             vao: Vao::new(),
+            vbo: VBO::default(),
             ebo: None,
             texture: None,
+            material: Material::BlinnPhong(Phong::default()),
         }
     }
 
     pub fn create(&mut self) {
         self.vao.create();
+        self.vbo.create(gl::ARRAY_BUFFER);
         if let Some(ebo) = &mut self.ebo {
-            ebo.create();
+            ebo.create(gl::ELEMENT_ARRAY_BUFFER);
         }
+        Vao::set_attributes();
         Vao::unbind();
     }
 
@@ -50,7 +57,7 @@ impl Mesh {
                 self.vao.bind();
                 gl::DrawElements(
                     gl::TRIANGLES,
-                    ebo.indices.len().try_into().unwrap(),
+                    ebo.data.len().try_into().unwrap(),
                     gl::UNSIGNED_INT,
                     std::ptr::null(),
                 );
@@ -61,7 +68,7 @@ impl Mesh {
         else {
             unsafe {
                 self.vao.bind();
-                gl::DrawArrays(gl::TRIANGLES, 0, self.vao.vertices.len() as i32);
+                gl::DrawArrays(gl::TRIANGLES, 0, self.vbo.data.len() as i32);
                 Vao::unbind();
             }
         }

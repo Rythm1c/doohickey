@@ -7,4 +7,4 @@ pub fn gravity(v: &mut Vec3) {
     *v = *v + acc;
 }
 
-//pub fn friction(){}
+pub fn friction() {}

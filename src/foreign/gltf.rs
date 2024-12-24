@@ -3,7 +3,7 @@ use crate::src::math::mat4::{transpose, Mat4};
 use crate::src::math::transform::Transform;
 use crate::src::math::{quaternion::*, vec2::*, vec3::*};
 
-use crate::src::renderer::ebo::Ebo;
+use crate::src::renderer::buffer::*;
 use crate::src::renderer::mesh::Mesh;
 use crate::src::renderer::model::Model;
 use crate::src::renderer::texture::Texture;
@@ -17,8 +17,6 @@ use crate::src::animation::track_transform::TransformTrack;
 
 use std::fs;
 use std::path::Path;
-//_______________________________________________________________________________________________
-//_______________________________________________________________________________________________
 // gltf loader definations
 // not perfect but works well enough for most files
 // still a work in progress
@@ -54,12 +52,20 @@ impl Gltf {
         }
     }
 
+    //_______________________________________________________________________________________________
     pub fn populate_model(&self, model: &mut Model) {
         self.extract_meshes_and_textures(&mut model.meshes, &mut model.textures);
         self.extract_skeleton(&mut model.skeleton);
         self.extract_animations(&mut model.animations);
     }
 
+    fn extract_skeleton(&self, skeleton: &mut Skeleton) {
+        self.extract_inverse_bind_mats(&mut skeleton.inverse_bind_pose);
+        self.extract_rest_pose(&mut skeleton.rest_pose);
+        self.extract_joint_names(&mut skeleton.joint_names);
+    }
+
+    //_______________________________________________________________________________________________
     //parent_folder for extracting any textures found
     pub fn extract_meshes_and_textures(&self, meshes: &mut Vec<Mesh>, textures: &mut Vec<Texture>) {
         let mut skins = Vec::new();
@@ -103,7 +109,7 @@ impl Gltf {
                                 let mut tex = Texture::new();
                                 let parent_folder = Path::new(&self.parent_folder[..]);
 
-                                tex.from(parent_folder.join(uri).as_path());
+                                tex.from(parent_folder.join(uri).as_path()).unwrap();
 
                                 mesh.texture = Some(tex.clone());
 
@@ -123,7 +129,7 @@ impl Gltf {
                 // extract positions
                 if let Some(positions) = reader.read_positions() {
                     positions.for_each(|pos| {
-                        mesh.vao.vertices.push(Vertex {
+                        mesh.vbo.data.push(Vertex {
                             pos: Vec3::from(&pos),
                             ..Vertex::DEFAULT
                         });
@@ -133,27 +139,27 @@ impl Gltf {
                 //extract normals
                 if let Some(normals) = reader.read_normals() {
                     normals.enumerate().for_each(|(i, norm)| {
-                        mesh.vao.vertices[i].norm = Vec3::from(&norm);
+                        mesh.vbo.data[i].norm = Vec3::from(&norm);
                     });
                 }
 
                 //extract colors
                 if let Some(colors) = reader.read_colors(0) {
                     colors.into_rgb_f32().enumerate().for_each(|(i, color)| {
-                        mesh.vao.vertices[i].col = Vec3::from(&color);
+                        mesh.vbo.data[i].col = Vec3::from(&color);
                     });
                 }
                 //extract texture coordinates
                 if let Some(texels) = reader.read_tex_coords(0) {
                     texels.into_f32().enumerate().for_each(|(i, texel)| {
-                        mesh.vao.vertices[i].tex = Vec2::from(&texel);
+                        mesh.vbo.data[i].tex = Vec2::from(&texel);
                     });
                 }
 
                 //extract weights
                 if let Some(weights) = reader.read_weights(0) {
                     weights.into_f32().enumerate().for_each(|(i, weight)| {
-                        mesh.vao.vertices[i].weights = weight;
+                        mesh.vbo.data[i].weights = weight;
                     });
                 }
 
@@ -161,14 +167,14 @@ impl Gltf {
                 if let Some(boneids) = reader.read_joints(0) {
                     boneids.into_u16().enumerate().for_each(|(i, batch)| {
                         if ids.len() > 0 {
-                            mesh.vao.vertices[i].bone_ids = [
+                            mesh.vbo.data[i].bone_ids = [
                                 ids[batch[0] as usize],
                                 ids[batch[1] as usize],
                                 ids[batch[2] as usize],
                                 ids[batch[3] as usize],
                             ];
                         } else {
-                            mesh.vao.vertices[i].bone_ids = batch.map(|id| id as i32);
+                            mesh.vbo.data[i].bone_ids = batch.map(|id| id as i32);
                         }
                     });
                 }
@@ -176,14 +182,14 @@ impl Gltf {
                 // alittle cheating
                 // have to come up with a better way of handling materials
                 // might impliment a pbr system
-                for vert in &mut mesh.vao.vertices {
+                for vert in &mut mesh.vbo.data {
                     vert.col = vec3(color[0], color[1], color[2])
                 }
 
                 //extract indices
                 if let Some(indices) = reader.read_indices() {
-                    mesh.ebo = Some(Ebo::new());
-                    mesh.ebo.as_mut().unwrap().indices = indices.into_u32().collect();
+                    mesh.ebo = Some(EBO::default());
+                    mesh.ebo.as_mut().unwrap().data = indices.into_u32().collect();
                 }
 
                 meshes.push(mesh);
@@ -191,13 +197,6 @@ impl Gltf {
         });
     }
 
-    fn extract_skeleton(&self, skeleton: &mut Skeleton) {
-        self.extract_inverse_bind_mats(&mut skeleton.inverse_bind_pose);
-        self.extract_rest_pose(&mut skeleton.rest_pose);
-        self.extract_joint_names(&mut skeleton.joint_names);
-    }
-
-    //_______________________________________________________________________________________________
     //_______________________________________________________________________________________________
     // pose loading function along with its helpers
 
@@ -206,7 +205,6 @@ impl Gltf {
             names.push(node.name().unwrap().to_string());
         });
     }
-    //_______________________________________________________________________________________________
     //_______________________________________________________________________________________________
     /// helper for getting transform form a node
     ///
@@ -255,7 +253,6 @@ impl Gltf {
         });
     }
 
-    //_______________________________________________________________________________________________
     //_______________________________________________________________________________________________
     // loading animations data
     // its been 2 weeks now typing without seeing any pretty animation on the screen

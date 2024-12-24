@@ -191,12 +191,12 @@ impl World {
     fn render_skeletal_animations(&mut self) {
         let shader = &mut self.shaders.get_mut("animation").unwrap();
         shader.set_use();
+
+        // send player info to shader for drawing
         let mats = &self.player.get_pose();
         for i in 0..mats.len() {
             shader.update_mat4(format!("boneMats[{i}]").as_str(), &mats[i]);
         }
-
-        // send player info to shader for drawing
         self.player.render(shader);
     }
 }

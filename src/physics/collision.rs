@@ -3,10 +3,7 @@ use crate::src::math::vec3::*;
 use crate::src::shapes::shape::Shape;
 use std::collections::HashMap;
 
-struct AABB {
-    min: Vec3,
-    max: Vec3,
-}
+use super::body::*;
 
 fn radius(size: &Vec3) -> f32 {
     (size.x + size.y + size.z) / 3.0
