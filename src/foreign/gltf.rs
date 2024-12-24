@@ -5,6 +5,7 @@ use crate::src::math::{quaternion::*, vec2::*, vec3::*};
 
 use crate::src::renderer::ebo::Ebo;
 use crate::src::renderer::mesh::Mesh;
+use crate::src::renderer::model::Model;
 use crate::src::renderer::texture::Texture;
 use crate::src::renderer::vertex::Vertex;
 
@@ -14,7 +15,6 @@ use crate::src::animation::frame::{QuaternionFrame, VectorFrame};
 use crate::src::animation::pose::Pose;
 use crate::src::animation::track_transform::TransformTrack;
 
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 //_______________________________________________________________________________________________
@@ -25,10 +25,9 @@ use std::path::Path;
 extern crate gltf;
 
 pub struct Gltf {
-    pub meshes: Vec<Mesh>,
-    pub textures: Vec<Texture>,
-    pub skeleton: Skeleton,
-    pub animations: Vec<Clip>,
+    parent_folder: String,
+    document: gltf::Document,
+    buffers: Vec<gltf::buffer::Data>,
 }
 
 impl Gltf {
@@ -47,66 +46,26 @@ impl Gltf {
 
         let (document, buffers, _) = gltf::import(gltf_file).unwrap();
 
-        let mut meshes = Self::extract_meshes(&document, &buffers);
-        let textures = Self::extract_textures(&document, parent);
-        let skeleton = Self::extract_skeleton(&document, &buffers);
-        let animations = Self::extract_animations(&document, &buffers);
-
-        // abit of a mess just to set the textures
-        let mut texture_hashmap = HashMap::new();
-        document
-            .textures()
-            .enumerate()
-            .for_each(|(i, texture)| match texture.source().source() {
-                gltf::image::Source::Uri { .. } => {
-                    texture_hashmap.insert(texture.index(), i);
-                }
-                _ => {}
-            });
-
-        let mut mesh_number = 0;
-        document.meshes().for_each(|mesh| {
-            mesh.primitives().for_each(|primitive| {
-                let pbr_info = &primitive.material().pbr_metallic_roughness();
-                match pbr_info.base_color_texture() {
-                    Some(texture) => match texture.texture().source().source() {
-                        gltf::image::Source::Uri { .. } => {
-                            let node_index = texture.texture().index();
-                            let texture_index = texture_hashmap.get(&node_index).unwrap();
-                            meshes[mesh_number].texture = Some(textures[*texture_index].clone());
-                        }
-
-                        _ => {
-                            println!("texture source not surported!")
-                        }
-                    },
-                    None => {
-                        println!("primitive contains no texture!")
-                    }
-                }
-                mesh_number += 1;
-            });
-        });
-
+        let parent_folder = String::from(parent.to_str().unwrap());
         Gltf {
-            meshes,
-            textures,
-            skeleton,
-            animations,
+            parent_folder,
+            document,
+            buffers,
         }
     }
 
+    pub fn populate_model(&self, model: &mut Model) {
+        self.extract_meshes_and_textures(&mut model.meshes, &mut model.textures);
+        self.extract_skeleton(&mut model.skeleton);
+        self.extract_animations(&mut model.animations);
+    }
+
     //parent_folder for extracting any textures found
-    pub fn extract_meshes(
-        document: &gltf::Document,
-        buffers: &Vec<gltf::buffer::Data>,
-    ) -> Vec<Mesh> {
-        let mut meshes = Vec::new();
-
+    pub fn extract_meshes_and_textures(&self, meshes: &mut Vec<Mesh>, textures: &mut Vec<Texture>) {
         let mut skins = Vec::new();
-        skins.resize(document.skins().count(), Vec::new());
+        skins.resize(self.document.skins().count(), Vec::new());
 
-        document.skins().for_each(|skin| {
+        self.document.skins().for_each(|skin| {
             let mut joints = Vec::new();
             skin.joints().for_each(|joint| {
                 joints.push(joint.index() as i32);
@@ -114,7 +73,9 @@ impl Gltf {
             skins[0] = joints;
         });
 
-        document.meshes().for_each(|mesh| {
+        let mut texture_ids = Vec::new();
+
+        self.document.meshes().for_each(|mesh| {
             let primitives = mesh.primitives();
             //assuming it only contains one skin
             let ids = &skins[0];
@@ -125,21 +86,39 @@ impl Gltf {
 
                 let pbr_info = &primitive.material().pbr_metallic_roughness();
                 let color = pbr_info.base_color_factor();
+                // uhhhh...
+                // good enough i guess
+                // should probably change my code architecture to load textures better
+                if let Some(texture) = pbr_info.base_color_texture() {
+                    match texture.texture().source().source() {
+                        gltf::image::Source::Uri { uri, .. } => {
+                            if texture_ids.contains(&texture.texture().index()) {
+                                let index = texture_ids
+                                    .iter()
+                                    .position(|&v| v == texture.texture().index())
+                                    .unwrap();
 
-                match pbr_info.base_color_texture() {
-                    Some(texture) => match texture.texture().source().source() {
-                        gltf::image::Source::Uri { .. } => {}
+                                mesh.texture = Some(textures[index].clone());
+                            } else {
+                                let mut tex = Texture::new();
+                                let parent_folder = Path::new(&self.parent_folder[..]);
+
+                                tex.from(parent_folder.join(uri).as_path());
+
+                                mesh.texture = Some(tex.clone());
+
+                                textures.push(tex);
+                                texture_ids.push(texture.texture().index());
+                            }
+                        }
 
                         _ => {
                             println!("texture source not surported!")
                         }
-                    },
-                    None => {
-                        println!("primitive contains no texture!")
                     }
                 }
 
-                let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
+                let reader = primitive.reader(|buffer| Some(&self.buffers[buffer.index()]));
 
                 // extract positions
                 if let Some(positions) = reader.read_positions() {
@@ -210,49 +189,22 @@ impl Gltf {
                 meshes.push(mesh);
             });
         });
-
-        meshes
     }
 
-    fn extract_textures(document: &gltf::Document, parent_folder: &Path) -> Vec<Texture> {
-        let mut textures = Vec::new();
-
-        document
-            .textures()
-            .for_each(|texture| match texture.source().source() {
-                gltf::image::Source::Uri { uri, .. } => {
-                    //create a new texture and push it texture container
-                    let mut tex = Texture::new();
-                    tex.from(parent_folder.join(uri).as_path());
-
-                    textures.insert(texture.index(), tex);
-                }
-                _ => {}
-            });
-
-        textures
-    }
-
-    fn extract_skeleton(document: &gltf::Document, buffers: &Vec<gltf::buffer::Data>) -> Skeleton {
-        Skeleton {
-            inverse_bind_pose: Self::extract_inverse_bind_mats(document, buffers),
-            rest_pose: Self::extract_rest_pose(document),
-            joint_names: Self::extract_joint_names(document),
-        }
+    fn extract_skeleton(&self, skeleton: &mut Skeleton) {
+        self.extract_inverse_bind_mats(&mut skeleton.inverse_bind_pose);
+        self.extract_rest_pose(&mut skeleton.rest_pose);
+        self.extract_joint_names(&mut skeleton.joint_names);
     }
 
     //_______________________________________________________________________________________________
     //_______________________________________________________________________________________________
     // pose loading function along with its helpers
 
-    fn extract_joint_names(document: &gltf::Document) -> Vec<String> {
-        let mut names = Vec::new();
-
-        document.nodes().for_each(|node| {
+    fn extract_joint_names(&self, names: &mut Vec<String>) {
+        self.document.nodes().for_each(|node| {
             names.push(node.name().unwrap().to_string());
         });
-
-        names
     }
     //_______________________________________________________________________________________________
     //_______________________________________________________________________________________________
@@ -269,11 +221,10 @@ impl Gltf {
         result
     }
 
-    fn extract_rest_pose(document: &gltf::Document) -> Pose {
-        let mut pose = Pose::new();
-        pose.resize(document.nodes().count());
+    fn extract_rest_pose(&self, pose: &mut Pose) {
+        pose.resize(self.document.nodes().count());
 
-        document.nodes().for_each(|node| {
+        self.document.nodes().for_each(|node| {
             let transform = Self::get_local_transform(&node);
             pose.joints[node.index()] = transform;
 
@@ -281,21 +232,15 @@ impl Gltf {
                 pose.parents[child.index()] = node.index() as i32;
             });
         });
-
-        pose
     }
 
-    fn extract_inverse_bind_mats(
-        document: &gltf::Document,
-        buffers: &Vec<gltf::buffer::Data>,
-    ) -> Vec<Option<Mat4>> {
-        let mut inv_poses: Vec<Option<Mat4>> = Vec::new();
-        inv_poses.resize(document.nodes().count(), None);
+    fn extract_inverse_bind_mats(&self, inv_poses: &mut Vec<Option<Mat4>>) {
+        inv_poses.resize(self.document.nodes().count(), None);
 
         // assumes theres only one skin
         // need to fix this
-        document.skins().for_each(|skin| {
-            let reader = skin.reader(|buffer| Some(&buffers[buffer.index()]));
+        self.document.skins().for_each(|skin| {
+            let reader = skin.reader(|buffer| Some(&self.buffers[buffer.index()]));
 
             let mut inv_bind_mats = Vec::new();
             if let Some(inverse_bind_mats) = reader.read_inverse_bind_matrices() {
@@ -308,8 +253,6 @@ impl Gltf {
                 inv_poses[joint.index()] = Some(transpose(inv_mat));
             }
         });
-
-        inv_poses
     }
 
     //_______________________________________________________________________________________________
@@ -321,12 +264,12 @@ impl Gltf {
     // it finally works btw :)
 
     fn extract_animation(
-        buffers: &Vec<gltf::buffer::Data>,
+        &self,
         channel: &gltf::animation::Channel,
         track_transform: &mut TransformTrack,
     ) {
         let mut key_frames_times: Vec<f32> = Vec::new();
-        let reader = channel.reader(|buffer| Some(&buffers[buffer.index()]));
+        let reader = channel.reader(|buffer| Some(&self.buffers[buffer.index()]));
 
         if let Some(inputs) = reader.read_inputs() {
             match inputs {
@@ -378,12 +321,8 @@ impl Gltf {
         }
     }
 
-    fn extract_animations(
-        document: &gltf::Document,
-        buffers: &Vec<gltf::buffer::Data>,
-    ) -> Vec<Clip> {
-        let mut clips = Vec::new();
-        document.animations().for_each(|animation| {
+    fn extract_animations(&self, clips: &mut Vec<Clip>) {
+        self.document.animations().for_each(|animation| {
             let mut clip = Clip::new();
             clip.name = animation.name().unwrap().to_string();
 
@@ -392,22 +331,17 @@ impl Gltf {
 
                 // bool variable to escape the horrors of the borrow checker
                 let mut exists = false;
-                let mut track_index = 0;
 
                 for (i, track) in clip.tracks.iter().enumerate() {
                     if (track.id as usize) == channel.target().node().index() {
+                        //if it does then modify the existing one
+                        self.extract_animation(&channel, &mut clip.tracks[i]);
                         exists = true;
-
-                        track_index = i;
-
                         break;
                     }
                 }
 
-                if exists {
-                    //if it does then modify the existing one
-                    Self::extract_animation(buffers, &channel, &mut clip.tracks[track_index]);
-                } else {
+                if !exists {
                     //if it doesn't create a new track
                     let sampler = &channel.sampler();
 
@@ -427,16 +361,13 @@ impl Gltf {
                     new_track.rotation.interpolation = interpolation;
                     new_track.scaling.interpolation = interpolation;
 
-                    Self::extract_animation(buffers, &channel, &mut new_track);
+                    self.extract_animation(&channel, &mut new_track);
                     clip.tracks.push(new_track);
                 }
             });
 
             clip.re_calculate_duration();
-
             clips.push(clip);
         });
-
-        clips
     }
 }

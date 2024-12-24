@@ -70,13 +70,9 @@ impl World {
             dir: vec3(0.3, -0.7, 0.4),
         };
 
-        let mut player = Model::default();
         let file = gltf::Gltf::new(Path::new("models/astronaut"));
-
-        player.meshes = file.meshes;
-        player.skeleton = file.skeleton;
-        player.animations = file.animations;
-        player.textures = file.textures;
+        let mut player = Model::default();
+        file.populate_model(&mut player);
         player
             .change_pos(vec3(0.0, 12.0, 3.0))
             .change_size(vec3(0.5, 0.5, 0.5));

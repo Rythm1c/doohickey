@@ -35,6 +35,8 @@ impl Mesh {
     }
 
     pub fn render(&mut self) {
+        // use gl::DrawElements if mesh contains an index buffer
+
         if let Some(ebo) = &mut self.ebo {
             //bind texture only if mesh contains one
             if let Some(texture) = &self.texture {
@@ -54,7 +56,9 @@ impl Mesh {
                 );
                 Vao::unbind();
             }
-        } else {
+        }
+        // else use gl::DrawArrays for none indexed drawing
+        else {
             unsafe {
                 self.vao.bind();
                 gl::DrawArrays(gl::TRIANGLES, 0, self.vao.vertices.len() as i32);

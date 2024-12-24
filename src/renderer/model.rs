@@ -60,16 +60,15 @@ impl Model {
         self
     }
 
-    pub fn recolor(&mut self, color: Vec3) {
+    /* pub fn recolor(&mut self, color: Vec3) {
         self.meshes.iter_mut().for_each(|mesh| {
             mesh.vao.vertices.iter_mut().for_each(|vertex| {
                 vertex.col = color;
             });
         });
-    }
+    } */
 
-    // can only choose one lighting model per model
-    // for now
+    // can only choose one lighting model per object
     pub fn render(&mut self, shader: &mut shaders::Program) {
         // use correct material
 
