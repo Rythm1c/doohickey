@@ -4,47 +4,79 @@ use super::texture::Texture;
 use super::vao::Vao;
 
 #[derive(Clone)]
-pub struct Mesh {
+pub enum Mesh {
+    PbrMesh(TMesh<Pbr>),
+    PhongMesh(TMesh<Phong>),
+}
+impl Mesh {
+    pub fn create(&mut self) {
+        match self {
+            Mesh::PbrMesh(mesh) => mesh.create(),
+            Mesh::PhongMesh(mesh) => mesh.create(),
+        }
+    }
+
+    pub fn textured(&self) -> bool {
+        match self {
+            Mesh::PbrMesh(mesh) => return mesh.textured(),
+            Mesh::PhongMesh(mesh) => return mesh.textured(),
+        }
+    }
+
+    pub fn render(&self) {
+        match self {
+            Mesh::PbrMesh(mesh) => mesh.render(),
+            Mesh::PhongMesh(mesh) => mesh.render(),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct TMesh<MaterialType: Materail + Default> {
     pub vao: Vao,
     pub vbo: VBO,
     pub ebo: Option<EBO>,
     pub texture: Option<Texture>,
-    pub material: Material,
+    pub material: MaterialType,
 }
 
-impl Mesh {
+impl<MaterialType: Materail + Default> TMesh<MaterialType> {
     pub fn default() -> Self {
         Self {
             vao: Vao::new(),
             vbo: VBO::default(),
             ebo: None,
             texture: None,
-            material: Material::BlinnPhong(Phong::default()),
+            material: MaterialType::default(),
         }
     }
 
     pub fn create(&mut self) {
         self.vao.create();
-        self.vbo.create(gl::ARRAY_BUFFER);
+        self.vbo.create();
         if let Some(ebo) = &mut self.ebo {
-            ebo.create(gl::ELEMENT_ARRAY_BUFFER);
+            ebo.create();
         }
+
+        self.vao.bind();
+        self.vbo.bind(gl::ARRAY_BUFFER);
+        if let Some(ebo) = &mut self.ebo {
+            ebo.bind(gl::ELEMENT_ARRAY_BUFFER);
+        }
+
         Vao::set_attributes();
+
         Vao::unbind();
     }
 
     pub fn textured(&self) -> bool {
-        match self.texture {
-            Some(..) => true,
-
-            None => false,
-        }
+        self.texture.is_some()
     }
 
-    pub fn render(&mut self) {
+    pub fn render(&self) {
         // use gl::DrawElements if mesh contains an index buffer
 
-        if let Some(ebo) = &mut self.ebo {
+        if let Some(ebo) = &self.ebo {
             //bind texture only if mesh contains one
             if let Some(texture) = &self.texture {
                 unsafe {

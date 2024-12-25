@@ -60,6 +60,11 @@ impl Model {
 
     // can only choose one lighting model per object
     pub fn render(&mut self, shader: &mut shaders::Program) {
+        let mats = &self.get_pose();
+        for i in 0..mats.len() {
+            shader.update_mat4(format!("boneMats[{i}]").as_str(), &mats[i]);
+        }
+
         shader.update_mat4("transform", &self.transform.to_mat());
 
         for mesh in self.meshes.iter_mut() {
@@ -76,7 +81,7 @@ impl Model {
         }
     }
 
-    pub fn get_pose(&mut self) -> Vec<Mat4> {
+    fn get_pose(&mut self) -> Vec<Mat4> {
         let mut final_mats = Vec::new();
 
         let len = self.skeleton.rest_pose.joints.len();

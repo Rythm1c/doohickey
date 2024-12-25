@@ -1,8 +1,7 @@
-use crate::src::math::quaternion::Quat;
 use crate::src::math::transform::Transform;
 use crate::src::math::vec3::Vec3;
 use crate::src::renderer::mesh::Mesh;
-use crate::src::renderer::shaders::{self, Program};
+use crate::src::renderer::shaders::Program;
 
 pub struct Shape {
     mesh: Mesh,
@@ -30,9 +29,9 @@ pub trait Shape {
 } */
 
 impl Shape {
-    pub fn new() -> Self {
+    pub fn new(mesh: Mesh) -> Self {
         Self {
-            mesh: Mesh::default(),
+            mesh,
             transform: Transform::DEFAULT,
             pattern: None,
             velocity: Vec3::ZERO,

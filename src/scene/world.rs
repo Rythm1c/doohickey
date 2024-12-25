@@ -192,11 +192,6 @@ impl World {
         let shader = &mut self.shaders.get_mut("animation").unwrap();
         shader.set_use();
 
-        // send player info to shader for drawing
-        let mats = &self.player.get_pose();
-        for i in 0..mats.len() {
-            shader.update_mat4(format!("boneMats[{i}]").as_str(), &mats[i]);
-        }
         self.player.render(shader);
     }
 }

@@ -12,7 +12,7 @@ pub struct Sphere {
 
 pub enum BoundingVolume {
     Sphere,
-    AABB,
-    OBB,
+    Aabb,
+    Obb,
     Capsule,
 }

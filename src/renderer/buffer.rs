@@ -19,10 +19,14 @@ impl<T> Default for Buffer<T> {
 }
 
 impl<T> Buffer<T> {
-    pub fn create(&mut self, target: u32) {
+    pub fn create(&mut self) {
         unsafe {
             gl::CreateBuffers(1, &mut self.id);
+        }
+    }
 
+    pub fn bind(&mut self, target: u32) {
+        unsafe {
             gl::BindBuffer(target, self.id);
             gl::BufferData(
                 target,

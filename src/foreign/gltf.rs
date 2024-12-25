@@ -92,6 +92,11 @@ impl Gltf {
 
                 let pbr_info = &primitive.material().pbr_metallic_roughness();
                 let color = pbr_info.base_color_factor();
+
+                println!("{:?}", primitive.material().emissive_factor());
+                println!("{:?}", pbr_info.metallic_factor());
+                println!("{:?}", pbr_info.roughness_factor());
+
                 // uhhhh...
                 // good enough i guess
                 // should probably change my code architecture to load textures better

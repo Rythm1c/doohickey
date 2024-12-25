@@ -1,7 +1,8 @@
-use crate::src::renderer::mesh::Mesh;
+/* use crate::src::renderer::mesh::Mesh;
 
 pub fn quad() -> Mesh {
-    let mut result = Mesh::default();
+    let  result = Mesh::default();
 
     result
 }
+ */

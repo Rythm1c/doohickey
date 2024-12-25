@@ -16,6 +16,11 @@ impl Vao {
     pub fn create(&mut self) {
         unsafe {
             gl::CreateVertexArrays(1, &mut self.id);
+        }
+    }
+
+    pub fn bind(&self) {
+        unsafe {
             gl::BindVertexArray(self.id);
         }
     }
@@ -89,12 +94,6 @@ impl Vao {
                 vert_size as i32,
                 offset_of!(Vertex, bone_ids) as *const c_void,
             );
-        }
-    }
-
-    pub fn bind(&self) {
-        unsafe {
-            gl::BindVertexArray(self.id);
         }
     }
 

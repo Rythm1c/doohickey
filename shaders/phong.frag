@@ -27,9 +27,14 @@ uniform vec3 L_direction;
 uniform vec3 L_color;
 vec3 directional_light(vec3);
 
-// texturing object surface
+// object material
+uniform vec3 baseColor;
+uniform float specular_strength;
 uniform bool textured;
-uniform sampler2D diffuse;
+uniform bool hasDiffuseTex;
+uniform bool hasSpecularTex;
+uniform sampler2D diffuse_tex;
+uniform sampler2D specular_tex;
 uniform sampler2D albedo;
 
 // getting a checkered pattern on an objects surface
@@ -99,15 +104,12 @@ void main() {
     //color = vec4(0.37, 0.74, 1.0, 1.0);
 }
 
-// function definations
-//_________________________________________________________________________
 float blend(float far) {
 
     float distance = clamp(length(fs_in.fragPos - viewPos), 0.0, far);
     return (pow(distance / far, 2.0));
 }
 
-//_________________________________________________________________________
 float checkered_fn() {
     float square = 2.0 / squares;
 
@@ -115,15 +117,12 @@ float checkered_fn() {
     return int(value.x + value.y) % 2;
 }
 
-//_________________________________________________________________________
 float line_fn() {
     float line = 1.0 / lines;
     vec2 a = step(vec2(line_thickness), fract(fs_in.texCoords / line));
     vec2 b = step(vec2(line_thickness), 1.0 - fract(fs_in.texCoords / line));
     return a.x * a.y * b.x * b.y;
 }
-
-//_________________________________________________________________________
 
 vec3 calc_pointlight(pointLight light, vec3 col) {
     vec3 result = vec3(0.0);
@@ -139,7 +138,7 @@ vec3 calc_pointlight(pointLight light, vec3 col) {
 
     vec3 viewDir = normalize(viewPos - fs_in.fragPos);
     vec3 halfwaydir = normalize(lightDir + viewDir);
-    float spec = pow(max(dot(norm, halfwaydir), 0.0), 32.0);
+    float spec = pow(max(dot(norm, halfwaydir), 0.0), specular_strength);
     vec3 specular = spec * light.color;
     result += specular;
 
@@ -149,7 +148,6 @@ vec3 calc_pointlight(pointLight light, vec3 col) {
     return result;
 }
 
-//_________________________________________________________________________
 float ortho_shadow() {
 
     vec3 proojCoords = fs_in.lightSpace.xyz / fs_in.lightSpace.w;
@@ -167,7 +165,6 @@ float ortho_shadow() {
     return shadow;
 }
 
-//_________________________________________________________________________
 vec3 directional_light(vec3 col) {
 
     vec3 result = vec3(0.0);
@@ -181,7 +178,7 @@ vec3 directional_light(vec3 col) {
 
     vec3 viewDir = normalize(viewPos - fs_in.fragPos);
     vec3 halfwaydir = normalize(lightDir + viewDir);
-    float spec = pow(max(dot(norm, halfwaydir), 0.0), 64.0);
+    float spec = pow(max(dot(norm, halfwaydir), 0.0), 32.0);
     vec3 specular = spec * L_color * col;
 
     if(shadowsEnabled)
