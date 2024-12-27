@@ -55,8 +55,9 @@
             }
         },
         {
-            "type": "icosphere",
-            "divs": 4,
+            "type": "sphere",
+            "lats": 40,
+            "longs": 40,
             "name": "ball2",
             "scale": [
                 7.0,
@@ -227,7 +228,7 @@
     ],
     "shaders": [
         {
-            "name": "object",
+            "name": "phong",
             "frag": "shaders/phong.frag",
             "vert": "shaders/common.vert"
         },
@@ -237,8 +238,18 @@
             "vert": "shaders/shadowmap.vert"
         },
         {
-            "name": "animation",
+            "name": "phongAnimation",
             "frag": "shaders/phong.frag",
+            "vert": "shaders/animation.vert"
+        },
+        {
+            "name": "pbr",
+            "frag": "shaders/pbr.frag",
+            "vert": "shaders/common.vert"
+        },
+        {
+            "name": "pbrAnimated",
+            "frag": "shaders/pbr.frag",
             "vert": "shaders/animation.vert"
         }
     ]

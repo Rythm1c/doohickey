@@ -3,10 +3,6 @@ use super::texture::Texture;
 
 use crate::src::math::vec3::Vec3;
 
-pub trait Materail {
-    fn configure_shader(&self, program: &Program);
-}
-
 #[derive(Clone)]
 pub struct Phong {
     pub base_color: [f32; 3],
@@ -36,7 +32,7 @@ impl Default for Phong {
     }
 }
 
-impl Materail for Phong {
+impl Phong {
     fn configure_shader(&self, program: &Program) {
         program.update_vec3("baseColor", Vec3::from(&self.base_color));
         program.update_float("specular_strength", self.specular_factor);
@@ -57,7 +53,7 @@ impl Default for Pbr {
         }
     }
 }
-impl Materail for Pbr {
+impl Pbr {
     fn configure_shader(&self, program: &Program) {
         program.update_vec3("baseColor", Vec3::from(&self.base_color));
         program.update_float("metallicFactor", self.metallic_factor);
@@ -68,30 +64,25 @@ impl Materail for Pbr {
     }
 }
 
-/* #[derive(Clone)]
-pub enum Material {
-    BlinnPhong(Phong),
+#[derive(Clone)]
+pub enum Materail {
+    Phong(Phong),
     Pbr(Pbr),
 }
- */
 
-/* impl Material {
+impl Materail {
+    pub fn default() -> Self {
+        Self::Phong(Phong::default())
+    }
+
     pub fn configure_shader(&self, program: &Program) {
         match self {
-            Material::BlinnPhong(phong) => {
-                program.update_vec3("baseColor", Vec3::from(&phong.base_color));
-                program.update_float("specular_strength", phong.specular_factor);
-                program.update_int("hasDiffuseTex", phong.diffuse_texture.is_some().into());
-                program.update_int("hasSpecularTex", phong.specular_texture.is_some().into());
+            Self::Phong(phong) => {
+                phong.configure_shader(program);
             }
-            Material::Pbr(pbr) => {
-                program.update_vec3("baseColor", Vec3::from(&pbr.base_color));
-                program.update_float("metallicFactor", pbr.metallic_factor);
-                program.update_float("roughness", pbr.roughness);
-                program.update_float("ao", pbr.ao);
-                program.update_int("hasBaseTexture", pbr.metallic_texture.is_some().into());
-                program.update_int("hasBaseTexture", pbr.metallic_texture.is_some().into());
+            Self::Pbr(pbr) => {
+                pbr.configure_shader(program);
             }
         }
     }
-} */
+}

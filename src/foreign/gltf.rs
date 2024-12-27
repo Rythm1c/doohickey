@@ -1,19 +1,13 @@
-use crate::src::animation::skeleton::Skeleton;
-use crate::src::math::mat4::{transpose, Mat4};
-use crate::src::math::transform::Transform;
-use crate::src::math::{quaternion::*, vec2::*, vec3::*};
-
-use crate::src::renderer::buffer::*;
-use crate::src::renderer::mesh::Mesh;
-use crate::src::renderer::model::Model;
-use crate::src::renderer::texture::Texture;
-use crate::src::renderer::vertex::Vertex;
-
-use crate::src::animation::clip::Clip;
-use crate::src::animation::curves::Interpolation;
-use crate::src::animation::frame::{QuaternionFrame, VectorFrame};
-use crate::src::animation::pose::Pose;
-use crate::src::animation::track_transform::TransformTrack;
+use crate::src::animation::{
+    clip::Clip,
+    curves::Interpolation,
+    frame::{QuaternionFrame, VectorFrame},
+    pose::Pose,
+    skeleton::Skeleton,
+    track_transform::TransformTrack,
+};
+use crate::src::math::{mat4::*, quaternion::*, transform::Transform, vec3::*};
+use crate::src::renderer::{buffer::*, mesh::*, model::Model, texture::Texture, vertex::Vertex};
 
 use std::fs;
 use std::path::Path;
@@ -35,6 +29,7 @@ impl Gltf {
         let mut gltf_file = String::new();
         for entry in paths {
             let path = entry.unwrap().path();
+
             if let Some(extension) = path.extension() {
                 if extension.eq("gltf") || extension.eq("glb") {
                     gltf_file = String::from(path.to_str().unwrap());
@@ -66,7 +61,7 @@ impl Gltf {
     }
 
     //_______________________________________________________________________________________________
-    //parent_folder for extracting any textures found
+
     pub fn extract_meshes_and_textures(&self, meshes: &mut Vec<Mesh>, textures: &mut Vec<Texture>) {
         let mut skins = Vec::new();
         skins.resize(self.document.skins().count(), Vec::new());
@@ -135,7 +130,7 @@ impl Gltf {
                 if let Some(positions) = reader.read_positions() {
                     positions.for_each(|pos| {
                         mesh.vbo.data.push(Vertex {
-                            pos: Vec3::from(&pos),
+                            pos: pos,
                             ..Vertex::DEFAULT
                         });
                     });
@@ -144,20 +139,20 @@ impl Gltf {
                 //extract normals
                 if let Some(normals) = reader.read_normals() {
                     normals.enumerate().for_each(|(i, norm)| {
-                        mesh.vbo.data[i].norm = Vec3::from(&norm);
+                        mesh.vbo.data[i].norm = norm;
                     });
                 }
 
                 //extract colors
                 if let Some(colors) = reader.read_colors(0) {
                     colors.into_rgb_f32().enumerate().for_each(|(i, color)| {
-                        mesh.vbo.data[i].col = Vec3::from(&color);
+                        mesh.vbo.data[i].col = color;
                     });
                 }
                 //extract texture coordinates
                 if let Some(texels) = reader.read_tex_coords(0) {
                     texels.into_f32().enumerate().for_each(|(i, texel)| {
-                        mesh.vbo.data[i].tex = Vec2::from(&texel);
+                        mesh.vbo.data[i].tex = texel;
                     });
                 }
 
@@ -188,7 +183,7 @@ impl Gltf {
                 // have to come up with a better way of handling materials
                 // might impliment a pbr system
                 for vert in &mut mesh.vbo.data {
-                    vert.col = vec3(color[0], color[1], color[2])
+                    vert.col = [color[0], color[1], color[2]];
                 }
 
                 //extract indices
@@ -196,11 +191,16 @@ impl Gltf {
                     mesh.ebo = Some(EBO::default());
                     mesh.ebo.as_mut().unwrap().data = indices.into_u32().collect();
                 }
+                mesh.create();
 
                 meshes.push(mesh);
             });
         });
     }
+
+    pub fn extract_materials() {}
+
+    pub fn extract_textures() {}
 
     //_______________________________________________________________________________________________
     // pose loading function along with its helpers
@@ -367,7 +367,6 @@ impl Gltf {
                     clip.tracks.push(new_track);
                 }
             });
-
             clip.re_calculate_duration();
             clips.push(clip);
         });

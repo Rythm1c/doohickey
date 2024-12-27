@@ -40,7 +40,7 @@ impl Demo {
     fn init(&mut self) -> &mut Self {
         // prepare the textures in the shaders for rendering
         {
-            let obj_shader = self.world.shaders.get_mut("object").unwrap();
+            let obj_shader = self.world.shaders.get_mut("phong").unwrap();
 
             obj_shader.set_use();
             obj_shader.update_int("shadowMap", 0);
@@ -49,7 +49,7 @@ impl Demo {
         }
 
         {
-            let anim_shader = self.world.shaders.get_mut("animation").unwrap();
+            let anim_shader = self.world.shaders.get_mut("phongAnimation").unwrap();
 
             anim_shader.set_use();
             anim_shader.update_int("shadowMap", 0);
@@ -83,7 +83,7 @@ impl Demo {
         //________________________________________________________________________
         //update shader for static objects(no skeleton)
         {
-            let shader = &mut self.world.shaders.get_mut("object").unwrap();
+            let shader = &mut self.world.shaders.get_mut("phong").unwrap();
 
             shader.set_use();
             self.world.sun.shadows.bind_texture();
@@ -105,7 +105,8 @@ impl Demo {
         //________________________________________________________________________
         //update shader for dynamic objects(have a skeleton)
         {
-            let shader = &mut self.world.shaders.get_mut("animation").unwrap();
+            let shader = &mut self.world.shaders.get_mut("phongAnimation").unwrap();
+            let projection = self.world.camera.get_pojection(self.window.get_ratio());
 
             shader.set_use();
             self.world.sun.shadows.bind_texture();
@@ -113,7 +114,7 @@ impl Demo {
             shader.update_vec3("L_color", self.world.sun.color);
             shader.update_vec3("viewPos", self.world.camera.pos);
             shader.update_mat4("view", &self.world.camera.get_view());
-            let projection = self.world.camera.get_pojection(self.window.get_ratio());
+
             shader.update_mat4("projection", &projection);
             shader.update_mat4("lightSpace", &self.world.sun.transform());
             shader.update_int("shadowsEnabled", false as i32);

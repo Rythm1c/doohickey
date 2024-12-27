@@ -2,8 +2,8 @@ use super::vertex::Vertex;
 
 #[derive(Clone)]
 pub struct Buffer<T> {
-    pub data: Vec<T>,
     id: u32,
+    pub data: Vec<T>,
 }
 
 pub type EBO = Buffer<u32>;

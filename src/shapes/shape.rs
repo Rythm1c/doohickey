@@ -1,14 +1,17 @@
 use crate::src::math::transform::Transform;
 use crate::src::math::vec3::Vec3;
-use crate::src::renderer::mesh::Mesh;
+use crate::src::renderer::material::*;
+use crate::src::renderer::mesh::*;
 use crate::src::renderer::shaders::Program;
 
 pub struct Shape {
     mesh: Mesh,
-    pub transform: Transform,
     pattern: Option<Pattern>,
     pub velocity: Vec3,
+    pub transform: Transform,
+    pub material: Materail,
 }
+
 /// choose what pattern to give a shape
 
 #[derive(Debug, Clone, Copy)]
@@ -19,31 +22,24 @@ pub enum Pattern {
     /// darkness, thickness, number of lines
     Striped(f32, f32, i32),
 }
-/*
-pub trait Shape {
-    fn change_orientation(&mut self, new_orienation: &Quat) -> &mut Self;
-    fn change_pos(&mut self, new_pos: Vec3) -> &mut Self;
-    fn reshape(&mut self, mesh: Mesh) -> &mut Self;
-    fn add_velocity(&mut self);
-    fn render(&self, program: &shaders::Program);
-} */
 
 impl Shape {
-    pub fn new(mesh: Mesh) -> Self {
+    pub fn new() -> Self {
         Self {
-            mesh,
+            mesh: Mesh::default(),
             transform: Transform::DEFAULT,
             pattern: None,
             velocity: Vec3::ZERO,
+            material: Materail::default(),
         }
     }
 
-    pub fn reposition(&mut self, new_pos: Vec3) -> &mut Self {
+    pub fn translate(&mut self, new_pos: Vec3) -> &mut Self {
         self.transform.translation = new_pos;
         self
     }
 
-    pub fn rescale(&mut self, new_size: Vec3) -> &mut Self {
+    pub fn scale(&mut self, new_size: Vec3) -> &mut Self {
         self.transform.scaling = new_size;
         self
     }
@@ -67,6 +63,7 @@ impl Shape {
     }
 
     pub fn render(&mut self, shader: &mut Program) {
+        shader.set_use();
         shader.update_mat4("transform", &self.transform.to_mat());
         /*    shader.update_int("textured", o.model.textured as i32); */
         if let Some(pattern) = self.pattern {

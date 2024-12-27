@@ -2,52 +2,25 @@ use super::buffer::*;
 use super::material::*;
 use super::texture::Texture;
 use super::vao::Vao;
+use super::vertex::Vertex;
 
 #[derive(Clone)]
-pub enum Mesh {
-    PbrMesh(TMesh<Pbr>),
-    PhongMesh(TMesh<Phong>),
-}
-impl Mesh {
-    pub fn create(&mut self) {
-        match self {
-            Mesh::PbrMesh(mesh) => mesh.create(),
-            Mesh::PhongMesh(mesh) => mesh.create(),
-        }
-    }
-
-    pub fn textured(&self) -> bool {
-        match self {
-            Mesh::PbrMesh(mesh) => return mesh.textured(),
-            Mesh::PhongMesh(mesh) => return mesh.textured(),
-        }
-    }
-
-    pub fn render(&self) {
-        match self {
-            Mesh::PbrMesh(mesh) => mesh.render(),
-            Mesh::PhongMesh(mesh) => mesh.render(),
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct TMesh<MaterialType: Materail + Default> {
+pub struct Mesh {
     pub vao: Vao,
     pub vbo: VBO,
     pub ebo: Option<EBO>,
     pub texture: Option<Texture>,
-    pub material: MaterialType,
+    pub material: Materail,
 }
 
-impl<MaterialType: Materail + Default> TMesh<MaterialType> {
+impl Mesh {
     pub fn default() -> Self {
         Self {
             vao: Vao::new(),
             vbo: VBO::default(),
             ebo: None,
             texture: None,
-            material: MaterialType::default(),
+            material: Materail::default(),
         }
     }
 
@@ -64,7 +37,7 @@ impl<MaterialType: Materail + Default> TMesh<MaterialType> {
             ebo.bind(gl::ELEMENT_ARRAY_BUFFER);
         }
 
-        Vao::set_attributes();
+        Vertex::set_attributes();
 
         Vao::unbind();
     }

@@ -7,7 +7,7 @@ use super::lights;
 use super::lights::PointLight;
 use crate::src::animation::*;
 use crate::src::foreign::*;
-use crate::src::renderer::model::Model;
+use crate::src::renderer::model::*;
 
 use crate::src::renderer::shaders;
 use crate::src::renderer::shadows;
@@ -25,7 +25,7 @@ use crate::src::shapes::{cube::cube, shape::Pattern, shape::Shape, sphere::*, to
 // not sure why im bothering with comments as if anyone is going to read any of this
 pub struct World {
     pub camera: Camera,
-    player: Model,
+    pub player: Model,
     pub sun: lights::DirectionalLight,
     pub shapes: HashMap<String, Shape>,    //done
     pub shaders: HashMap<String, Program>, //done
@@ -34,16 +34,10 @@ pub struct World {
 
 impl World {
     pub fn default() -> Self {
-        let directional_light = lights::DirectionalLight {
-            shadows: shadows::Shadow::new(800, 600),
-            color: vec3(1.0, 1.0, 1.0),
-            dir: vec3(0.3, -0.7, 0.4),
-        };
-
         Self {
             camera: Camera::default(),
             player: Model::default(),
-            sun: directional_light,
+            sun: lights::DirectionalLight::default(),
             shapes: HashMap::new(),
             shaders: HashMap::new(),
             point_lights: Vec::new(),
@@ -73,12 +67,10 @@ impl World {
         let file = gltf::Gltf::new(Path::new("models/astronaut"));
         let mut player = Model::default();
         file.populate_model(&mut player);
-        player
-            .change_pos(vec3(0.0, 12.0, 3.0))
-            .change_size(vec3(0.5, 0.5, 0.5));
+        player.translate(vec3(0.0, 12.0, 3.0));
+        player.scale(vec3(0.5, 0.5, 0.5));
+        player.orient(Quat::create(180.0, vec3(0.0, 1.0, 0.0)));
 
-        player.prepere_render_resources();
-        player.transform.orientation = Quat::create(180.0, vec3(0.0, 1.0, 0.0));
         player.play_animation = true;
         player.current_anim = 0;
 
@@ -160,11 +152,9 @@ impl World {
 
         shader.set_use();
         shader.update_mat4("lightSpace", &self.sun.transform());
-        shader.update_mat4("model", &self.player.transform.to_mat());
         self.player.render(shader);
 
         shapes.values_mut().for_each(|shape| {
-            // shader.update_mat4("model", shape.transform.get());
             shape.render(shader);
         });
         // end of render
@@ -174,22 +164,16 @@ impl World {
     }
 
     pub fn render(&mut self) {
-        self.render_static_objects();
-        self.render_skeletal_animations();
-    }
-
-    fn render_static_objects(&mut self) {
+        //render shapes
         let shapes = &mut self.shapes;
-        let shader = &mut self.shaders.get_mut("object").unwrap();
-        shader.set_use();
+        let shader = &mut self.shaders.get_mut("phong").unwrap();
         // object specific
         shapes.values_mut().for_each(|shape| {
             shape.render(shader);
         });
-    }
 
-    fn render_skeletal_animations(&mut self) {
-        let shader = &mut self.shaders.get_mut("animation").unwrap();
+        //render model animated
+        let shader = &mut self.shaders.get_mut("phongAnimation").unwrap();
         shader.set_use();
 
         self.player.render(shader);
@@ -224,8 +208,25 @@ fn world_from_json(
     };
 
     //______________________________________________________________________
-    //load shapes
+    //load point lights
+    for light in data["lights"].members() {
+        let pos = vec3_from_members(&mut light["pos"].members());
+        let col = vec3_from_members(&mut light["col"].members());
 
+        lights.push(PointLight { col, pos });
+    }
+
+    //______________________________________________________________________
+    //load shaders
+    for shader in data["shaders"].members() {
+        let name = String::from(shader["name"].as_str().unwrap());
+        let frag = Path::new(shader["frag"].as_str().unwrap());
+        let vert = Path::new(shader["vert"].as_str().unwrap());
+
+        shaders.insert(name, shaders::create_shader(&vert, &frag));
+    }
+    //______________________________________________________________________
+    //load shapes
     for shape in data["shapes"].members() {
         let shape_type = shape["type"].as_str().unwrap();
         let pattern_type = shape["pattern"]["type"].as_str().unwrap();
@@ -235,8 +236,8 @@ fn world_from_json(
         let color = vec3_from_members(&mut shape["color"].members());
 
         let mut result = Shape::new();
-        result.reposition(pos);
-        result.rescale(scaling);
+        result.translate(pos);
+        result.scale(scaling);
 
         match pattern_type {
             "checkered" => {
@@ -268,22 +269,20 @@ fn world_from_json(
             "sphere" => {
                 let lats = shape["lats"].as_u32().unwrap();
                 let longs = shape["longs"].as_u32().unwrap();
-                result.reshape(sphere(lats, longs, color));
-            }
-
-            "icosphere" => {
-                let divs = shape["divs"].as_i32().unwrap();
-                result.reshape(icosphere(divs, color));
+                let col = [color.x, color.y, color.z];
+                result.reshape(sphere(lats, longs, col));
             }
 
             "cube" => {
                 let color_cube = shape["colorCube"].as_bool().unwrap();
-                result.reshape(cube(color_cube, color));
+                let col = [color.x, color.y, color.z];
+                result.reshape(cube(color_cube, col));
             }
 
             "torus" => {
                 let divs = shape["divs"].as_u32().unwrap();
-                result.reshape(torus(divs, color));
+                let col = [color.x, color.y, color.z];
+                result.reshape(torus(divs, col));
             }
 
             _ => {
@@ -292,24 +291,5 @@ fn world_from_json(
         }
 
         shapes.insert(shape["name"].to_string(), result);
-    }
-
-    //______________________________________________________________________
-    //load point lights
-    for light in data["lights"].members() {
-        let pos = vec3_from_members(&mut light["pos"].members());
-        let col = vec3_from_members(&mut light["col"].members());
-
-        lights.push(PointLight { col, pos });
-    }
-
-    //______________________________________________________________________
-    //load shaders
-    for shader in data["shaders"].members() {
-        let name = String::from(shader["name"].as_str().unwrap());
-        let frag = Path::new(shader["frag"].as_str().unwrap());
-        let vert = Path::new(shader["vert"].as_str().unwrap());
-
-        shaders.insert(name, shaders::create_shader(&vert, &frag));
     }
 }

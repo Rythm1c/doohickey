@@ -1,8 +1,10 @@
+use super::material::*;
 use super::mesh::*;
 use super::shaders;
 use super::texture::Texture;
 
 use crate::src::math::mat4::Mat4;
+use crate::src::math::quaternion::Quat;
 use crate::src::math::transform::Transform;
 use crate::src::math::vec3::Vec3;
 
@@ -11,6 +13,7 @@ use crate::src::animation::pose::Pose;
 use crate::src::animation::skeleton::Skeleton;
 
 // i seriously need to refactor this mess
+
 #[derive(Clone)]
 pub struct Model {
     pub meshes: Vec<Mesh>,
@@ -42,24 +45,20 @@ impl Model {
         self.meshes.push(mesh);
     }
 
-    pub fn prepere_render_resources(&mut self) {
-        for mesh in self.meshes.iter_mut() {
-            mesh.create();
-        }
+    pub fn translate(&mut self, pos: Vec3) {
+        self.transform.translation = pos;
     }
 
-    pub fn change_pos(&mut self, n_pos: Vec3) -> &mut Self {
-        self.transform.translation = n_pos;
-        self
+    pub fn scale(&mut self, size: Vec3) {
+        self.transform.scaling = size;
     }
 
-    pub fn change_size(&mut self, n_size: Vec3) -> &mut Self {
-        self.transform.scaling = n_size;
-        self
+    pub fn orient(&mut self, quat: Quat) {
+        self.transform.orientation = quat;
     }
 
     // can only choose one lighting model per object
-    pub fn render(&mut self, shader: &mut shaders::Program) {
+    pub fn render(&mut self, shader: &shaders::Program) {
         let mats = &self.get_pose();
         for i in 0..mats.len() {
             shader.update_mat4(format!("boneMats[{i}]").as_str(), &mats[i]);
@@ -89,7 +88,8 @@ impl Model {
         final_mats.resize(len, Mat4::IDENTITY);
 
         if self.play_animation {
-            // the match statements are a slight attempt at optimization, to reduce the amount of matrix multiplication going on ofcourse
+            // the match statements are a slight attempt at optimization,
+            // to reduce the amount of matrix multiplication going on ofcourse
             // only multiply with the joint that are actually sent to the shader
             // not sure if this is significant though
             for i in 0..len {

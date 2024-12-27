@@ -17,6 +17,13 @@ pub struct DirectionalLight {
 }
 
 impl DirectionalLight {
+    pub fn default() -> Self {
+        Self {
+            shadows: shadows::Shadow::new(800, 600),
+            color: vec3(1.0, 1.0, 1.0),
+            dir: vec3(0.5, -0.5, 1.0),
+        }
+    }
     /// for rendering to shadow map
     pub fn get_view(&self) -> Mat4 {
         look_at(&vec3(0.0, 0.0, 0.0), &self.dir, &vec3(0.0, 1.0, 0.0))
