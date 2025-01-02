@@ -1,8 +1,7 @@
 use super::src::engine::input;
 use super::src::engine::timer::Timer;
 use super::src::engine::window::Window;
-use super::src::scene::lights;
-use super::src::scene::world::World;
+use super::src::scene::viewer::World;
 use super::src::screen_capture::system::ScreenCapture;
 
 pub struct Demo {
@@ -38,25 +37,6 @@ impl Demo {
     }
 
     fn init(&mut self) -> &mut Self {
-        // prepare the textures in the shaders for rendering
-        {
-            let obj_shader = self.world.shaders.get_mut("phong").unwrap();
-
-            obj_shader.set_use();
-            obj_shader.update_int("shadowMap", 0);
-            obj_shader.update_int("albedo", 1);
-            obj_shader.update_int("specular", 2);
-        }
-
-        {
-            let anim_shader = self.world.shaders.get_mut("phongAnimation").unwrap();
-
-            anim_shader.set_use();
-            anim_shader.update_int("shadowMap", 0);
-            anim_shader.update_int("albedo", 1);
-            anim_shader.update_int("specular", 2);
-        }
-
         self
     }
 
@@ -71,62 +51,9 @@ impl Demo {
     }
 
     fn update(&mut self) {
-        self.world
-            .update_cam()
-            .update_animations(&self.timer)
-            .update_physics()
-            .update_shadows();
+        self.world.update(self.window.get_ratio(), &self.timer);
 
         self.window.clear();
-
-        let lights = &self.world.point_lights;
-        //________________________________________________________________________
-        //update shader for static objects(no skeleton)
-        {
-            let shader = &mut self.world.shaders.get_mut("phong").unwrap();
-
-            shader.set_use();
-            self.world.sun.shadows.bind_texture();
-            shader.update_vec3("L_direction", self.world.sun.dir);
-            shader.update_vec3("L_color", self.world.sun.color);
-            shader.update_vec3("viewPos", self.world.camera.pos);
-            shader.update_mat4("view", &self.world.camera.get_view());
-            let projection = self.world.camera.get_pojection(self.window.get_ratio());
-            shader.update_mat4("projection", &projection);
-            shader.update_mat4("lightSpace", &self.world.sun.transform());
-            shader.update_int("shadowsEnabled", false as i32);
-            let len = lights.len();
-            shader.update_int("pointLightCount", len as i32);
-
-            for i in 0..len {
-                lights::pl_to_shader(lights[i], shader, i);
-            }
-        }
-        //________________________________________________________________________
-        //update shader for dynamic objects(have a skeleton)
-        {
-            let shader = &mut self.world.shaders.get_mut("phongAnimation").unwrap();
-            let projection = self.world.camera.get_pojection(self.window.get_ratio());
-
-            shader.set_use();
-            self.world.sun.shadows.bind_texture();
-            shader.update_vec3("L_direction", self.world.sun.dir);
-            shader.update_vec3("L_color", self.world.sun.color);
-            shader.update_vec3("viewPos", self.world.camera.pos);
-            shader.update_mat4("view", &self.world.camera.get_view());
-
-            shader.update_mat4("projection", &projection);
-            shader.update_mat4("lightSpace", &self.world.sun.transform());
-            shader.update_int("shadowsEnabled", false as i32);
-
-            let len = lights.len();
-
-            shader.update_int("pointLightCount", len as i32);
-            // update point lights
-            for i in 0..len {
-                lights::pl_to_shader(lights[i], shader, i);
-            }
-        }
 
         self.world.render();
         // recorder.screen_shot("screenshot.png");

@@ -38,24 +38,10 @@ vec3 frenselSchlick(float, vec3);
 
 const float PI = 3.14159265359;
 
-// getting a checkered pattern on an objects surface
-uniform bool checkered;
-uniform float squares;
-uniform float sqr_shade;
-float checkered_fn();
-
-// drawing a grid line on an objects surface
-uniform bool subDivided;
-uniform float lines;
-uniform float line_thickness;
-uniform float line_shade;
-float line_fn();
-
 // blending with background based on distance from camera
 // also can be used to create a lazy fog effect
 float blend(float far);
 
-//_________________________________________________________________________
 //_________________________________________________________________________
 void main() {
     vec3 N = normalize(fs_in.normal);
@@ -65,7 +51,7 @@ void main() {
     f0 = mix(f0, baseColor, metallicFactor);
 
     vec3 lo = vec3(0.0);
-    for (int i = 0; i < lightCount; i++) {
+    for(int i = 0; i < lightCount; i++) {
         vec3 L = normalize(lights[i].position - fs_in.fragPos);
         vec3 H = normalize(V + L);
 
@@ -108,7 +94,6 @@ void main() {
 
 //*** function deinations **//
 //_________________________________________________________________________
-//_________________________________________________________________________
 float distributionGGX(vec3 N, vec3 H, float roughness) {
     float a = pow(roughness, 2.0);
     float a2 = pow(a, 2.0);
@@ -121,7 +106,6 @@ float distributionGGX(vec3 N, vec3 H, float roughness) {
     return nom / denom;
 }
 //_________________________________________________________________________
-//_________________________________________________________________________
 float GeometrySchlickGGX(float NdotV, float roughness) {
     float r = roughness + 1.0;
     float k = pow(r, 2.0) / 8.0;
@@ -131,7 +115,6 @@ float GeometrySchlickGGX(float NdotV, float roughness) {
 
     return nom / denom;
 }
-//_________________________________________________________________________
 //_________________________________________________________________________
 float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
     float NdotV = max(dot(N, V), 0.0);
@@ -143,31 +126,11 @@ float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
     return ggx1 * ggx2;
 }
 //_________________________________________________________________________
-//_________________________________________________________________________
 vec3 frenselSchlick(float cosTheta, vec3 f0) {
     return f0 + (1.0 - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 //_________________________________________________________________________
-//_________________________________________________________________________
 float blend(float far) {
     float distance = clamp(length(fs_in.fragPos - camPos), 0.0, far);
     return (pow(distance / far, 2.0));
-}
-
-//_________________________________________________________________________
-//_________________________________________________________________________
-float checkered_fn() {
-    float square = 2.0 / squares;
-
-    vec2 value = step(vec2(0.5), fract(fs_in.texCoords / square));
-    return int(value.x + value.y) % 2;
-}
-
-//_________________________________________________________________________
-//_________________________________________________________________________
-float line_fn() {
-    float line = 1.0 / lines;
-    vec2 a = step(vec2(line_thickness), fract(fs_in.texCoords / line));
-    vec2 b = step(vec2(line_thickness), 1.0 - fract(fs_in.texCoords / line));
-    return a.x * a.y * b.x * b.y;
 }

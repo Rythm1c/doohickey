@@ -37,19 +37,6 @@ uniform sampler2D diffuse_tex;
 uniform sampler2D specular_tex;
 uniform sampler2D albedo;
 
-// getting a checkered pattern on an objects surface
-uniform bool checkered;
-uniform float squares;
-uniform float sqr_shade;
-float checkered_fn();
-
-// drawing a grid line on an objects surface
-uniform bool subDivided;
-uniform float lines;
-uniform float line_thickness;
-uniform float line_shade;
-float line_fn();
-
 // blending with background based on distance from camera
 // also can be used to create a lazy fog effect
 float blend(float far);
@@ -83,18 +70,6 @@ void main() {
         result += calc_pointlight(pointLights[i]);
     } */
 
-    if(checkered) {
-        if(checkered_fn() == 1) {
-            result *= sqr_shade;
-        }
-    }
-
-    if(subDivided) {
-        if(line_fn() == 0) {
-            result *= line_shade;
-        }
-    }
-
     //foggy effect 
     vec3 background = vec3(0.1);
     float factor = blend(400.0);
@@ -108,20 +83,6 @@ float blend(float far) {
 
     float distance = clamp(length(fs_in.fragPos - viewPos), 0.0, far);
     return (pow(distance / far, 2.0));
-}
-
-float checkered_fn() {
-    float square = 2.0 / squares;
-
-    vec2 value = step(vec2(0.5), fract(fs_in.texCoords / square));
-    return int(value.x + value.y) % 2;
-}
-
-float line_fn() {
-    float line = 1.0 / lines;
-    vec2 a = step(vec2(line_thickness), fract(fs_in.texCoords / line));
-    vec2 b = step(vec2(line_thickness), 1.0 - fract(fs_in.texCoords / line));
-    return a.x * a.y * b.x * b.y;
 }
 
 vec3 calc_pointlight(pointLight light, vec3 col) {

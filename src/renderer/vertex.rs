@@ -1,5 +1,3 @@
-use crate::src::math::{vec2::*, vec3::*};
-
 use std::mem::offset_of;
 use std::os::raw::c_void;
 

@@ -1,4 +1,3 @@
-use super::material::*;
 use super::mesh::*;
 use super::shaders;
 use super::texture::Texture;
