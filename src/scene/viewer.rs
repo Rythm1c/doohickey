@@ -18,26 +18,33 @@ pub struct World {
     pub player: Model,
     pub sun: DirectionalLight,
     shaders: HashMap<String, Program>, //done
-    pub point_lights: Vec<PointLight>, //done
+    pub lights: Vec<PointLight>,       //done
 }
 
 impl World {
-    pub fn default() -> Self {
-        Self {
-            camera: Camera::default(),
-            player: Model::default(),
-            sun: DirectionalLight::default(),
-            shaders: HashMap::new(),
-            point_lights: Vec::new(),
-        }
-    }
-
     pub fn new() -> Self {
         let mut camera = Camera::default();
         camera.pos = vec3(0.0, 20.0, -30.0);
 
         let mut shaders = HashMap::new();
-        let mut point_lights = Vec::new();
+        let lights = vec![
+            PointLight {
+                pos: vec3(30.0, 20.0, -20.0),
+                col: vec3(1.0, 1.0, 1.0),
+            },
+            PointLight {
+                pos: vec3(-30.0, 20.0, -20.0),
+                col: vec3(1.0, 0.6, 0.01),
+            },
+            PointLight {
+                pos: vec3(30.0, 20.0, 40.0),
+                col: vec3(1.0, 0.0, 1.0),
+            },
+            PointLight {
+                pos: vec3(-30.0, 20.0, 40.0),
+                col: vec3(0.0, 1.0, 0.5),
+            },
+        ];
 
         let sun = DirectionalLight {
             shadows: shadows::Shadow::new(1900, 1200),
@@ -101,9 +108,21 @@ impl World {
             sun,
             camera,
             player,
-            point_lights,
             shaders,
+            lights,
         }
+    }
+
+    pub fn add_model(&mut self, id: String, path: &Path) {
+        let file = gltf::Gltf::new(path);
+        self.player = Model::default();
+        file.populate_model(&mut self.player);
+        self.player.translate(vec3(0.0, 12.0, 3.0));
+        self.player.scale(vec3(0.5, 0.5, 0.5));
+        self.player.orient(Quat::create(180.0, vec3(0.0, 1.0, 0.0)));
+
+        self.player.play_animation = true;
+        self.player.current_anim = 0;
     }
 
     pub fn update(&mut self, win_ratio: f32, timer: &Timer) {
@@ -112,7 +131,7 @@ impl World {
         // update animations for current model being viewed
         self.player.update_animation(timer.elapsed);
 
-        let lights = &self.point_lights;
+        let lights = &self.lights;
         //________________________________________________________________________
         //update shader for static objects(no skeleton)
         {
@@ -168,17 +187,16 @@ impl World {
     pub fn render(&mut self) {
         // let shader = &mut self.shaders.get_mut("phong").unwrap();
         //render scene shadows
-        let shader = &mut self.shaders.get_mut("shadow").unwrap();
+        /* let shader = &mut self.shaders.get_mut("shadow").unwrap();
         self.sun.shadows.attach(1900, 1200);
         shader.set_use();
         shader.update_mat4("lightSpace", &self.sun.transform());
         self.player.render(shader);
-        shadows::Shadow::detach();
+        shadows::Shadow::detach(); */
 
         //render model animated
         let shader = &mut self.shaders.get_mut("phongAnimation").unwrap();
         shader.set_use();
-
         self.player.render(shader);
     }
 }

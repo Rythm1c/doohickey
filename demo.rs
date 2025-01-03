@@ -9,7 +9,7 @@ pub struct Demo {
     world: World,
     timer: Timer,
     running: bool,
-    screen_capture: ScreenCapture,
+    capture: ScreenCapture,
 }
 
 impl Demo {
@@ -19,7 +19,7 @@ impl Demo {
         let timer = Timer::new();
 
         let (w, h) = window.get_size();
-        let screen_capture = ScreenCapture::new(w, h);
+        let capture = ScreenCapture::new(w, h);
 
         let running = true;
 
@@ -28,7 +28,7 @@ impl Demo {
             window,
             world,
             timer,
-            screen_capture,
+            capture,
         }
     }
 
@@ -44,24 +44,22 @@ impl Demo {
         while self.running {
             self.timer.update();
             self.handle_input();
-            self.update();
+
+            self.world.update(self.window.get_ratio(), &self.timer);
+
+            self.window.clear(0.8, 0.2, 0.2);
+
+            self.world.render();
+
+            // recorder.screen_shot("screenshot.png");
+            // self.screen_capture.capture();
+
+            eprint!("\rfps : {}", self.timer.fps());
+
+            self.window.swap();
         }
 
         self
-    }
-
-    fn update(&mut self) {
-        self.world.update(self.window.get_ratio(), &self.timer);
-
-        self.window.clear();
-
-        self.world.render();
-        // recorder.screen_shot("screenshot.png");
-        // self.screen_capture.capture();
-
-        eprint!("\rfps : {}", self.timer.fps());
-
-        self.window.swap();
     }
 
     fn handle_input(&mut self) {

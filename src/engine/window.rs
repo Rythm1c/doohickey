@@ -55,11 +55,11 @@ impl Window {
         w as f32 / h as f32
     }
 
-    pub fn clear(&self) {
+    pub fn clear(&self, r: f32, g: f32, b: f32) {
         let (w, h) = self.get_size();
         unsafe {
             gl::Viewport(0, 0, w as i32, h as i32);
-            gl::ClearColor(0.1, 0.1, 0.1, 1.0);
+            gl::ClearColor(r, g, b, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
     }
